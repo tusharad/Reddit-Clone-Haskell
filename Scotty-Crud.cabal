@@ -1,0 +1,61 @@
+cabal-version:      3.4
+name:               Scotty-Crud
+version:            0.1.0.0
+license:            BSD-2-Clause
+license-file:       LICENSE
+author:             tusharad
+maintainer:         tusharadhatrao@gmail.com
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    exposed-modules:  MyLib
+                    , ScottyCrud.Core
+                    , ScottyCrud.HTML
+                    , ScottyCrud.Common.Types
+                    , ScottyCrud.Auth
+                    , ScottyCrud.Middleware
+    build-depends:    base ^>=4.17.2.1
+                    , scotty
+                    , postgresql-simple
+                    , aeson
+                    , http-types
+                    , text
+                    , blaze-html
+                    , blaze-markup
+                    , cookie
+                    , bytestring
+                    , wai-middleware-static
+                    , wai
+                    , jwt
+                    , containers
+                    , scientific
+                    , time
+                    , string-interpolate
+
+    hs-source-dirs:   src
+    default-language: GHC2021
+
+executable Scotty-Crud
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:
+        base ^>=4.17.2.1,
+        Scotty-Crud
+    hs-source-dirs:   app
+    default-language: GHC2021
+
+test-suite Scotty-Crud-test
+    import:           warnings
+
+    default-language: GHC2021
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+
+    build-depends:
+        base ^>=4.17.2.1,
+        Scotty-Crud

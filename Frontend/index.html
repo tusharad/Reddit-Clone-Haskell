@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" 
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <title>Hello, world!</title>
+</head>
+<style>
+    body {
+        background-color: #f0f2f5;
+    }
+
+    .header-bar {
+        background-color: #007bff;
+        color: #ffffff;
+        padding: 10px 0;
+        text-align: center;
+    }
+
+    .footer-bar {
+        background-color: #007bff;
+        color: #ffffff;
+        padding: 10px 0;
+        text-align: center;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+    }
+
+    .login-container {
+        max-width: 400px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #ffffff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-control {
+        margin-bottom: 10px;
+    }
+
+    .post-item {
+        background-color: #ffffff;
+        margin-bottom: 10px;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .post-item {
+        background-color: #ffffff;
+        margin-bottom: 20px;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .post-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .post-item h5 {
+        color: #007bff;
+        margin-bottom: 5px;
+    }
+
+    .post-item p {
+        color: #666666;
+    }
+
+    .post-item small {
+        font-weight: 600;
+    }
+
+    body {
+        background-color: #f4f7f6;
+    }
+
+    .post-container {
+        background-color: #ffffff;
+        margin-top: 20px;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        border-left: 5px solid #5cb85c;
+    }
+
+    .comments-container {
+        margin-top: 20px;
+    }
+
+    .comment {
+        background-color: #e9ecef;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        border-left: 3px solid #0275d8;
+    }
+
+    h2,
+    h3 {
+        color: #333;
+    }
+
+    p {
+        color: #555;
+    }
+</style>
+
+<body>
+    <h1>Hello, world!</h1>
+    <div class="main">
+        <nav class="header-bar navbar navbar-expand-lg navbar-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Reddit-Like</a>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <form class="d-flex ms-auto my-lg-0">
+                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                        <button class="btn btn-outline-light" type="submit">Search</button>
+                    </form>
+                    <button class="btn btn-outline-light ms-2" type="button">Login</button>
+                </div>
+            </div>
+        </nav>
+        <div class="container my-4">
+            <div class="row">
+                <div class="col-md-10">
+                    <div class="post-item">
+                        <h5>Title of the Post</h5>
+                        <p><small>Posted by Author Name on January 1, 2023</small></p>
+                    </div>
+                    <div class="post-item">
+                        <h5>Another Interesting Post</h5>
+                        <p><small>Posted by Another Author on January 2, 2023</small></p>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <div class="card">
+                        <div class="card-header">
+                            Featured Posts
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Special Post 1</li>
+                            <li class="list-group-item">Special Post 2</li>
+                            <li class="list-group-item">Special Post 3</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="post-container">
+                <h2>Post Title</h2>
+                <p>Posted by <strong>Author Name</strong> on <em>January 1, 2023</em></p>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor,
+                    dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas
+                    ligula massa, varius a, semper congue, euismod non, mi.</p>
+            </div>
+
+            <div class="comments-container">
+                <h3>Comments</h3>
+                <div class="comment">
+                    <p><strong>Commenter Name:</strong> This is an interesting post!</p>
+                </div>
+                <div class="comment">
+                    <p><strong>Another Commenter:</strong> I completely agree with the points made in this post.</p>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="login-container">
+                <h2 class="text-center">Login</h2>
+                <form>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email address</label>
+                        <input type="email" class="form-control" id="email" aria-describedby="emailHelp">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+            </div>
+        </div>
+        <div class="container">
+            <div class="login-container">
+                <h2 class="text-center">Sign Up</h2>
+                <form>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email address</label>
+                        <input type="email" class="form-control" id="email" aria-describedby="emailHelp">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="password">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Sign up</button>
+                </form>
+            </div>
+        </div>
+        <div class="footer-bar">
+            <p>Footer here</p>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+
+</html>
