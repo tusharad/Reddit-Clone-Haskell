@@ -11,6 +11,7 @@ import           Text.Blaze.Html.Renderer.Text ( renderHtml )
 import           ScottyCrud.HTML
 import           ScottyCrud.Common.Types
 import           Database.PostgreSQL.Simple
+import           Control.Concurrent.Async
 
 main' :: IO ()
 main' = scotty 3000 $ do
@@ -18,28 +19,35 @@ main' = scotty 3000 $ do
   authController
   homeController
 
-
 insertComment :: T.Text -> Int -> Int -> IO ()
 insertComment commentContent postId userId = do
   conn <- getConn
   _ <- execute conn "insert into comments (comment_content,post_id,user_id) VALUES (?,?,?)" (commentContent,postId,userId) 
   close conn
 
-fetchAllPosts :: IO [PostAndUser]
+fetchAllPosts :: IO [PostAndUserAndCat]
 fetchAllPosts = do
   conn <- getConn
-  postList <- query_ conn "select *from posts join users on users.user_id = posts.user_id;" :: IO [PostAndUser]
+  postList <- query_ conn "select *from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id;" :: IO [PostAndUserAndCat]
   close conn
   pure postList
 
-fetchPostById :: Int -> IO (Maybe PostAndUser)
+fetchPostById :: Int -> IO (Maybe PostAndUserAndCat)
 fetchPostById postId = do
   conn <- getConn
-  postList <- query conn "select *from posts join users on users.user_id = posts.user_id where post_id = ?;" (Only postId) :: IO [PostAndUser]
+  postList <- query conn "select *from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id where post_id = ?;" (Only postId) :: IO [PostAndUserAndCat]
   close conn
   case postList of
     [] -> pure Nothing
     [post] -> pure $ Just post
+
+fetchCommentsByPostId :: Int -> IO [CommentAndUser]
+fetchCommentsByPostId postId = do
+  conn <- getConn
+  commentList <- query conn "select *from comments join users on users.user_id = comments.user_id where post_id = ?;" (Only postId) :: IO [CommentAndUser]
+  close conn
+  pure commentList
+
 
 homeController :: ScottyM ()
 homeController = do
@@ -60,22 +68,25 @@ homeController = do
       Just user -> text $ "welcome " <> (TL.pack (user_email user))
   post "/addPost" $ do
     mUser <- getAuthUser
+    (categoryId :: Int)       <- formParam "category_id"
     (postTitle :: T.Text)       <- formParam "post_title"
     (postDescription :: T.Text) <- formParam "post_description"
     case mUser of
       Nothing   -> redirect "/"
       Just user -> do
         conn <- liftIO $ getConn
-        _ <- liftIO $ execute conn "insert into posts (post_title,post_description,user_id) values (?,?,?);" (postTitle,postDescription,user_id user)
+        _ <- liftIO $ execute conn "insert into posts (post_title,post_description,user_id,category_id) values (?,?,?,?);" (postTitle,postDescription,user_id user,categoryId)
         liftIO $ close conn
         redirect "/"
   get "/viewPost/:postId" $ do
     mUser <- getAuthUser
     postId' <- pathParam "postId"
-    mPostInfo <- liftIO $ fetchPostById postId'
+    -- mPostInfo <- liftIO $ fetchPostById postId'
+    -- commentList <- liftIO $ fetchCommentsByPostId postId'
+    (mPostInfo,commentList ) <- liftIO $ concurrently (fetchPostById postId') (fetchCommentsByPostId postId')
     case mPostInfo of
       Nothing -> redirect "/"
-      Just postInfo -> html $ renderHtml $ viewPost mUser postInfo
+      Just postInfo -> html $ renderHtml $ viewPost mUser postInfo commentList
   post "/addComment" $ do
     mUser <- getAuthUser
     case mUser of

@@ -2,6 +2,11 @@ body {
     background-color: #f0f2f5;
 }
 
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .header-bar {
     background-color: #0a1f35;
     color: #ffffff;

@@ -4,11 +4,12 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 module ScottyCrud.Common.Types where
 
-import GHC.Generics
-import Database.PostgreSQL.Simple
-import Data.Aeson
+import           GHC.Generics
+import           Database.PostgreSQL.Simple
+import           Data.Aeson
 import qualified Data.Text as T
-import Data.Time.Clock
+import           Data.Text (Text)
+import           Data.Time.Clock
 
 data User = User {
     user_id    :: Int
@@ -23,18 +24,34 @@ data Post = Post {
   , userId   :: Int
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
+  , category_id :: Int
 } deriving (Show,Generic,Eq,FromRow)
 
-data PostAndUser = PostAndUser {
+data PostAndUserAndCat = PostAndUserAndCat {
     postId :: Int
   , postTitle :: T.Text
   , postDescription :: T.Text
   , userId   :: Int
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
+  , category_id :: Int
   , userUserId :: Int
   , userUserEmail :: T.Text
   , userPassword :: T.Text
+  , categoryId :: Int
+  , categoryName :: T.Text
+} deriving (Show,Generic,Eq,FromRow)
+
+data CommentAndUser = CommentAndUser {
+    commentId :: Int
+  , commentContent :: Text
+  , createdAt :: UTCTime
+  , updatedAt :: UTCTime
+  , userId :: Int
+  , postId :: Int
+  , userUserId :: Int
+  , userEmail :: Text
+  , commentPassword :: Text
 } deriving (Show,Generic,Eq,FromRow)
 
 data Person = Person {

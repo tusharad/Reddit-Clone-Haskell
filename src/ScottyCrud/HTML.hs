@@ -6,7 +6,7 @@ import           Prelude hiding (head, id, div)
 import           Text.Blaze.Html5  as H hiding (map) 
 import           Text.Blaze.Html5.Attributes as HA hiding (title)
 import           ScottyCrud.Common.Types
-import qualified ScottyCrud.Common.Types as PU (PostAndUser(..))
+import qualified ScottyCrud.Common.Types as PU (PostAndUserAndCat(..))
 import           Data.Time.Clock
 
 
@@ -85,7 +85,7 @@ loginPage = html $ do
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
 
-homePage :: Maybe User -> [PostAndUser] -> Markup
+homePage :: Maybe User -> [PostAndUserAndCat] -> Markup
 homePage mUser postList = html $ do
   head $ do
     link ! rel "stylesheet" ! href "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -101,8 +101,9 @@ homePage mUser postList = html $ do
               a ! href ("/viewPost/" <> stringValue (show $ PU.postId post)) $ do
                 div ! class_ "post-item" $ do
                   (h5 $ toMarkup $ PU.postTitle post)
-                  (h5 $ toMarkup $ PU.postId post)
                   (p $ do
+                    strong $ toMarkup $ PU.categoryName post
+                    br
                     small $ toMarkup $ show $ utctDay $ PU.createdAt post
                     br
                     small $ toMarkup $ PU.userUserEmail post)
@@ -131,18 +132,21 @@ addPostPage mUser = html $ do
         div ! class_ "login-container" $ do
             h2 ! class_ "text-center" $ "Add Post"
             H.form ! action "/addPost" ! method "POST" $ do
-                div ! class_ "mb-3" $ do
+               div ! class_ "mb-3" $ do
+                    H.label ! class_ "form-label" $ "Category"
+                    input ! type_ "number" ! class_ "form-control" ! HA.name "category_id"
+               div ! class_ "mb-3" $ do
                     H.label ! class_ "form-label" $ "Post title"
                     input ! type_ "text" ! class_ "form-control" ! HA.name "post_title"
-                div ! class_ "mb-3" $ do
+               div ! class_ "mb-3" $ do
                     H.label ! class_ "form-label" $ "Post Description"
                     textarea ! class_ "form-control" ! rows "3" ! HA.name "post_description" $ ""
-                button ! type_ "submit" ! class_ "btn btn-primary w-100" $ "Add Post"
+               button ! type_ "submit" ! class_ "btn btn-primary w-100" $ "Add Post"
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
 
-viewPost :: Maybe User -> PostAndUser -> Markup
-viewPost mUser postInfo = html $ do
+viewPost :: Maybe User -> PostAndUserAndCat -> [CommentAndUser] -> Markup
+viewPost mUser postInfo commentList = html $ do
   head $ do
     link ! rel "stylesheet" ! href "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     link ! rel "stylesheet" ! type_ "text/css" ! href "/static/style.css"
@@ -164,14 +168,17 @@ viewPost mUser postInfo = html $ do
                     H.label ! class_ "form-label" $ "Add Comment"
                     input ! type_ "text" ! class_ "form-control" ! HA.name "comment_content"
                     input ! type_ "hidden" ! class_ "form-control" ! HA.name "post_id" ! HA.value (stringValue (show (PU.postId postInfo)))
-                button ! type_ "submit" ! class_ "btn btn-primary w-30" $ "Add Comment"
+                case mUser of
+                  Nothing -> button ! type_ "submit" ! class_ "btn btn-primary w-30 disabled" $ "Add Comment"
+                  _       -> button ! type_ "submit" ! class_ "btn btn-primary w-30" $ "Add Comment"
+                
     div ! class_ "comments-container" $ do
         h3 "Comments" 
-        div ! class_ "comment" $ ""
-        div ! class_ "comment" $ do
-            p $ do
-              strong "Another Commenter:" 
-              "I completely agree with the points made in this post."
+        div  $ do
+            div ! class_ "comment" $ mapM_ (\comment -> p $ do
+              strong $ toMarkup (userEmail comment)
+              H.span " : "
+              toMarkup (commentContent comment)) commentList
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
 

@@ -35,6 +35,7 @@ library
                     , scientific
                     , time
                     , string-interpolate
+                    , async
 
     hs-source-dirs:   src
     default-language: GHC2021
