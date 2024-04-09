@@ -8,6 +8,7 @@ import           Text.Blaze.Html5.Attributes as HA hiding (title)
 import           ScottyCrud.Common.Types
 import qualified ScottyCrud.Common.Types as PU (PostAndUserAndCat(..))
 import           Data.Time.Clock
+import qualified Data.Text as T
 
 
 headerBar :: Maybe User -> Html
@@ -33,14 +34,13 @@ headerBar mUser = do
             a ! href "/addPost" $ do
               button ! class_ "btn btn-outline-light ms-2" ! type_ "button" $ "addPost"
  
-
 footerBar :: Html
 footerBar = do
       div ! class_ "footer-bar" $ do
         p "Footer here"
 
-signUpPage :: Markup
-signUpPage = html $ do
+signUpPage :: Maybe T.Text -> Markup
+signUpPage mMsg = html $ do
   head $ do
     link ! rel "stylesheet" ! href "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     link ! rel "stylesheet" ! type_ "text/css" ! href "static/style.css"
@@ -49,6 +49,9 @@ signUpPage = html $ do
    div ! class_ "main" $ do
     headerBar Nothing
     div ! class_ "container" $ do
+        case mMsg of
+          Just msg -> h1 $ toMarkup msg
+          Nothing  -> mempty 
         div ! class_ "login-container" $ do
             h2 ! class_ "text-center" $ "Signup"
             H.form ! action "/signupUser" ! method "POST" $ do
@@ -58,12 +61,15 @@ signUpPage = html $ do
                 div ! class_ "mb-3" $ do
                     H.label ! class_ "form-label" $ "Password"
                     input ! type_ "password" ! class_ "form-control" ! HA.name "password"
+                div ! class_ "mb-3" $ do
+                    H.label ! class_ "form-label" $ "Confirm Password"
+                    input ! type_ "password" ! class_ "form-control" ! HA.name "confirm_password"
                 button ! type_ "submit" ! class_ "btn btn-primary w-100" $ "Signup"
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
 
-loginPage :: Markup
-loginPage = html $ do
+loginPage :: Maybe T.Text -> Markup
+loginPage mMsg = html $ do
   head $ do
     link ! rel "stylesheet" ! href "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     link ! rel "stylesheet" ! type_ "text/css" ! href "static/style.css"
@@ -74,6 +80,9 @@ loginPage = html $ do
     div ! class_ "container" $ do
         div ! class_ "login-container" $ do
             h2 ! class_ "text-center" $ "Login"
+            case mMsg of
+              Just msg -> h1 $ toMarkup msg
+              Nothing  -> mempty 
             H.form ! action "/loginUser" ! method "POST" $ do
                 div ! class_ "mb-3" $ do
                     H.label ! class_ "form-label" $ "Email address"
@@ -134,7 +143,9 @@ addPostPage mUser = html $ do
             H.form ! action "/addPost" ! method "POST" $ do
                div ! class_ "mb-3" $ do
                     H.label ! class_ "form-label" $ "Category"
-                    input ! type_ "number" ! class_ "form-control" ! HA.name "category_id"
+                    select ! HA.name "category_id" $ do
+                      option ! HA.value "1" $ "Haskell"
+                      option ! HA.value "2" $ "Android"
                div ! class_ "mb-3" $ do
                     H.label ! class_ "form-label" $ "Post title"
                     input ! type_ "text" ! class_ "form-control" ! HA.name "post_title"
@@ -181,88 +192,3 @@ viewPost mUser postInfo commentList = html $ do
               toMarkup (commentContent comment)) commentList
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
-
-
-{-
-homePage :: Maybe User -> [Post] -> Markup
-homePage mUser postList = html $ do
-    head $ do
-        title "learning haskell" -- <title>learning haskell</title>
-        link ! rel "stylesheet" ! type_ "text/css" ! href "static/style.css"
-    body $ do
-        case mUser of
-          Just user -> p $ "Hello " <> toHtml (user_email user)
-          Nothing -> p "please login"
-        h1 "Hello from Scotty!"
-        h3 "Post List: "
-        ol $ mapM_ (\post -> li $ div $ do
-          (p $ toMarkup $ postTitle post)
-          (p $ toMarkup $ postDescription post)) postList
-
-addPostPage :: Markup
-addPostPage = html $ do
-  body $ do
-    h1 "Add Post"
-    Text.Blaze.Html5.form ! action "/addPost" ! method "POST" $ do
-      p "Enter title"
-      input ! type_ "text" ! Text.Blaze.Html5.Attributes.name "post_title"
-      br
-      p "Enter post description"
-      input ! type_ "text" ! Text.Blaze.Html5.Attributes.name "post_description"
-      input ! type_ "submit" ! Text.Blaze.Html5.Attributes.value "submit"
-
-personsPage :: [Person] -> Markup
-personsPage lst = html $ do
-  body $ do
-    h1 "Person list:"
-    ul $ mapM_ (li. toMarkup . getName) lst
-
-insertPersonPage :: Markup
-insertPersonPage = html $ do
-  body $ do
-    h1 "Insert Person Form"
-    Text.Blaze.Html5.form ! action "/addPerson" ! method "POST" $ do
-      p "Enter name"
-      input ! type_ "text" ! Text.Blaze.Html5.Attributes.name "name"
-      br
-      p "Enter age"
-      input ! type_ "number" ! Text.Blaze.Html5.Attributes.name "age"
-      input ! type_ "submit" ! Text.Blaze.Html5.Attributes.value "submit"
-  
-
-signUpPage :: Markup
-signUpPage = html $ do
-  body $ do
-    h1 "Signup"
-    Text.Blaze.Html5.form ! action "/signupUser" ! method "POST" $ do
-      p "Enter email"
-      input ! type_ "email" ! Text.Blaze.Html5.Attributes.name "email"
-      br
-      p "Enter password"
-      input ! type_ "password" ! Text.Blaze.Html5.Attributes.name "password"
-      input ! type_ "submit" ! Text.Blaze.Html5.Attributes.value "submit"
-
-loginPage :: Markup
-loginPage = html $ do
-  body $ do
-    h1 "Login"
-    Text.Blaze.Html5.form ! action "/loginUser" ! method "POST" $ do
-      p "Enter email"
-      input ! type_ "email" ! Text.Blaze.Html5.Attributes.name "email"
-      br
-      p "Enter password"
-      input ! type_ "password" ! Text.Blaze.Html5.Attributes.name "password"
-      input ! type_ "submit" ! Text.Blaze.Html5.Attributes.value "Login"
--}
-
-getName :: Person -> String
-getName Person{..} = name
-
-{-
-tempPage :: MarkUp 
-tempPage = html $ do
-  head $ do
-    title "login"
-    link ! href "https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" ! rel "stylesheet"
-  body $ do
--}

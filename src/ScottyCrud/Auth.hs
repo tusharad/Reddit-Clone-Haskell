@@ -22,6 +22,15 @@ import           Data.Maybe (fromMaybe)
   , wai 
 -}
 
+jwtEncryptUserId :: Int -> T.Text
+jwtEncryptUserId userId = do
+  let key = hmacSecret . T.pack $ "hello cat"
+  let cs = mempty { 
+        iss = stringOrURI . T.pack $ "Foo"
+        , unregisteredClaims = ClaimsMap $ Map.fromList [(T.pack "user_id", (Number $ fromIntegral userId))]
+      }
+  encodeSigned key mempty cs
+
 getAuthUser :: ActionM (Maybe User)
 getAuthUser = do
     mUserId <- getCookie "auth_token"
@@ -43,44 +52,37 @@ getAuthUser = do
                         [user] -> pure $ Just user
     pure mUser 
 
-{-
-main2 :: IO ()
-main2 = scotty 3000 $ do
-  middleware $ staticPolicy (addBase "/home/user/haskell/Scotty-Crud/")
-  middleware $ checkRouteMiddleware
-  get "/" $ do
-    mUser <- getAuthUser
-    html $ renderHtml $ homePage mUser
-  get "/admin" $ do
-    mUser <- getAuthUser
-    case mUser of
-      Nothing   -> redirect "/"
-      Just user -> text $ "welcome " <> (TL.pack (user_email user))
-  -}
-
 authController :: ScottyM ()
 authController = do
   get "/signup" $ do
-    html $ renderHtml signUpPage
+    mMsg <- queryParamMaybe "message"
+    html $ renderHtml $ signUpPage mMsg
   get "/login" $ do
     mUser <- getAuthUser
+    mMsg <- queryParamMaybe "message"
     case mUser of
       Just _ -> redirect "/"
-      Nothing -> html $ renderHtml loginPage
+      Nothing -> html $ renderHtml $ loginPage mMsg
 
   post "/signupUser" $ do
     (email :: T.Text) <- formParam "email"
     (password :: T.Text) <- formParam "password"
+    (confirmPassword :: T.Text) <- formParam "confirm_password"
     conn <- liftIO getConn
     userList <- liftIO $ (query conn "Select *FROM users where user_email = ?;" (Only email):: IO [User])
     case userList of
         [] -> do
-            _ <- liftIO $ execute conn "insert into users (user_email,password) values (?,?);" (email,password)
-            liftIO $ close conn
-            text "user created"
+            case password == confirmPassword of
+              False -> do
+                liftIO $ close conn
+                redirect "/signup?message=password is did not matched"
+              _     -> do 
+                _ <- liftIO $ execute conn "insert into users (user_email,password) values (?,?);" (email,password)
+                liftIO $ close conn
+                redirect "/"
         _  -> do
             liftIO $ close conn
-            redirect "/login"
+            redirect "/login?message=user already exist"
 
   post "/loginUser" $ do
     (email :: T.Text) <- formParam "email"
@@ -92,19 +94,13 @@ authController = do
         [user]  -> do
             case (password user) == password' of
                 True -> do
-                    let key = hmacSecret . T.pack $ "hello cat"
-                    let cs = mempty { -- mempty returns a default JWTClaimsSet
-                                iss = stringOrURI . T.pack $ "Foo"
-                                 , unregisteredClaims = ClaimsMap $ Map.fromList [(T.pack "user_id", (Number (fromIntegral $ user_id user)))]
-                                }
-                    let encryptedString = encodeSigned key mempty cs
+                    let encryptedString = jwtEncryptUserId (user_id user)
                     setSimpleCookie "auth_token" encryptedString
                     liftIO $ close conn
                     redirect "/"
                 False -> do
                     liftIO $ close conn
                     text "password is wrong!!"
-        _    -> undefined
   get "/logout" $ do
     deleteCookie "auth_token"
     redirect "/"

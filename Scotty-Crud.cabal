@@ -17,6 +17,7 @@ library
                     , ScottyCrud.HTML
                     , ScottyCrud.Common.Types
                     , ScottyCrud.Auth
+                    , ScottyCrud.Query
                     , ScottyCrud.Middleware
     build-depends:    base ^>=4.17.2.1
                     , scotty

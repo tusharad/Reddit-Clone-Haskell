@@ -1,22 +1,43 @@
-body {
-    background-color: #f0f2f5;
-}
-
 .disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
+body {
+    background-color: #a4daff; /* Lighter shade for a fresher look */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern and readable font */
+    color: #4A4A4A; /* Slightly darker text for better readability */
+}
+
+.navbar-brand, .post-item h5 {
+    color: #18BC9C; /* Calm green for emphasis and branding */
+    font-weight: bold;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: #ECF0F1; /* Ensuring navbar links are visible */
+}
+
+.btn-outline-light {
+    border-color: #18BC9C;
+    color: #18BC9C;
+}
+
+.btn-outline-light:hover {
+    background-color: #18BC9C;
+    color: #ECF0F1;
+}
+
 .header-bar {
-    background-color: #0a1f35;
-    color: #ffffff;
+    background-color: #34495E; /* Dark blue shade for a professional look */
+    color: #ECF0F1; /* Light text color for contrast */
     padding: 10px 0;
     text-align: center;
 }
 
 .footer-bar {
-    background-color: #007bff;
-    color: #ffffff;
+    background-color: #34495E;
+    color: #ECF0F1;
     padding: 10px 0;
     text-align: center;
     position: fixed;
@@ -37,6 +58,7 @@ body {
 }
 
 .post-item {
+    border-left: 5px solid #3498DB;
     background-color: #ffffff;
     margin-bottom: 10px;
     padding: 20px;
@@ -44,14 +66,7 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.post-item {
-    background-color: #ffffff;
-    margin-bottom: 20px;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
+
 
 .post-item:hover {
     transform: translateY(-5px);
@@ -59,20 +74,16 @@ body {
 }
 
 .post-item h5 {
-    color: #007bff;
+    color: #18BC9C;
     margin-bottom: 5px;
 }
 
 .post-item p {
-    color: #666666;
+    color: #1f567a;
 }
 
 .post-item small {
     font-weight: 600;
-}
-
-body {
-    background-color: #f4f7f6;
 }
 
 .post-container {
@@ -96,11 +107,28 @@ body {
     border-left: 3px solid #0275d8;
 }
 
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: #3498DB;
+    color: #FFFFFF;
+}
+
+.list-group-item {
+    border: none; /* Cleaner look for list items */
+}
+
 h2,
 h3 {
-    color: #333;
+    color: #18BC9C;
 }
 
 p {
-    color: #555;
+    color: #000000;
+}
+
+h2, h3, h5, p, .navbar-brand, .list-group-item {
+    font-weight: normal; /* Avoiding overly bold fonts for a lighter appearance */
 }
