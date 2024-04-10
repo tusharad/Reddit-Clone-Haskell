@@ -17,8 +17,10 @@ headerBar mUser = do
         a ! class_ "navbar-brand" ! href "/" $ "ScottyCrud" 
       div ! class_ "collapse navbar-collapse" $ do
         H.form ! class_ "d-flex ms-auto my-lg-0" $ do
-            input ! class_ "form-control me-2" ! type_ "search" ! placeholder "Search"
-            button ! class_ "btn btn-outline-light" ! type_ "submit" $ "Search"
+           -- a ! href ("/search") $ do
+             button ! class_ "btn btn-outline-light" ! type_ "search" $ "Search"
+             input ! class_ "form-control me-2" ! type_ "search" ! placeholder "Search"
+
         case mUser of
           Nothing -> do
             a ! href "/login" $ do
@@ -181,6 +183,20 @@ viewPost mUser postInfo commentList = html $ do
               toMarkup (commentContent comment)) commentList
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
+
+searchResultsPage :: [Post] -> Markup
+searchResultsPage posts = html $ do
+    head $ do
+      title "Search Results"
+    body $ do
+        h1 "Search Results"
+        div ! class_ "posts" $ do
+            mapM_ renderPost posts
+  where
+    renderPost :: Post -> Markup
+    renderPost post = div ! class_ "post" $ do
+        h2 $ toMarkup $ PU.postTitle Post
+        p $ toMarkup $ PU.postDescription Post
 
 
 {-

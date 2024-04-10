@@ -49,9 +49,25 @@ fetchCommentsByPostId postId = do
   pure commentList
 
 
+searchText :: T.Text -> IO[PostAndUserAndCat]
+searchText search_text = do
+  conn <- getConn
+  result <- query conn "SELECT * FROM posts JOIN users ON users.user_id = posts.user_id JOIN category ON posts.category_id = category.category_id WHERE post_title LIKE ? OR post_description LIKE ?;" (['%' <> search_term <> '%', '%' <> search_term <> '%']) :: IO [PostAndUserAndCat]
+  close conn 
+  return $ map (\(title, desciption) -> Posts title desription) result
+
 homeController :: ScottyM ()
 homeController = do
-  middleware $ staticPolicy (addBase "/home/user/haskell/Scotty-Crud/")
+  middleware $ staticPolicy (addBase "/home/adming10x/Haskell-Training/Training/Project-04/Scotty-Crud")
+  
+  get ("/search") $ do 
+    (search_term :: String) <- queryParam "search_term"
+    case search_term of 
+      Nothing -> redirect ("/")
+      Just term -> do
+        html $ renderHtml $ searchText search_text
+
+
   get "/" $ do
     mUser <- getAuthUser
     postList <- liftIO fetchAllPosts
@@ -97,8 +113,7 @@ homeController = do
         let userId = user_id user
         liftIO $ insertComment comment_content post_id userId
         redirect $ "/viewPost/" <> TL.pack (show post_id)
-         
-
+        
 {-
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}

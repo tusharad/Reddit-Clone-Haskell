@@ -18,7 +18,7 @@ library
                     , ScottyCrud.Common.Types
                     , ScottyCrud.Auth
                     , ScottyCrud.Middleware
-    build-depends:    base ^>=4.17.2.1
+    build-depends:    base ^>=4.19.1.0
                     , scotty
                     , postgresql-simple
                     , aeson
@@ -44,7 +44,7 @@ executable Scotty-Crud
     import:           warnings
     main-is:          Main.hs
     build-depends:
-        base ^>=4.17.2.1,
+        base ^>=4.19.1.0,
         Scotty-Crud
     hs-source-dirs:   app
     default-language: GHC2021
@@ -58,5 +58,5 @@ test-suite Scotty-Crud-test
     main-is:          Main.hs
 
     build-depends:
-        base ^>=4.17.2.1,
+        base ^>=4.19.1.0,
         Scotty-Crud
