@@ -67,6 +67,7 @@ signUpPage mMsg = html $ do
                 button ! type_ "submit" ! class_ "btn btn-primary w-100" $ "Signup"
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
+    script ! src "/static/style.js" $ ""
 
 loginPage :: Maybe T.Text -> Markup
 loginPage mMsg = html $ do
@@ -93,6 +94,7 @@ loginPage mMsg = html $ do
                 button ! type_ "submit" ! class_ "btn btn-primary w-100" $ "Login"
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
+    script ! src "/static/style.js" $ ""
 
 homePage :: Maybe User -> [PostAndUserAndCat] -> Markup
 homePage mUser postList = html $ do
@@ -115,7 +117,15 @@ homePage mUser postList = html $ do
                     br
                     small $ toMarkup $ show $ utctDay $ PU.createdAt post
                     br
-                    small $ toMarkup $ PU.userUserEmail post)
+                    small $ toMarkup $ PU.userUserEmail post
+                    (div $ do
+                      case mUser of
+                        Nothing   -> mempty
+                        Just user -> case (PU.userId post) == (user_id user) of
+                            True -> (a ! href ("/deletePost/" <> toValue (show $ PU.postId post)) $ "delete post") >>
+                                    br >>
+                                    (a ! href ("/updatePost/" <> toValue (show $ PU.postId post)) $ "update post")
+                            False -> mempty))
                     ) postList
         div ! class_ "col-md-2" $ do
             div ! class_ "card" $ do
@@ -127,6 +137,38 @@ homePage mUser postList = html $ do
                     li ! class_ "list-group-item" $ "Special Post 3"
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
+    script ! src "/static/style.js" $ ""
+
+updatePostPage :: Maybe User -> PostAndUserAndCat -> Markup
+updatePostPage mUser postInfo = html $ do
+  head $ do
+    link ! rel "stylesheet" ! href "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    link ! rel "stylesheet" ! type_ "text/css" ! href "/static/style.css"
+    title "ScottyCrud - Login Page"
+  body $ do
+   div ! class_ "main" $ do
+    headerBar mUser
+    div ! class_ "container" $ do
+        div ! class_ "login-container" $ do
+            h2 ! class_ "text-center" $ "Update Post"
+            H.form ! action "/updatePost" ! method "POST" $ do
+               div ! class_ "mb-3" $ do
+                    H.label ! class_ "form-label" $ "Category"
+                    select ! HA.name "category_id" $ do
+                      option ! HA.value "1" $ "Haskell"
+                      option ! HA.value "2" $ "Android"
+               div ! class_ "mb-3" $ do
+                    H.label ! class_ "form-label" $ "Post title"
+                    input ! type_ "text" ! class_ "form-control" ! HA.name "post_title" ! HA.value (toValue (PU.postTitle postInfo))
+                    input ! type_ "hidden" ! class_ "form-control" ! HA.name "post_id" ! HA.value (toValue (PU.postId postInfo))
+               div ! class_ "mb-3" $ do
+                    H.label ! class_ "form-label" $ "Post Description"
+                    textarea ! class_ "form-control" ! rows "3" ! HA.name "post_description" $ (toMarkup $ PU.postDescription postInfo)
+               button ! type_ "submit" ! class_ "btn btn-primary w-100" $ "Update Post"
+    footerBar
+    script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
+    script ! src "/static/style.js" $ ""
+
 
 addPostPage :: Maybe User -> Markup
 addPostPage mUser = html $ do
@@ -155,6 +197,7 @@ addPostPage mUser = html $ do
                button ! type_ "submit" ! class_ "btn btn-primary w-100" $ "Add Post"
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
+    script ! src "/static/style.js" $ ""
 
 viewPost :: Maybe User -> PostAndUserAndCat -> [CommentAndUser] -> Markup
 viewPost mUser postInfo commentList = html $ do
@@ -189,6 +232,17 @@ viewPost mUser postInfo commentList = html $ do
             div ! class_ "comment" $ mapM_ (\comment -> p $ do
               strong $ toMarkup (userEmail comment)
               H.span " : "
+              i ! onclick "toggle()" $ "click me"
+              div ! class_ "replyBox" $ do
+                H.form ! action "/addComment" ! method "POST" $ do
+                  div ! class_ "mb-3" $ do
+                      H.label ! class_ "form-label" $ "Add Comment"
+                      input ! type_ "text" ! class_ "form-control" ! HA.name "comment_content"
+                      input ! type_ "hidden" ! class_ "form-control" ! HA.name "post_id" ! HA.value (stringValue (show (PU.postId postInfo)))
+                  case mUser of
+                    Nothing -> button ! type_ "submit" ! class_ "btn btn-primary w-30 disabled" $ "Add Comment"
+                    _       -> button ! type_ "submit" ! class_ "btn btn-primary w-30" $ "Add Comment"
               toMarkup (commentContent comment)) commentList
     footerBar
     script ! src "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" $ ""
+    script ! src "/static/style.js" $ ""

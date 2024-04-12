@@ -13,6 +13,7 @@ import qualified Data.Map.Strict as Map
 import           Data.Aeson
 import           Data.Scientific (toBoundedInteger)
 import           Data.Maybe (fromMaybe)
+import           ScottyCrud.Query
 
 {-
     scotty
@@ -31,25 +32,29 @@ jwtEncryptUserId userId = do
       }
   encodeSigned key mempty cs
 
+fetchUserIdFromJWT res = Map.lookup "user_id" $ unClaimsMap $ unregisteredClaims res
+
+checkIfUserIdIsValid :: Value -> IO (Maybe User)
+checkIfUserIdIsValid (Number user_id) = do
+    let user_id' = fromMaybe (0 :: Int) $ toBoundedInteger user_id
+    userList <- getUserById user_id'
+    case userList of
+      [] -> pure $ Nothing
+      [user] -> pure $ Just user
+
+getAuthUser_ :: (Maybe T.Text) -> IO (Maybe User)
+getAuthUser_ Nothing = pure Nothing
+getAuthUser_ (Just encryptedData)= do
+  let mRes = fmap claims $ decodeAndVerifySignature (toVerify . hmacSecret . T.pack $ "hello cat") encryptedData
+      res = mRes >>= fetchUserIdFromJWT
+  case res of
+    Nothing -> pure Nothing
+    Just r  -> checkIfUserIdIsValid r
+
 getAuthUser :: ActionM (Maybe User)
 getAuthUser = do
     mUserId <- getCookie "auth_token"
-    mUser <- liftIO $ case mUserId of
-        Nothing -> pure Nothing
-        Just encryptedData -> do
-           let mRes = fmap claims $ decodeAndVerifySignature (toVerify . hmacSecret . T.pack $ "hello cat") encryptedData
-           case mRes of
-              Nothing -> pure Nothing
-              Just res -> case Map.lookup "user_id" $ unClaimsMap $ unregisteredClaims res of
-                    Nothing -> pure Nothing
-                    Just (Number user_id) -> do
-                      conn <- liftIO getConn
-                      let user_id' = fromMaybe (0 :: Int) $ toBoundedInteger user_id
-                      userList <- liftIO (query conn "Select *FROM users where user_id = ?;" (Only user_id'):: IO [User])
-                      close conn
-                      case userList of
-                        [] -> pure Nothing
-                        [user] -> pure $ Just user
+    mUser <- liftIO $ getAuthUser_ mUserId
     pure mUser 
 
 authController :: ScottyM ()

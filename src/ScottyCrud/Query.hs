@@ -7,6 +7,26 @@ import           Data.Text (Text)
 import           ScottyCrud.Common.Types
 import           Database.PostgreSQL.Simple
 
+
+getUserById :: Int -> IO [User]
+getUserById userId = do
+    conn <- getConn
+    userList <- (query conn "Select *FROM users where user_id = ?;" (Only userId):: IO [User])
+    close conn
+    pure userList
+
+deletePostById :: Int -> IO ()
+deletePostById postId = do
+    conn <- getConn
+    _ <- execute conn "delete FROM posts where post_id = ?;" (Only postId)
+    close conn
+
+updatePostQ :: Text -> Text -> Int -> Int -> Int -> IO ()
+updatePostQ postTitle postDescription userId categoryId postId = do
+    conn <- getConn
+    _ <- execute conn "update posts set post_title = ?, post_description = ?, category_id = ? where post_id = ?;" (postTitle,postDescription,categoryId,postId)
+    close conn
+
 insertComment :: T.Text -> Int -> Int -> IO ()
 insertComment commentContent postId userId = do
   conn <- getConn

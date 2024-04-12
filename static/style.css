@@ -132,3 +132,7 @@ p {
 h2, h3, h5, p, .navbar-brand, .list-group-item {
     font-weight: normal; /* Avoiding overly bold fonts for a lighter appearance */
 }
+
+.replyBox {
+  display : none;
+}

@@ -10,6 +10,7 @@ import           Network.Wai.Middleware.Static
 import           Text.Blaze.Html.Renderer.Text ( renderHtml )
 import           ScottyCrud.HTML
 import           ScottyCrud.Common.Types
+import qualified ScottyCrud.Common.Types as PU (PostAndUserAndCat(..))
 import           Control.Concurrent.Async
 import           ScottyCrud.Query
 
@@ -64,3 +65,49 @@ homeController = do
         let userId = user_id user
         liftIO $ insertComment comment_content post_id userId
         redirect $ "/viewPost/" <> TL.pack (show post_id)
+  get "/deletePost/:postId" $ do
+    mUser <- getAuthUser
+    postId <- pathParam "postId"
+    case mUser of
+      Nothing   -> text "unauthorized!!"
+      Just user -> do
+          let userId' = user_id user
+          mPostInfo <- liftIO $ fetchPostById postId
+          case mPostInfo of
+            Nothing -> text "unauthorized!!"
+            Just postInfo -> do
+              case ((PU.userId postInfo) == userId') of
+               False -> text "unauthorized!"
+               True  -> (liftIO $ deletePostById postId) >> redirect "/"
+  get "/updatePost/:postId" $ do
+    mUser <- getAuthUser
+    postId <- pathParam "postId"
+    case mUser of
+      Nothing   -> text "unauthorized!!"
+      Just user -> do
+          let userId' = user_id user
+          mPostInfo <- liftIO $ fetchPostById postId
+          case mPostInfo of
+            Nothing -> text "unauthorized!!"
+            Just postInfo -> do
+              case ((PU.userId postInfo) == userId') of
+               False -> text "unauthorized!"
+               True  -> html $ renderHtml $ updatePostPage mUser postInfo
+  post "/updatePost" $ do
+    mUser <- getAuthUser
+    (categoryId :: Int)       <- formParam "category_id"
+    (postId :: Int)       <- formParam "post_id"
+    (postTitle :: T.Text)       <- formParam "post_title"
+    (postDescription :: T.Text) <- formParam "post_description"
+    case mUser of
+      Nothing   -> text $ "unauthorized"
+      Just user -> do
+        mPostInfo <- liftIO $ fetchPostById postId
+        case mPostInfo of
+            Nothing -> text "unauthorized!!"
+            Just postInfo -> do
+              case ((PU.userId postInfo) == (user_id user)) of
+               False -> text "unauthorized!"
+               True  -> do
+                liftIO $ updatePostQ postTitle postDescription (user_id user) categoryId postId
+                redirect "/"
