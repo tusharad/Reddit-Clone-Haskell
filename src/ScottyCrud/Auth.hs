@@ -5,7 +5,6 @@ import           Web.Scotty
 import           Web.Scotty.Cookie
 import           ScottyCrud.HTML
 import           Text.Blaze.Html.Renderer.Text ( renderHtml )
-import           Database.PostgreSQL.Simple
 import           ScottyCrud.Common.Types
 import qualified Data.Text as T
 import           Web.JWT
@@ -37,7 +36,7 @@ fetchUserIdFromJWT res = Map.lookup "user_id" $ unClaimsMap $ unregisteredClaims
 checkIfUserIdIsValid :: Value -> IO (Maybe User)
 checkIfUserIdIsValid (Number user_id) = do
     let user_id' = fromMaybe (0 :: Int) $ toBoundedInteger user_id
-    userList <- getUserById user_id'
+    userList <- getUserByIdQ user_id'
     case userList of
       [] -> pure $ Nothing
       [user] -> pure $ Just user
@@ -62,6 +61,7 @@ authController = do
   get "/signup" $ do
     mMsg <- queryParamMaybe "message"
     html $ renderHtml $ signUpPage mMsg
+  
   get "/login" $ do
     mUser <- getAuthUser
     mMsg <- queryParamMaybe "message"
@@ -73,27 +73,16 @@ authController = do
     (email :: T.Text) <- formParam "email"
     (password :: T.Text) <- formParam "password"
     (confirmPassword :: T.Text) <- formParam "confirm_password"
-    conn <- liftIO getConn
-    userList <- liftIO $ (query conn "Select *FROM users where user_email = ?;" (Only email):: IO [User])
+    userList <- liftIO $ fetchUserByEmailQ email
     case userList of
-        [] -> do
-            case password == confirmPassword of
-              False -> do
-                liftIO $ close conn
-                redirect "/signup?message=password is did not matched"
-              _     -> do 
-                _ <- liftIO $ execute conn "insert into users (user_email,password) values (?,?);" (email,password)
-                liftIO $ close conn
-                redirect "/"
-        _  -> do
-            liftIO $ close conn
-            redirect "/login?message=user already exist"
+        [] ->  if (password == confirmPassword) then redirect "/signup?message=password is did not matched" else (liftIO $ addUserQ email password) >> redirect "/"
+        _  -> redirect "/login?message=user already exist"
 
   post "/loginUser" $ do
     (email :: T.Text) <- formParam "email"
     (password' :: String) <- formParam "password"
     conn <- liftIO getConn
-    userList <- liftIO $ (query conn "Select *FROM users where user_email = ?;" (Only email):: IO [User])
+    userList <- liftIO $ fetchUserByEmailQ email
     case userList of
         [] -> text "sign up first :("
         [user]  -> do
@@ -101,11 +90,8 @@ authController = do
                 True -> do
                     let encryptedString = jwtEncryptUserId (user_id user)
                     setSimpleCookie "auth_token" encryptedString
-                    liftIO $ close conn
                     redirect "/"
                 False -> do
-                    liftIO $ close conn
                     text "password is wrong!!"
-  get "/logout" $ do
-    deleteCookie "auth_token"
-    redirect "/"
+  
+  get "/logout" $ deleteCookie "auth_token" >> redirect "/"

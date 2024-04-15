@@ -26,7 +26,7 @@ homeController = do
   middleware $ staticPolicy (addBase "/home/user/haskell/training/Scotty-Crud/")
   get "/" $ do
     mUser <- getAuthUser
-    postList <- liftIO fetchAllPosts
+    postList <- liftIO fetchAllPostsQ
     html $ renderHtml $ homePage mUser postList
   get "/addPost" $ do
     mUser <- getAuthUser
@@ -51,7 +51,7 @@ homeController = do
   get "/viewPost/:postId" $ do
     mUser <- getAuthUser
     postId' <- pathParam "postId"
-    (mPostInfo,commentList ) <- liftIO $ concurrently (fetchPostById postId') (fetchCommentsByPostId postId')
+    (mPostInfo,commentList ) <- liftIO $ concurrently (fetchPostByIdQ postId') (fetchCommentsByPostIdQ postId')
     case mPostInfo of
       Nothing -> redirect "/"
       Just postInfo -> html $ renderHtml $ viewPost mUser postInfo commentList
@@ -63,7 +63,7 @@ homeController = do
         (comment_content :: T.Text) <- formParam "comment_content"
         (post_id :: Int) <- formParam "post_id"
         let userId = user_id user
-        liftIO $ insertComment comment_content post_id userId
+        liftIO $ insertCommentQ comment_content post_id userId
         redirect $ "/viewPost/" <> TL.pack (show post_id)
   get "/deletePost/:postId" $ do
     mUser <- getAuthUser
@@ -72,13 +72,13 @@ homeController = do
       Nothing   -> text "unauthorized!!"
       Just user -> do
           let userId' = user_id user
-          mPostInfo <- liftIO $ fetchPostById postId
+          mPostInfo <- liftIO $ fetchPostByIdQ postId
           case mPostInfo of
             Nothing -> text "unauthorized!!"
             Just postInfo -> do
               case ((PU.userId postInfo) == userId') of
                False -> text "unauthorized!"
-               True  -> (liftIO $ deletePostById postId) >> redirect "/"
+               True  -> (liftIO $ deletePostByIdQ postId) >> redirect "/"
   get "/updatePost/:postId" $ do
     mUser <- getAuthUser
     postId <- pathParam "postId"
@@ -86,7 +86,7 @@ homeController = do
       Nothing   -> text "unauthorized!!"
       Just user -> do
           let userId' = user_id user
-          mPostInfo <- liftIO $ fetchPostById postId
+          mPostInfo <- liftIO $ fetchPostByIdQ postId
           case mPostInfo of
             Nothing -> text "unauthorized!!"
             Just postInfo -> do
@@ -102,7 +102,7 @@ homeController = do
     case mUser of
       Nothing   -> text $ "unauthorized"
       Just user -> do
-        mPostInfo <- liftIO $ fetchPostById postId
+        mPostInfo <- liftIO $ fetchPostByIdQ postId
         case mPostInfo of
             Nothing -> text "unauthorized!!"
             Just postInfo -> do
