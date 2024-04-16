@@ -8,6 +8,15 @@ import           ScottyCrud.Common.Types
 import           Database.PostgreSQL.Simple
 
 
+fetchSearchedPostsQ :: Text -> IO [PostAndUserAndCat]
+fetchSearchedPostsQ searchTerm = do
+  conn <- getConn
+  postList <- query conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_email,category.category_name from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id WHERE post_title LIKE ? OR post_description LIKE ?;" ("%" <> (searchTerm ) <> "%", "%" <> (searchTerm ) <> "%") :: IO [PostAndUserAndCat]
+  close conn
+  pure postList
+
+
+
 getUserByIdQ :: Int -> IO [User]
 getUserByIdQ userId = do
     conn <- getConn

@@ -111,3 +111,10 @@ homeController = do
                True  -> do
                 liftIO $ updatePostQ postTitle postDescription (user_id user) categoryId postId
                 redirect "/"
+  get "/search" $ do
+    search_term <- queryParam "search_term"
+    mUser <- getAuthUser
+    postList <- liftIO $ fetchSearchedPostsQ search_term
+    html $ renderHtml $ homePage mUser postList
+      
+

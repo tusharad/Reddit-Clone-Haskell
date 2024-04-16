@@ -75,7 +75,9 @@ authController = do
     (confirmPassword :: T.Text) <- formParam "confirm_password"
     userList <- liftIO $ fetchUserByEmailQ email
     case userList of
-        [] ->  if (password == confirmPassword) then redirect "/signup?message=password is did not matched" else (liftIO $ addUserQ email password) >> redirect "/"
+        [] ->  if (password == confirmPassword) 
+          then redirect "/signup?message=password is did not matched" 
+          else (liftIO $ addUserQ email password) >> redirect "/"
         _  -> redirect "/login?message=user already exist"
 
   post "/loginUser" $ do

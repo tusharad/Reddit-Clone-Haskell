@@ -17,8 +17,8 @@ headerBar mUser = do
       div ! class_ "container-fluid" $ do
         a ! class_ "navbar-brand" ! href "/" $ "ScottyCrud" 
       div ! class_ "collapse navbar-collapse" $ do
-        H.form ! class_ "d-flex ms-auto my-lg-0" $ do
-            input ! class_ "form-control me-2" ! type_ "search" ! placeholder "Search"
+        H.form ! class_ "d-flex ms-auto my-lg-0" ! method "GET" ! action "/search" $ do
+            input ! class_ "form-control me-2" ! type_ "search" ! name "search_term" ! placeholder "Search"
             button ! class_ "btn btn-outline-light" ! type_ "submit" $ "Search"
         case mUser of
           Nothing -> do
@@ -232,7 +232,7 @@ viewPost mUser postInfo commentList = html $ do
             div ! class_ "comment" $ mapM_ (\comment -> p $ do
               strong $ toMarkup (userEmail comment)
               H.span " : "
-              i ! onclick "toggle()" $ "click me"
+              button ! onclick "toggle()" $ "Reply"
               div ! class_ "replyBox" $ do
                 H.form ! action "/addComment" ! method "POST" $ do
                   div ! class_ "mb-3" $ do
