@@ -62,8 +62,9 @@ homeController = do
       Just user -> do
         (comment_content :: T.Text) <- formParam "comment_content"
         (post_id :: Int) <- formParam "post_id"
+        (parentCommentId :: Maybe Int) <- formParamMaybe "parent_comment_id"
         let userId = user_id user
-        liftIO $ insertCommentQ comment_content post_id userId
+        liftIO $ insertCommentQ comment_content post_id userId parentCommentId
         redirect $ "/viewPost/" <> TL.pack (show post_id)
   get "/deletePost/:postId" $ do
     mUser <- getAuthUser

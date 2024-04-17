@@ -43,6 +43,7 @@ data CommentAndUser = CommentAndUser {
   , createdAt :: UTCTime
   , userId :: Int
   , userEmail :: Text
+  , parentCommentId :: Maybe Int
 } deriving (Show,Generic,Eq,FromRow)
 
 getConn :: IO Connection

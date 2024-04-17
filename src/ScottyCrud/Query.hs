@@ -36,10 +36,10 @@ updatePostQ postTitle postDescription userId categoryId postId = do
     _ <- execute conn "update posts set post_title = ?, post_description = ?, category_id = ? where post_id = ?;" (postTitle,postDescription,categoryId,postId)
     close conn
 
-insertCommentQ :: T.Text -> Int -> Int -> IO ()
-insertCommentQ commentContent postId userId = do
+insertCommentQ :: T.Text -> Int -> Int -> Maybe Int -> IO ()
+insertCommentQ commentContent postId userId parentCommentId = do
   conn <- getConn
-  _ <- execute conn "insert into comments (comment_content,post_id,user_id) VALUES (?,?,?)" (commentContent,postId,userId) 
+  _ <- execute conn "insert into comments (comment_content,post_id,user_id,parent_comment_id) VALUES (?,?,?,?)" (commentContent,postId,userId,parentCommentId) 
   close conn
 
 fetchAllPostsQ :: IO [PostAndUserAndCat]
@@ -61,7 +61,7 @@ fetchPostByIdQ postId = do
 fetchCommentsByPostIdQ :: Int -> IO [CommentAndUser]
 fetchCommentsByPostIdQ postId = do
   conn <- getConn
-  commentList <- query conn "select comments.comment_id,comments.comment_content,comments.createdat,comments.user_id,users.user_email from comments join users on users.user_id = comments.user_id where post_id = ?;" (Only postId) :: IO [CommentAndUser]
+  commentList <- query conn "select comments.comment_id,comments.comment_content,comments.createdat,comments.user_id,users.user_email,comments.parent_comment_id from comments join users on users.user_id = comments.user_id where post_id = ? order by comments.comment_id asc;" (Only postId) :: IO [CommentAndUser]
   close conn
   pure commentList
 
