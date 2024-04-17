@@ -8,7 +8,7 @@ import qualified Data.Text.Lazy as TL
 import qualified Data.Text as T
 import           Network.Wai.Middleware.Static
 import           Text.Blaze.Html.Renderer.Text ( renderHtml )
-import           ScottyCrud.HTML
+import           ScottyCrud.HTML.Core
 import           ScottyCrud.Common.Types
 import qualified ScottyCrud.Common.Types as PU (PostAndUserAndCat(..))
 import           Control.Concurrent.Async

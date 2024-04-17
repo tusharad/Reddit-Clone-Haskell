@@ -15,8 +15,6 @@ fetchSearchedPostsQ searchTerm = do
   close conn
   pure postList
 
-
-
 getUserByIdQ :: Int -> IO [User]
 getUserByIdQ userId = do
     conn <- getConn
@@ -61,7 +59,7 @@ fetchPostByIdQ postId = do
 fetchCommentsByPostIdQ :: Int -> IO [CommentAndUser]
 fetchCommentsByPostIdQ postId = do
   conn <- getConn
-  commentList <- query conn "select comments.comment_id,comments.comment_content,comments.createdat,comments.user_id,users.user_email,comments.parent_comment_id from comments join users on users.user_id = comments.user_id where post_id = ? order by comments.comment_id asc;" (Only postId) :: IO [CommentAndUser]
+  commentList <- query conn "select comments.comment_id,comments.comment_content,comments.createdat,comments.user_id,users.user_email,comments.parent_comment_id,comments.post_id from comments join users on users.user_id = comments.user_id where post_id = ? order by comments.comment_id asc;" (Only postId) :: IO [CommentAndUser]
   close conn
   pure commentList
 

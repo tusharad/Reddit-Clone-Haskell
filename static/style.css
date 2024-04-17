@@ -1,8 +1,10 @@
 body {
-    background-color: #f0f2f5; /* A light gray background for the body */
-  }
-  .footer-bar {
-      position: fixed;
-bottom: 0;
-width: 100%;    
-  }
+  background-color: #f0f2f5;
+  /* A light gray background for the body */
+}
+
+.footer-bar {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+}

@@ -3,7 +3,6 @@
 module ScottyCrud.Auth where
 import           Web.Scotty
 import           Web.Scotty.Cookie
-import           ScottyCrud.HTML
 import           Text.Blaze.Html.Renderer.Text ( renderHtml )
 import           ScottyCrud.Common.Types
 import qualified Data.Text as T
@@ -13,24 +12,18 @@ import           Data.Aeson
 import           Data.Scientific (toBoundedInteger)
 import           Data.Maybe (fromMaybe)
 import           ScottyCrud.Query
-
-{-
-    scotty
-  , yesod
-  , servant
-  , webapi
-  , wai 
--}
+import           ScottyCrud.HTML.Auth
 
 jwtEncryptUserId :: Int -> T.Text
 jwtEncryptUserId userId = do
   let key = hmacSecret . T.pack $ "hello cat"
-  let cs = mempty { 
+  let cs = mempty {
         iss = stringOrURI . T.pack $ "Foo"
-        , unregisteredClaims = ClaimsMap $ Map.fromList [(T.pack "user_id", (Number $ fromIntegral userId))]
+        , unregisteredClaims = ClaimsMap $ Map.fromList [(T.pack "user_id", Number $ fromIntegral userId)]
       }
   encodeSigned key mempty cs
 
+fetchUserIdFromJWT :: JWTClaimsSet -> Maybe Value
 fetchUserIdFromJWT res = Map.lookup "user_id" $ unClaimsMap $ unregisteredClaims res
 
 checkIfUserIdIsValid :: Value -> IO (Maybe User)
@@ -38,13 +31,15 @@ checkIfUserIdIsValid (Number user_id) = do
     let user_id' = fromMaybe (0 :: Int) $ toBoundedInteger user_id
     userList <- getUserByIdQ user_id'
     case userList of
-      [] -> pure $ Nothing
+      []     -> pure Nothing
       [user] -> pure $ Just user
+      _      -> undefined
+checkIfUserIdIsValid _ = undefined
 
-getAuthUser_ :: (Maybe T.Text) -> IO (Maybe User)
+getAuthUser_ :: Maybe T.Text -> IO (Maybe User)
 getAuthUser_ Nothing = pure Nothing
 getAuthUser_ (Just encryptedData)= do
-  let mRes = fmap claims $ decodeAndVerifySignature (toVerify . hmacSecret . T.pack $ "hello cat") encryptedData
+  let mRes = claims <$> decodeAndVerifySignature (toVerify . hmacSecret . T.pack $ "hello cat") encryptedData
       res = mRes >>= fetchUserIdFromJWT
   case res of
     Nothing -> pure Nothing
@@ -53,15 +48,14 @@ getAuthUser_ (Just encryptedData)= do
 getAuthUser :: ActionM (Maybe User)
 getAuthUser = do
     mUserId <- getCookie "auth_token"
-    mUser <- liftIO $ getAuthUser_ mUserId
-    pure mUser 
+    liftIO $ getAuthUser_ mUserId
 
 authController :: ScottyM ()
 authController = do
   get "/signup" $ do
     mMsg <- queryParamMaybe "message"
     html $ renderHtml $ signUpPage mMsg
-  
+
   get "/login" $ do
     mUser <- getAuthUser
     mMsg <- queryParamMaybe "message"
@@ -75,25 +69,19 @@ authController = do
     (confirmPassword :: T.Text) <- formParam "confirm_password"
     userList <- liftIO $ fetchUserByEmailQ email
     case userList of
-        [] ->  if (password == confirmPassword) 
-          then redirect "/signup?message=password is did not matched" 
-          else (liftIO $ addUserQ email password) >> redirect "/"
+        [] ->  if password == confirmPassword
+          then redirect "/signup?message=password is did not matched"
+          else liftIO (addUserQ email password) >> redirect "/"
         _  -> redirect "/login?message=user already exist"
 
   post "/loginUser" $ do
-    (email :: T.Text) <- formParam "email"
+    (email :: T.Text)     <- formParam "email"
     (password' :: String) <- formParam "password"
-    conn <- liftIO getConn
-    userList <- liftIO $ fetchUserByEmailQ email
+    userList              <- liftIO $ fetchUserByEmailQ email
     case userList of
         [] -> text "sign up first :("
-        [user]  -> do
-            case (password user) == password' of
-                True -> do
-                    let encryptedString = jwtEncryptUserId (user_id user)
-                    setSimpleCookie "auth_token" encryptedString
-                    redirect "/"
-                False -> do
-                    text "password is wrong!!"
-  
+        [user]  -> if password user == password' then setSimpleCookie "auth_token" (jwtEncryptUserId (user_id user)) >> redirect "/"
+            else text "password is wrong!!"
+        _       -> undefined
+
   get "/logout" $ deleteCookie "auth_token" >> redirect "/"

@@ -14,7 +14,10 @@ library
     import:           warnings
     exposed-modules:  MyLib
                     , ScottyCrud.Core
-                    , ScottyCrud.HTML
+                    , ScottyCrud.HTML.Core
+                    , ScottyCrud.HTML.Common
+                    , ScottyCrud.HTML.Auth
+                    , ScottyCrud.HTML.Comment
                     , ScottyCrud.Common.Types
                     , ScottyCrud.Auth
                     , ScottyCrud.Query

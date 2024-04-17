@@ -1,10 +1,6 @@
-Certainly! Here's a README template for the Scotty-Crud GitHub repository based on the provided context:
-
----
-
 # Scotty-Crud
 
-Scotty-Crud is a web-based blogging application designed to facilitate hands-on learning with the Scotty Web-Framework. This application allows users to experience the simplicity and power of Scotty alongside other technologies like Blaze-html for templating and PostgreSQL for database management. Whether you're new to Haskell web frameworks or looking to sharpen your skills, Scotty-Crud offers a practical approach to understanding web application development with Scotty.
+Scotty-Crud is a web-based blogging application designed to facilitate hands-on learning with the Scotty Web-Framework. This application allows users to experience the simplicity and power of Scotty alongside other technologies like Blaze-html for templating and PostgreSQL for database management.
 
 ## Technologies Used
 
@@ -58,26 +54,5 @@ Ensure you have the following installed:
    ```
 
 The application should now be running on your local server. Open your web browser and navigate to the address provided in your terminal to start using Scotty-Crud.
-
-## Contributing
-
-Contributions to Scotty-Crud are welcome! Whether it's bug fixes, feature additions, or improvements to the documentation, your help is appreciated. Please feel free to fork the repository and submit a pull request with your changes.
-
-## License
-
-Scotty-Crud is released under the [MIT License](LICENSE). Feel free to use, modify, and distribute the code as you see fit.
-
----
-
-/login - GET - login.html
-/signup - GET - signup.html
-
-/loginPerson - POST
-/signupPerson - POST
-
-name
-email
-password
-store it in DB
 
 
