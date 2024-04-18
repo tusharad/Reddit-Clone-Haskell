@@ -1,6 +1,6 @@
-# Scotty-Crud
+# HaskRead
 
-Scotty-Crud is a web-based blogging application designed to facilitate hands-on learning with the Scotty Web-Framework. This application allows users to experience the simplicity and power of Scotty alongside other technologies like Blaze-html for templating and PostgreSQL for database management.
+HaskRead is a web-based blogging application designed to facilitate hands-on learning with the Scotty Web-Framework. This application allows users to experience the simplicity and power of Scotty alongside other technologies like Blaze-html for templating and PostgreSQL for database management.
 
 ## Technologies Used
 
@@ -10,13 +10,14 @@ Scotty-Crud is a web-based blogging application designed to facilitate hands-on 
 
 ## Features
 
-1. **Login/Signup**: Secure authentication using JWT tokens ensures that users can safely login or sign up to access the application.
-2. **Add Blogs**: Users can create and publish blogs, sharing their thoughts, knowledge, or any content they wish to put out there.
-3. **Add Comments**: Engage with the community by adding comments to blogs, fostering an interactive environment.
+1. User Authentication using JWT.
+2. CRUD on POST.
+3. Nested Comments.
+
 
 ## Getting Started
 
-To get Scotty-Crud up and running on your local machine, follow these simple steps:
+To get HaskRead up and running on your local machine, follow these simple steps:
 
 ### Prerequisites
 
@@ -31,11 +32,11 @@ Ensure you have the following installed:
 
    Open your terminal and clone the Scotty-Crud repository using Git:
    ```
-   git clone https://github.com/yourusername/scotty-crud.git
+   git clone https://github.com/yourusername/HaskRead.git
    ```
    Navigate into the project directory:
    ```
-   cd scotty-crud
+   cd HaskRead
    ```
 
 2. **Set up the database**
@@ -53,6 +54,6 @@ Ensure you have the following installed:
    cabal run
    ```
 
-The application should now be running on your local server. Open your web browser and navigate to the address provided in your terminal to start using Scotty-Crud.
+The application should now be running on your local server. Open your web browser and navigate to the address provided in your terminal to start using HaskRead.
 
 
