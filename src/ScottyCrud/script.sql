@@ -6,7 +6,7 @@ postgres=# create table category (category_id serial primary key,category_name v
 CREATE TABLE
 postgres=# alter table posts add column category_id int references category(category_id) on delete cascade;
 ALTER TABLE
-
+alter table users add column user_name varchar(50) unique;
 
 users {
    user_id

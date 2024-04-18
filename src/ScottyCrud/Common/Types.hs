@@ -14,6 +14,7 @@ data User = User {
     user_id    :: Int
   , user_email :: String
   , password :: String
+  , userName :: Text
 } deriving (Show,Generic,FromRow,ToJSON)
 
 data Post = Post {
@@ -32,7 +33,7 @@ data PostAndUserAndCat = PostAndUserAndCat {
   , postDescription :: Text
   , userId   :: Int
   , createdAt :: UTCTime
-  , userUserEmail :: Text
+  , userName :: Text
   , categoryName :: Text
 } deriving (Show,Generic,Eq,FromRow)
 
@@ -41,7 +42,7 @@ data CommentAndUser = CommentAndUser {
   , commentContent :: Text
   , createdAt :: UTCTime
   , userId :: Int
-  , userEmail :: Text
+  , userName :: Text
   , parentCommentId :: Maybe Int
   , postId :: Int
 } deriving (Show,Generic,Eq,FromRow)

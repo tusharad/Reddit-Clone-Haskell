@@ -13,6 +13,7 @@ import           Data.Scientific (toBoundedInteger)
 import           Data.Maybe (fromMaybe)
 import           ScottyCrud.Query
 import           ScottyCrud.HTML.Auth
+import           Data.Password.Bcrypt
 
 jwtEncryptUserId :: Int -> T.Text
 jwtEncryptUserId userId = do
@@ -64,24 +65,45 @@ authController = do
       Nothing -> html $ renderHtml $ loginPage mMsg
 
   post "/signupUser" $ do
+    (userName :: T.Text) <- formParam "userName"
     (email :: T.Text) <- formParam "email"
     (password :: T.Text) <- formParam "password"
     (confirmPassword :: T.Text) <- formParam "confirm_password"
+    userNameList <- liftIO $ fetchUserByUserNameQ userName
     userList <- liftIO $ fetchUserByEmailQ email
     case userList of
-        [] ->  if password == confirmPassword
-          then redirect "/signup?message=password is did not matched"
-          else liftIO (addUserQ email password) >> redirect "/"
+        [] ->  do
+          case userNameList of
+            [] -> if password /= confirmPassword then redirect "/signup?message=password is did not matched" else liftIO (addUserQ email password userName) >> redirect "/"
+            _ -> redirect "/signup?message=user name is taken"
         _  -> redirect "/login?message=user already exist"
 
   post "/loginUser" $ do
     (email :: T.Text)     <- formParam "email"
-    (password' :: String) <- formParam "password"
+    (password_ :: String) <- formParam "password"
     userList              <- liftIO $ fetchUserByEmailQ email
     case userList of
         [] -> text "sign up first :("
-        [user]  -> if password user == password' then setSimpleCookie "auth_token" (jwtEncryptUserId (user_id user)) >> redirect "/"
-            else text "password is wrong!!"
+        [user]  -> do
+            let hashedPassword = password user
+            case checkPassword (mkPassword (T.pack password_)) (PasswordHash (T.pack hashedPassword)) of
+              PasswordCheckSuccess -> setSimpleCookie "auth_token" (jwtEncryptUserId (user_id user)) >> redirect "/"
+              _                    -> text "password is wrong!!"
         _       -> undefined
 
   get "/logout" $ deleteCookie "auth_token" >> redirect "/"
+
+  put "/password_reset" $ do
+    mUser <- getAuthUser
+    case mUser of
+      Nothing -> redirect "/?message=user not valid"
+      Just user -> do
+        currentPassword <- formParam "current_password"
+        newPassword  <- formParam "new_password"
+        confirmPassword <- formParam "confirm_password"
+        if (newPassword /= confirmPassword) then redirect "/?message=passwords not matching" 
+        else do
+          case checkPassword (mkPassword (currentPassword)) (PasswordHash (T.pack $ password user)) of
+            PasswordCheckSuccess -> (liftIO $ updateUserPasswordQ (user_id user) newPassword) >> redirect "/?message=password has been updated"
+            _                    -> redirect "/?message=password is wrong"
+

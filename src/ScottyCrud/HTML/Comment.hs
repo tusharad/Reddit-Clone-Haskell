@@ -14,7 +14,7 @@ viewComment nestedComment = do
   div ! class_ "pl-8 mt-4" $ do
     div ! class_ "bg-white p-4 rounded-lg shadow-md mb-4" $ do
       p $ do
-        strong $ toMarkup (userEmail (mainComment nestedComment)) <> " : "
+        strong $ toMarkup (CU.userName (mainComment nestedComment)) <> " : "
         toMarkup (commentContent (mainComment nestedComment))
         replyForm (mainComment nestedComment)
         div $ mapM_ viewComment (childComments nestedComment)

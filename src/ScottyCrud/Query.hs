@@ -6,12 +6,13 @@ import qualified Data.Text as T
 import           Data.Text (Text) 
 import           ScottyCrud.Common.Types
 import           Database.PostgreSQL.Simple
+import           Data.Password.Bcrypt
 
 
 fetchSearchedPostsQ :: Text -> IO [PostAndUserAndCat]
 fetchSearchedPostsQ searchTerm = do
   conn <- getConn
-  postList <- query conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_email,category.category_name from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id WHERE post_title LIKE ? OR post_description LIKE ?;" ("%" <> (searchTerm ) <> "%", "%" <> (searchTerm ) <> "%") :: IO [PostAndUserAndCat]
+  postList <- query conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_name,category.category_name from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id WHERE post_title LIKE ? OR post_description LIKE ?;" ("%" <> (searchTerm ) <> "%", "%" <> (searchTerm ) <> "%") :: IO [PostAndUserAndCat]
   close conn
   pure postList
 
@@ -43,14 +44,14 @@ insertCommentQ commentContent postId userId parentCommentId = do
 fetchAllPostsQ :: IO [PostAndUserAndCat]
 fetchAllPostsQ = do
   conn <- getConn
-  postList <- query_ conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_email,category.category_name from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id;" :: IO [PostAndUserAndCat]
+  postList <- query_ conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_name,category.category_name from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id;" :: IO [PostAndUserAndCat]
   close conn
   pure postList
 
 fetchPostByIdQ :: Int -> IO (Maybe PostAndUserAndCat)
 fetchPostByIdQ postId = do
   conn <- getConn
-  postList <- query conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_email,category.category_name from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id where post_id = ?;" (Only postId) :: IO [PostAndUserAndCat]
+  postList <- query conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_name,category.category_name from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id where post_id = ?;" (Only postId) :: IO [PostAndUserAndCat]
   close conn
   case postList of
     [] -> pure Nothing
@@ -59,7 +60,7 @@ fetchPostByIdQ postId = do
 fetchCommentsByPostIdQ :: Int -> IO [CommentAndUser]
 fetchCommentsByPostIdQ postId = do
   conn <- getConn
-  commentList <- query conn "select comments.comment_id,comments.comment_content,comments.createdat,comments.user_id,users.user_email,comments.parent_comment_id,comments.post_id from comments join users on users.user_id = comments.user_id where post_id = ? order by comments.comment_id asc;" (Only postId) :: IO [CommentAndUser]
+  commentList <- query conn "select comments.comment_id,comments.comment_content,comments.createdat,comments.user_id,users.user_name,comments.parent_comment_id,comments.post_id from comments join users on users.user_id = comments.user_id where post_id = ? order by comments.comment_id asc;" (Only postId) :: IO [CommentAndUser]
   close conn
   pure commentList
 
@@ -69,6 +70,13 @@ addPostQ postTitle postDescription userId categoryId = do
         _ <- execute conn "insert into posts (post_title,post_description,user_id,category_id) values (?,?,?,?);" (postTitle,postDescription,userId,categoryId)
         close conn
 
+fetchUserByUserNameQ :: Text -> IO [User]
+fetchUserByUserNameQ  userName = do
+  conn <- getConn
+  userList <- query conn "SELECT *FROM users where user_name = ?;" (Only userName) :: IO [User]
+  close conn
+  pure userList
+
 fetchUserByEmailQ :: Text -> IO [User]
 fetchUserByEmailQ email = do
     conn <- getConn
@@ -76,8 +84,23 @@ fetchUserByEmailQ email = do
     close conn
     pure userList
 
-addUserQ :: Text -> Text -> IO ()
-addUserQ email password = do
+fetchUserByIdQ :: Int -> IO [User]
+fetchUserByIdQ userId = do
+    conn <- getConn
+    userList <- query conn "Select *FROM users where user_id = ?;" (Only userId):: IO [User]
+    close conn
+    pure userList
+
+addUserQ :: Text -> Text -> Text -> IO ()
+addUserQ email password userName = do
+  hashedPassword <- hashPassword $ mkPassword password
   conn <- getConn
-  _ <- execute conn "insert into users (user_email,password) values (?,?);" (email,password)
+  _ <- execute conn "insert into users (user_email,password,user_name) values (?,?,?);" (email,unPasswordHash hashedPassword,userName)
+  close conn
+
+updateUserPasswordQ :: Int -> Text -> IO ()
+updateUserPasswordQ userId newPassword = do
+  hashedPassword <- hashPassword $ mkPassword newPassword
+  conn <- getConn
+  _ <- execute conn "update users set password = ? where user_id = ?" (unPasswordHash hashedPassword,userId)
   close conn

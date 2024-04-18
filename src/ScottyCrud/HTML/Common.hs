@@ -5,6 +5,7 @@ import           Prelude hiding (head, id, div)
 import           Text.Blaze.Html5  as H hiding (map)
 import           Text.Blaze.Html5.Attributes as HA hiding (title)
 import           ScottyCrud.Common.Types
+import qualified ScottyCrud.Common.Types as U (User (..))
 import           Data.Text (Text)
 
 headerBar :: Maybe User -> Text -> Html
@@ -33,7 +34,7 @@ headerBar mUser titleText = do
                 button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" ! type_ "button" $ "Signup"
             Just user -> do
               a ! href "/" $ do
-                button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" ! type_ "button" $ toHtml (user_email user)
+                button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" ! type_ "button" $ toHtml (U.userName user)
               a ! href "/logout" $ do
                 button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" ! type_ "button" $ "Logout"
               a ! href "/addPost" $ do

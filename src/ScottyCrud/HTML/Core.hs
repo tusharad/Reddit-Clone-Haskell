@@ -25,7 +25,7 @@ homePage mUser postList = html $ do
                 div ! class_ "text-right text-gray-600" $ do
                   strong (toMarkup $ PU.categoryName post) >> br
                   small  (toMarkup $ show $ utctDay $ PU.createdAt post) >> br
-                  small  (toMarkup $ PU.userUserEmail post) >> br
+                  small  (toMarkup $ PU.userName post) >> br
                   case mUser of
                     Nothing -> mempty
                     Just user -> (if user_id user == PU.userId post then div ! class_ "space-x-0.5" $ do
@@ -111,7 +111,7 @@ viewPost mUser postInfo commentList = html $ do
                 toMarkup $ PU.postDescription postInfo
           div ! class_ "text-right text-sm" $ do
             p $ do
-              "Posted by : " <> toMarkup (PU.userUserEmail postInfo)
+              "Posted by : " <> toMarkup (PU.userName postInfo)
             p $ do
               "on "
               em $ do

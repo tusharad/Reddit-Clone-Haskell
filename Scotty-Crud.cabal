@@ -40,6 +40,7 @@ library
                     , time
                     , string-interpolate
                     , async
+                    , password
 
     hs-source-dirs:   src
     default-language: GHC2021
