@@ -52,5 +52,5 @@ data NestedComment = NestedComment {
   , childComments :: [NestedComment]
 } deriving (Eq,Show)
 
-getConn :: IO Connection
-getConn = connect defaultConnectInfo { connectHost = "localhost",connectDatabase="postgres",connectUser="tushar",connectPassword="1234" }
+getConn :: ConnectInfo
+getConn = defaultConnectInfo { connectHost = "localhost",connectDatabase="postgres",connectUser="tushar",connectPassword="1234" }
