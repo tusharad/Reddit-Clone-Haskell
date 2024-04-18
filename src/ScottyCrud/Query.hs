@@ -8,7 +8,6 @@ import           ScottyCrud.Common.Types
 import           Database.PostgreSQL.Simple
 import           Data.Password.Bcrypt
 
-
 fetchSearchedPostsQ :: Text -> IO [PostAndUserAndCat]
 fetchSearchedPostsQ searchTerm = do
   withConnect getConn $ \conn -> do
@@ -87,12 +86,12 @@ addUserQ :: Text -> Text -> Text -> IO ()
 addUserQ email password userName = do
   hashedPassword <- hashPassword $ mkPassword password
   withConnect getConn $ \conn -> do
-   _ <- execute conn "insert into users (user_email,password,user_name) values (?,?,?);" (email,unPasswordHash hashedPassword,userName)
+   _ <- execute conn "insert into users (user_email,password,user_name) values (?,?,?);" (email,hashedPassword,userName)
    pure ()
 
 updateUserPasswordQ :: Int -> Text -> IO ()
 updateUserPasswordQ userId newPassword = do
   hashedPassword <- hashPassword $ mkPassword newPassword
   withConnect getConn $ \conn -> do
-    _ <- execute conn "update users set password = ? where user_id = ?" (unPasswordHash hashedPassword,userId)
+    _ <- execute conn "update users set password = ? where user_id = ?" (hashedPassword,userId)
     pure ()

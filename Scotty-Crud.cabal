@@ -19,9 +19,12 @@ library
                     , ScottyCrud.HTML.Auth
                     , ScottyCrud.HTML.Comment
                     , ScottyCrud.Common.Types
-                    , ScottyCrud.Auth
+                    , ScottyCrud.Auth.Core
+                    , ScottyCrud.Auth.Handler
                     , ScottyCrud.Query
                     , ScottyCrud.Middleware
+                    , ScottyCrud.Handler
+
     build-depends:    base ^>=4.17.2.1
                     , scotty
                     , postgresql-simple

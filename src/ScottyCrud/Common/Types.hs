@@ -6,9 +6,12 @@ module ScottyCrud.Common.Types where
 
 import           GHC.Generics
 import           Database.PostgreSQL.Simple
+import           Database.PostgreSQL.Simple.ToField
+import           Data.Password.Bcrypt
 import           Data.Aeson
 import           Data.Text (Text)
 import           Data.Time.Clock
+import qualified Data.Text.Encoding as ST
 
 data User = User {
     user_id    :: Int
@@ -54,3 +57,6 @@ data NestedComment = NestedComment {
 
 getConn :: ConnectInfo
 getConn = defaultConnectInfo { connectHost = "localhost",connectDatabase="postgres",connectUser="tushar",connectPassword="1234" }
+
+instance ToField (PasswordHash Bcrypt) where
+  toField = Escape . ST.encodeUtf8 . unPasswordHash
