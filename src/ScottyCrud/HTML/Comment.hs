@@ -8,7 +8,6 @@ import           ScottyCrud.Common.Types
 import qualified ScottyCrud.Common.Types as PU (PostAndUserAndCat(..))
 import qualified ScottyCrud.Common.Types as CU (CommentAndUser(..))
 import           Data.Maybe
-import           Data.List ((\\))
 
 viewComment :: NestedComment -> Markup
 viewComment nestedComment = do
@@ -30,11 +29,10 @@ replyForm comment =
 
 viewComments :: Maybe User -> [CommentAndUser] -> Html
 viewComments _ commentList = do
- h1 $ toMarkup $ show $ toNestedComment commentList commentList
  div ! class_ "" $ do
       h3 ! class_ "font-bold text-xl mb-4" $ "Comments"
       div ! class_ "pl-4" $ do
-        div ! class_ "bg-white p-4 rounded-lg shadow-md mb-4" $ mapM_ (\comment -> div $ do viewComment comment) (toNestedComment commentList commentList)
+        div ! class_ "bg-white p-4 rounded-lg shadow-md mb-4" $ mapM_ (\comment -> div $ do viewComment comment) (toNestedComment commentList)
 
 addCommentForm :: Maybe User -> PostAndUserAndCat -> Markup
 addCommentForm mUser postInfo = do
@@ -48,9 +46,12 @@ addCommentForm mUser postInfo = do
                     Nothing -> button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled" ! type_ "submit" $ "Add Comment"
                     _       -> button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" ! type_ "submit" $ "Add Comment"
 
-toNestedComment :: [CommentAndUser] -> [CommentAndUser] -> [NestedComment]
-toNestedComment [] _ = []
-toNestedComment (comment:commentList) commentListMain = NestedComment comment (toNestedComment immidiateChildren commentListMain) : toNestedComment remainingList commentList
+toNest :: [CommentAndUser] -> CommentAndUser -> NestedComment
+toNest commentList c = NestedComment c (map (toNest commentList) children)
   where
-    immidiateChildren = filter (\x -> commentId comment == fromMaybe (-1) (parentCommentId x)) commentListMain
-    remainingList = immidiateChildren \\ commentList
+    children = filter (\comment -> Just (commentId c) == parentCommentId comment) commentList
+
+toNestedComment :: [CommentAndUser] -> [NestedComment]
+toNestedComment commentList = map (toNest commentList) rootComments
+  where
+    rootComments = filter (isNothing.parentCommentId) commentList
