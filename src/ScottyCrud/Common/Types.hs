@@ -31,13 +31,14 @@ data Post = Post {
 } deriving (Show,Generic,Eq,FromRow)
 
 data PostAndUserAndCat = PostAndUserAndCat {
-    postId :: Int
-  , postTitle :: Text
+    postId          :: Int
+  , postTitle       :: Text
   , postDescription :: Text
-  , userId   :: Int
-  , createdAt :: UTCTime
-  , userName :: Text
-  , categoryName :: Text
+  , userId          :: Int
+  , createdAt       :: UTCTime
+  , userName        :: Text
+  , categoryName    :: Text
+  , filePath        :: Maybe String
 } deriving (Show,Generic,Eq,FromRow)
 
 data CommentAndUser = CommentAndUser {

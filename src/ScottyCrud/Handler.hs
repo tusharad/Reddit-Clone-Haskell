@@ -8,10 +8,14 @@ import           Text.Blaze.Html.Renderer.Text ( renderHtml )
 import           ScottyCrud.HTML.Core
 import qualified Data.Text.Lazy as TL
 import qualified ScottyCrud.Common.Types as PU (PostAndUserAndCat(..))
+import qualified ScottyCrud.Common.Types as CU (CommentAndUser(..))
 import           Control.Concurrent
 import           Control.Concurrent.Async
 import           ScottyCrud.Common.Types
 import qualified Data.Text as T
+import           Network.Wai.Parse
+import qualified Data.ByteString.Lazy as BS
+import qualified Data.ByteString.Char8 as BSC
 
 getHomeR :: ActionM ()
 getHomeR = do
@@ -39,10 +43,19 @@ postAddPostR = do
     (categoryId :: Int)       <- formParam "category_id"
     (postTitle :: T.Text)       <- formParam "post_title"
     (postDescription :: T.Text) <- formParam "post_description"
+    fileList                            <- files
+    liftIO $ print fileList
+    
     case mUser of
       Nothing   -> redirect "/"
       Just user -> do
-        _ <- liftIO $ forkIO $ addPostQ postTitle postDescription (user_id user) categoryId
+        mFilePath <- case fileList of
+            [] -> pure Nothing
+            [file_] -> do
+              let fInfo = snd file_
+              liftIO $ BS.writeFile ("/home/user/haskell/training/Scotty-Crud/uploads/" <> BSC.unpack (fileName fInfo)) (fileContent fInfo)
+              pure $ Just $ "/home/user/haskell/training/Scotty-Crud/uploads/" <> BSC.unpack (fileName fInfo)
+        _ <- liftIO $ forkIO $ addPostQ postTitle postDescription (user_id user) categoryId mFilePath
         redirect "/"
 
 getViewPostR :: ActionM ()
@@ -125,3 +138,26 @@ getSearchR = do
     mUser       <- getAuthUser
     postList    <- liftIO $ fetchSearchedPostsQ search_term
     html $ renderHtml $ homePage mUser postList
+
+postDeleteCommentR :: ActionM ()
+postDeleteCommentR = do
+  mUser <- getAuthUser
+  commentId <- formParam "comment_id"
+  case mUser of
+    Nothing   -> redirect "/"
+    Just user -> do
+      commentList <- liftIO $ fetchCommentByIdQ commentId
+      case commentList of
+        [] -> redirect "/"
+        [c] -> if (user_id user /= CU.userId c) then redirect "/" else (liftIO $ deleteCommentByIdQ commentId) >> redirect "/"
+
+getUpdateCommentR :: ActionM ()
+getUpdateCommentR = undefined
+
+postUpdateCommentR :: ActionM ()
+postUpdateCommentR = undefined
+
+postDownloadR :: ActionM ()
+postDownloadR = do
+  filePath <- formParam "file_path"
+  file filePath

@@ -14,7 +14,7 @@ headerBar mUser titleText = do
       meta ! charset "UTF-8"
       meta ! content "width=device-width, initial-scale=1.0" ! name "viewport"
       script ! src "https://cdn.tailwindcss.com" $ ""
-      link ! rel "stylesheet" ! type_ "text/css" ! href "static/style.css"
+      link ! rel "stylesheet" ! type_ "text/css" ! href "/static/style.css"
       title $ toMarkup titleText
     body $ do
       div ! class_ "navbar flex justify-between items-center p-4 bg-indigo-800 text-white" $ do

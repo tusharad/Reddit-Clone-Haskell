@@ -11,7 +11,7 @@ import           Data.Password.Bcrypt
 fetchSearchedPostsQ :: Text -> IO [PostAndUserAndCat]
 fetchSearchedPostsQ searchTerm = do
   withConnect getConn $ \conn -> do
-    postList <- query conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_name,category.category_name from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id WHERE post_title LIKE ? OR post_description LIKE ?;" ("%" <> (searchTerm ) <> "%", "%" <> (searchTerm ) <> "%") :: IO [PostAndUserAndCat]
+    postList <- query conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_name,category.category_name,posts.file_path from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id WHERE post_title LIKE ? OR post_description LIKE ?;" ("%" <> (searchTerm ) <> "%", "%" <> (searchTerm ) <> "%") :: IO [PostAndUserAndCat]
     pure postList
 
 getUserByIdQ :: Int -> IO [User]
@@ -41,13 +41,13 @@ insertCommentQ commentContent postId userId parentCommentId = do
 fetchAllPostsQ :: IO [PostAndUserAndCat]
 fetchAllPostsQ = do
   withConnect getConn $ \conn -> do
-    postList <- query_ conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_name,category.category_name from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id;" :: IO [PostAndUserAndCat]
+    postList <- query_ conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_name,category.category_name,posts.file_path from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id;" :: IO [PostAndUserAndCat]
     pure postList
 
 fetchPostByIdQ :: Int -> IO (Maybe PostAndUserAndCat)
 fetchPostByIdQ postId = do
   withConnect getConn $ \conn -> do
-    postList <- query conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_name,category.category_name from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id where post_id = ?;" (Only postId) :: IO [PostAndUserAndCat]
+    postList <- query conn "select posts.post_id,posts.post_title,posts.post_description,posts.user_id,posts.created_at,users.user_name,category.category_name,posts.file_path from posts join users on users.user_id = posts.user_id join category on posts.category_id = category.category_id where post_id = ?;" (Only postId) :: IO [PostAndUserAndCat]
     case postList of
       [] -> pure Nothing
       [post] -> pure $ Just post
@@ -58,10 +58,22 @@ fetchCommentsByPostIdQ postId = do
     commentList <- query conn "select comments.comment_id,comments.comment_content,comments.createdat,comments.user_id,users.user_name,comments.parent_comment_id,comments.post_id from comments join users on users.user_id = comments.user_id where post_id = ? order by comments.comment_id asc;" (Only postId) :: IO [CommentAndUser]
     pure commentList
 
-addPostQ :: Text -> Text -> Int -> Int -> IO ()
-addPostQ postTitle postDescription userId categoryId = do
+fetchCommentByIdQ :: Int -> IO [CommentAndUser]
+fetchCommentByIdQ cId = do
   withConnect getConn $ \conn -> do
-        _ <- execute conn "insert into posts (post_title,post_description,user_id,category_id) values (?,?,?,?);" (postTitle,postDescription,userId,categoryId)
+    commentList <- query conn "select comments.comment_id,comments.comment_content,comments.createdat,comments.user_id,users.user_name,comments.parent_comment_id,comments.post_id from comments join users on users.user_id = comments.user_id where comment_id = ? order by comments.comment_id asc;" (Only cId) :: IO [CommentAndUser]
+    pure commentList
+
+deleteCommentByIdQ :: Int -> IO ()
+deleteCommentByIdQ cId = do
+  withConnect getConn $ \conn -> do
+    _ <- execute conn "delete from comments where comment_id = ?;" (Only cId)
+    pure ()
+
+addPostQ :: Text -> Text -> Int -> Int -> Maybe String -> IO ()
+addPostQ postTitle postDescription userId categoryId mFilePath = do
+  withConnect getConn $ \conn -> do
+        _ <- execute conn "insert into posts (post_title,post_description,user_id,category_id,file_path) values (?,?,?,?,?);" (postTitle,postDescription,userId,categoryId,mFilePath)
         pure ()
 
 fetchUserByUserNameQ :: Text -> IO [User]

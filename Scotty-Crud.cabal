@@ -44,6 +44,7 @@ library
                     , string-interpolate
                     , async
                     , password
+                    , wai-extra
 
     hs-source-dirs:   src
     default-language: GHC2021

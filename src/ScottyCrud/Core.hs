@@ -16,13 +16,17 @@ main' = scotty 3000 $ do
 homeController :: ScottyM ()
 homeController = do
   middleware $ staticPolicy (addBase "/home/user/haskell/training/Scotty-Crud/")
-  get "/"                   getHomeR
-  get "/addPost"            getAddPostR
-  get "/admin"              getAdminR
-  post "/addPost"           postAddPostR
-  get "/viewPost/:postId"   getViewPostR
-  post "/addComment"        postAddCommentR
-  get "/deletePost/:postId" getDeletePostR
-  get "/updatePost/:postId" getUpdatePostR
-  post "/updatePost"        postUpdatePostR 
-  get "/search"             getSearchR
+  get    "/"                     getHomeR
+  get    "/addPost"              getAddPostR
+  get    "/admin"                getAdminR
+  post   "/addPost"              postAddPostR
+  get    "/viewPost/:postId"     getViewPostR
+  post   "/addComment"           postAddCommentR
+  post   "/deleteComment"        postDeleteCommentR
+  get    "/updateComment"        getUpdateCommentR
+  post   "/updateComment"        postUpdateCommentR
+  get    "/deletePost/:postId"   getDeletePostR
+  get    "/updatePost/:postId"   getUpdatePostR
+  post   "/updatePost"           postUpdatePostR 
+  get    "/search"               getSearchR
+  post   "/download"             postDownloadR
