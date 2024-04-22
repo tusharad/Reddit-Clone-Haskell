@@ -1,3 +1,4 @@
+/localhost:3000/email_confirmation/?user_id&hash/encrypted
 # HaskRead
 
 HaskRead is a web-based blogging application designed to facilitate hands-on learning with the Scotty Web-Framework. This application allows users to experience the simplicity and power of Scotty alongside other technologies like Blaze-html for templating and PostgreSQL for database management.

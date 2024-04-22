@@ -45,6 +45,8 @@ library
                     , async
                     , password
                     , wai-extra
+                    , uuid
+                    , req
 
     hs-source-dirs:   src
     default-language: GHC2021

@@ -17,7 +17,7 @@ fetchSearchedPostsQ searchTerm = do
 getUserByIdQ :: Int -> IO [User]
 getUserByIdQ userId = do
   withConnect getConn $ \conn -> do
-    userList <- (query conn "Select *FROM users where user_id = ?;" (Only userId):: IO [User])
+    userList <- (query conn "Select  user_id,user_email,password,user_name,is_verified FROM users where user_id = ?;" (Only userId):: IO [User])
     pure userList
 
 deletePostByIdQ :: Int -> IO ()
@@ -76,30 +76,48 @@ addPostQ postTitle postDescription userId categoryId mFilePath = do
         _ <- execute conn "insert into posts (post_title,post_description,user_id,category_id,file_path) values (?,?,?,?,?);" (postTitle,postDescription,userId,categoryId,mFilePath)
         pure ()
 
+fetchUserTokenQ :: Int -> IO (Maybe Text)
+fetchUserTokenQ uid = do
+  withConnect getConn $ \conn -> do
+    userList <- query conn "SELECT token FROM users where user_id = ?;" (Only uid) :: IO [(Only Text)]
+    case userList of
+      [] -> pure Nothing
+      [(Only token)] -> pure $ Just token
+
+verifyUserQ :: Int -> IO ()
+verifyUserQ userId = do
+   withConnect getConn $ \conn -> do
+        _ <- execute conn "update users set is_verified = true where user_id = ?;" (Only userId)
+        pure ()
+
+
+
+
 fetchUserByUserNameQ :: Text -> IO [User]
 fetchUserByUserNameQ  userName = do
   withConnect getConn $ \conn -> do
-    userList <- query conn "SELECT *FROM users where user_name = ?;" (Only userName) :: IO [User]
+    userList <- query conn "SELECT user_id,user_email,password,user_name,is_verified FROM users where user_name = ?;" (Only userName) :: IO [User]
     pure userList
 
 fetchUserByEmailQ :: Text -> IO [User]
 fetchUserByEmailQ email = do
   withConnect getConn $ \conn -> do
-    userList <- query conn "Select *FROM users where user_email = ?;" (Only email):: IO [User]
+    userList <- query conn "Select user_id,user_email,password,user_name,is_verified FROM users where user_email = ?;" (Only email):: IO [User]
     pure userList
 
 fetchUserByIdQ :: Int -> IO [User]
 fetchUserByIdQ userId = do
   withConnect getConn $ \conn -> do
-    userList <- query conn "Select *FROM users where user_id = ?;" (Only userId):: IO [User]
+    userList <- query conn "Select user_id,user_email,password,user_name,is_verified FROM users where user_id = ?;" (Only userId):: IO [User]
     pure userList
 
-addUserQ :: Text -> Text -> Text -> IO ()
-addUserQ email password userName = do
+addUserQ :: Text -> Text -> Text -> Text -> IO (Int)
+addUserQ email password userName tokenVal = do
   hashedPassword <- hashPassword $ mkPassword password
   withConnect getConn $ \conn -> do
-   _ <- execute conn "insert into users (user_email,password,user_name) values (?,?,?);" (email,hashedPassword,userName)
-   pure ()
+   newUserId <- query conn "insert into users (user_email,password,user_name,token) values (?,?,?,?) returning user_id;" (email,hashedPassword,userName,tokenVal) :: IO [(Only Int)]
+   let (Only uid) = head newUserId
+   pure $ uid
 
 updateUserPasswordQ :: Int -> Text -> IO ()
 updateUserPasswordQ userId newPassword = do

@@ -12,3 +12,4 @@ authController = do
   post "/loginUser"      postLoginUserR
   get  "/logout"         getLogoutR
   put  "/password_reset" putPasswordResetR 
+  get "/verify_email/:uid/:hashedtoken"    getVerifyEmail

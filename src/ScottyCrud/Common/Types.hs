@@ -18,6 +18,7 @@ data User = User {
   , user_email :: String
   , password :: String
   , userName :: Text
+  , isVerified :: Bool
 } deriving (Show,Generic,FromRow,ToJSON)
 
 data Post = Post {
@@ -61,3 +62,24 @@ getConn = defaultConnectInfo { connectHost = "localhost",connectDatabase="postgr
 
 instance ToField (PasswordHash Bcrypt) where
   toField = Escape . ST.encodeUtf8 . unPasswordHash
+
+data From = From {
+  email :: Text
+} deriving (Show,Generic)
+
+data Email = Email {
+  email :: Text
+  } deriving (Show,Generic)
+
+-- https://pastebin.com/raw/RH9bndmx
+data MyData = MyData
+  { from :: From
+  , to :: [Email]
+  , subject :: Text
+  , text :: Text
+  } deriving (Show, Generic)
+
+instance ToJSON MyData
+instance ToJSON Email
+instance ToJSON From
+

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 module ScottyCrud.Auth.Handler where
 
 import           Web.Scotty
@@ -7,13 +8,48 @@ import           Data.Scientific (toBoundedInteger)
 import           Data.Maybe (fromMaybe)
 import           Data.Password.Bcrypt
 import           Web.JWT
-import           ScottyCrud.Common.Types
+import           ScottyCrud.Common.Types hiding (MyData(..))
+import qualified ScottyCrud.Common.Types as CT
 import           ScottyCrud.Query
 import           Web.Scotty.Cookie
 import           ScottyCrud.HTML.Auth
 import           Text.Blaze.Html.Renderer.Text ( renderHtml )
 import           Data.Aeson
 import qualified Data.Map.Strict as Map
+import           Data.UUID.V4
+import           Data.UUID
+import           Network.HTTP.Req as Req
+import           GHC.Generics
+
+
+sendVerificationMail :: Int -> T.Text -> T.Text -> IO ()
+sendVerificationMail uid email hashedToken = Req.runReq Req.defaultHttpConfig $ do
+  
+  let myData = CT.MyData {
+    from = From "support@trial-z86org8yjeklew13.mlsender.net",
+    to = [Email email],
+    subject = "Test mail!",
+    CT.text = "click here to verify your account\n http://localhost:3000/verify_email/" <> (T.pack $ show uid) <> "/" <> hashedToken
+  } 
+
+  bs <- Req.req POST (https "api.mailersend.com" /: "v1" /: "email") (ReqBodyJson myData) bsResponse $ do
+    oAuth2Bearer "" 
+    <> (Req.header "X-Requested-With" "XMLHttpRequest" )
+    <> (Req.header "Content-Type" "application/json" )
+  liftIO $ print (responseBody bs) 
+
+getVerifyEmail :: ActionM ()
+getVerifyEmail = do
+  uid <- pathParam "uid"
+  hashedtoken <- pathParam "hashedtoken"
+  userList <- liftIO $ fetchUserTokenQ uid
+  case userList of
+    Nothing     -> redirect "/"
+    Just tokenVal -> do
+      case (checkPassword (mkPassword tokenVal) (PasswordHash hashedtoken)) of
+        PasswordCheckSuccess -> (liftIO $ verifyUserQ uid) >> redirect "/login"
+        _                    -> redirect "/?message=verification failed"
+        
 
 getSignupR :: ActionM ()
 getSignupR = do
@@ -30,16 +66,21 @@ getLoginR = do
 
 postSignupUserR :: ActionM ()
 postSignupUserR = do
-    (userName :: T.Text) <- formParam "userName"
-    (email :: T.Text) <- formParam "email"
-    (password :: T.Text) <- formParam "password"
+    (userName :: T.Text)        <- formParam "userName"
+    (email :: T.Text)           <- formParam "email"
+    (password :: T.Text)        <- formParam "password"
     (confirmPassword :: T.Text) <- formParam "confirm_password"
-    userNameList <- liftIO $ fetchUserByUserNameQ userName
-    userList <- liftIO $ fetchUserByEmailQ email
+    userNameList                <- liftIO $ fetchUserByUserNameQ userName
+    userList                    <- liftIO $ fetchUserByEmailQ email
     case userList of
         [] ->  do
           case userNameList of
-            [] -> if password /= confirmPassword then redirect "/signup?message=password is did not matched" else liftIO (addUserQ email password userName) >> redirect "/"
+            [] -> if password /= confirmPassword then redirect "/signup?message=password is did not matched" else do
+              tokenVal <- liftIO nextRandom
+              uid <- liftIO (addUserQ email password userName (toText tokenVal))
+              hashedToken <- hashPassword $ mkPassword (toText tokenVal)
+              liftIO $ sendVerificationMail uid email (unPasswordHash hashedToken)
+              redirect "/"
             _ -> redirect "/signup?message=user name is taken"
         _  -> redirect "/login?message=user already exist"
 
@@ -53,7 +94,9 @@ postLoginUserR = do
         [user]  -> do
             let hashedPassword = password user
             case checkPassword (mkPassword (T.pack password_)) (PasswordHash (T.pack hashedPassword)) of
-              PasswordCheckSuccess -> setSimpleCookie "auth_token" (jwtEncryptUserId (user_id user)) >> redirect "/"
+              PasswordCheckSuccess -> do
+                if (not $ isVerified user) then text "please verify account first" else do
+                  setSimpleCookie "auth_token" (jwtEncryptUserId (user_id user)) >> redirect "/"
               _                    -> text "password is wrong!!"
         _       -> undefined
 

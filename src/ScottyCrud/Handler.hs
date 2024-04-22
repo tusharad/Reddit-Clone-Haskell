@@ -11,7 +11,7 @@ import qualified ScottyCrud.Common.Types as PU (PostAndUserAndCat(..))
 import qualified ScottyCrud.Common.Types as CU (CommentAndUser(..))
 import           Control.Concurrent
 import           Control.Concurrent.Async
-import           ScottyCrud.Common.Types
+import           ScottyCrud.Common.Types hiding (MyData(..))
 import qualified Data.Text as T
 import           Network.Wai.Parse
 import qualified Data.ByteString.Lazy as BS
