@@ -1,7 +1,9 @@
 {-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE DeriveAnyClass, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module ScottyCrud.Common.Types where
 
 import           GHC.Generics
@@ -12,6 +14,28 @@ import           Data.Aeson
 import           Data.Text (Text)
 import           Data.Time.Clock
 import qualified Data.Text.Encoding as ST
+import           Control.Monad.Reader
+import           Control.Monad.IO.Unlift (MonadUnliftIO(..))
+
+data DBSetting = DBSetting {
+    host          :: String
+  , schema        :: Text
+  , dbPassword      :: String
+  , user          :: String
+  , databaseName  :: String
+} deriving (Show,Generic,Read,Eq,FromJSON)
+
+data AppSetting = AppSetting {
+    port :: Int
+  , dbSetting :: DBSetting
+  , staticPath :: FilePath
+  , uploadPath :: FilePath
+  , mailerSendAPIToken :: String
+  , mailerSendFromEmail :: Text
+} deriving (Show,Generic,Read,Eq,FromJSON)
+
+newtype AppM a = AppM { runAppM :: ReaderT AppSetting IO a}
+  deriving newtype (Functor,Applicative,Monad,MonadIO,MonadReader AppSetting,MonadUnliftIO)
 
 data User = User {
     user_id    :: Int
@@ -57,19 +81,15 @@ data NestedComment = NestedComment {
   , childComments :: [NestedComment]
 } deriving (Eq,Show)
 
-getConn :: ConnectInfo
-getConn = defaultConnectInfo { connectHost = "localhost",connectDatabase="postgres",connectUser="tushar",connectPassword="1234" }
+getConn :: DBSetting -> ConnectInfo
+getConn DBSetting{..} = defaultConnectInfo { connectHost = host,connectDatabase = databaseName,connectUser = user,connectPassword= dbPassword }
 
 instance ToField (PasswordHash Bcrypt) where
   toField = Escape . ST.encodeUtf8 . unPasswordHash
 
-data From = From {
-  email :: Text
-} deriving (Show,Generic)
+data From = From { email :: Text } deriving (Show,Generic)
 
-data Email = Email {
-  email :: Text
-  } deriving (Show,Generic)
+data Email = Email { email :: Text } deriving (Show,Generic)
 
 -- https://pastebin.com/raw/RH9bndmx
 data MyData = MyData

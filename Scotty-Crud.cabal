@@ -47,6 +47,8 @@ library
                     , wai-extra
                     , uuid
                     , req
+                    , mtl
+                    , unliftio-core
 
     hs-source-dirs:   src
     default-language: GHC2021
