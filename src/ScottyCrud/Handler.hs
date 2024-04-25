@@ -52,7 +52,7 @@ postAddPostR = do
             [file_] -> do
               let fInfo = snd file_
               liftIO $ BS.writeFile
-                (uPath
+                (uPath <> "/"
                 <> BSC.unpack (fileName fInfo)) (fileContent fInfo)
               pure $ Just $ uPath <> BSC.unpack (fileName fInfo)
             _       -> pure Nothing
@@ -118,7 +118,7 @@ postUpdatePostR = do
     (postTitle :: T.Text)       <- formParam "post_title"
     (postDescription :: T.Text) <- formParam "post_description"
     case mUser of
-      Nothing   -> text $ "unauthorized"
+      Nothing   -> text "unauthorized"
       Just user -> do
         mPostInfo <- lift $ fetchPostByIdQ postId
         case mPostInfo of
