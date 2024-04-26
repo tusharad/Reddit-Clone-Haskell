@@ -23,3 +23,5 @@ cabal.project.local~
 .ghc.environment.*
 appsetting.json
 uploads/
+db/
+db-data/

@@ -1,0 +1,30 @@
+services:
+  backend:
+    build: .
+    ports:
+      - 8081:3001
+    depends_on:
+      - pg_db
+  pg_db:
+    image: postgres:14.11
+    restart: always
+    secrets:
+      - db-password
+      - db-user
+      - db-name
+    volumes:
+      - ./src/ScottyCrud/script.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+      - POSTGRES_USER_FILE=/run/secrets/db-user
+      - POSTGRES_DB_FILE=/run/secrets/db-name
+volumes:
+  db-data:
+secrets:
+  db-password:
+    file: db/password.txt
+  db-user:
+    file: db/user.txt
+  db-name:
+    file: db/name.txt
