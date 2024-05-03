@@ -1,11 +1,11 @@
 services:
   backend:
-    build: .
+    image: tusharknight8/scotty-crud:8.0
     ports:
       - 8081:3001
     depends_on:
-      - pg_db
-  pg_db:
+      - postgres
+  postgres:
     image: postgres:14.11
     restart: always
     secrets:

@@ -15,19 +15,21 @@ import qualified Data.Text as T
 import           Network.Wai.Parse
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Char8 as BSC
+import           System.FilePath ((</>))
 
 getHomeR :: ActionT AppM ()
 getHomeR = do
     mUser <- getAuthUser
     postList <- lift fetchAllPostsQ
-    html $ renderHtml $ homePage mUser postList
+    categoryList <- lift fetchAllCategoriesQ
+    html $ renderHtml $ homePage mUser postList categoryList
 
 getAddPostR :: ActionT AppM ()
 getAddPostR = do
     mUser <- getAuthUser
     case mUser of
       Nothing   -> redirect "/"
-      Just _ -> html $ renderHtml $ addPostPage mUser
+      Just _ -> (lift fetchAllCategoriesQ) >>= (\categoryList -> html (renderHtml $ addPostPage mUser categoryList))
 
 getAdminR :: ActionT AppM ()
 getAdminR = do
@@ -42,22 +44,16 @@ postAddPostR = do
     (categoryId :: Int)         <- formParam "category_id"
     (postTitle :: T.Text)       <- formParam "post_title"
     (postDescription :: T.Text) <- formParam "post_description"
-    fileList                    <- files
+    fileList_                    <- files
+    let fileList = filter emptyFiles fileList_
     case mUser of
       Nothing   -> redirect "/"
       Just user -> do
-        uPath <- asks uploadPath
-        mFilePath <- case fileList of
-            []      -> pure Nothing
-            [file_] -> do
-              let fInfo = snd file_
-              liftIO $ BS.writeFile
-                (uPath <> "/"
-                <> BSC.unpack (fileName fInfo)) (fileContent fInfo)
-              pure $ Just $ uPath <> BSC.unpack (fileName fInfo)
-            _       -> pure Nothing
+        mFilePath <- checkAndWriteFile fileList
         _ <- lift $ addPostQ postTitle postDescription (user_id user) categoryId mFilePath
         redirect "/"
+      where
+        emptyFiles (_,fInfo) = (fileName fInfo) /= "\"\""
 
 getViewPostR :: ActionT AppM ()
 getViewPostR = do
@@ -107,8 +103,11 @@ getUpdatePostR = do
           mPostInfo <- lift $ fetchPostByIdQ postId
           case mPostInfo of
             Nothing -> text "unauthorized!!"
-            Just postInfo -> do
-              (if PU.userId postInfo == userId' then html $ renderHtml $ updatePostPage mUser postInfo else text "unauthorized!")
+            Just postInfo -> if 
+                              PU.userId postInfo == userId' then 
+                                html $ renderHtml $ updatePostPage mUser postInfo 
+                            else 
+                              text "unauthorized!"
 
 postUpdatePostR :: ActionT AppM ()
 postUpdatePostR = do
@@ -117,23 +116,43 @@ postUpdatePostR = do
     (postId :: Int)       <- formParam "post_id"
     (postTitle :: T.Text)       <- formParam "post_title"
     (postDescription :: T.Text) <- formParam "post_description"
+    fileList_                    <- files 
+    let fileList = filter emptyFiles fileList_
     case mUser of
       Nothing   -> text "unauthorized"
       Just user -> do
         mPostInfo <- lift $ fetchPostByIdQ postId
         case mPostInfo of
             Nothing -> text "unauthorized!!"
-            Just postInfo -> do
-              (if PU.userId postInfo == user_id user then (do
-               lift $ updatePostQ postTitle postDescription categoryId postId
-               redirect "/") else text "unauthorized!")
+            Just postInfo -> 
+              if 
+                PU.userId postInfo == user_id user then do
+                  mFilePath <- checkAndWriteFile fileList
+                  lift $ updatePostQ postTitle postDescription categoryId postId mFilePath
+                  redirect "/?message=updation successful!" 
+              else 
+                text "unauthorized!"
+    where
+      emptyFiles (_,fInfo) = (fileName fInfo) /= "\"\""
+
+checkAndWriteFile :: [(T.Text,FileInfo BS.ByteString)] -> ActionT AppM (Maybe FilePath)
+checkAndWriteFile fileList = do
+        uPath <- asks uploadPath
+        case fileList of
+            []      -> pure Nothing
+            [(_,fInfo)] -> do
+              let filePath = uPath </> BSC.unpack (fileName fInfo)
+              liftIO $ BS.writeFile filePath (fileContent fInfo)
+              pure (Just filePath)
+            _       -> pure Nothing
 
 getSearchR :: ActionT AppM ()
 getSearchR = do
-    search_term <- queryParam "search_term"
-    mUser       <- getAuthUser
-    postList    <- lift $ fetchSearchedPostsQ search_term
-    html $ renderHtml $ homePage mUser postList
+    search_term  <- queryParam "search_term"
+    mUser        <- getAuthUser
+    postList     <- lift $ fetchSearchedPostsQ search_term
+    categoryList <- lift fetchAllCategoriesQ
+    html $ renderHtml $ homePage mUser postList categoryList
 
 postDeleteCommentR :: ActionT AppM ()
 postDeleteCommentR = do

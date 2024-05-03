@@ -45,6 +45,11 @@ data User = User {
   , isVerified :: Bool
 } deriving (Show,Generic,FromRow,ToJSON)
 
+data Category = Category {
+    categoryId :: Int
+  , categoryName :: Text
+} deriving (Eq,Show,Generic,FromRow)
+
 data Post = Post {
     postId :: Int
   , postTitle :: Text

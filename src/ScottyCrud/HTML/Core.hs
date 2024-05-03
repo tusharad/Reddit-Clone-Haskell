@@ -1,14 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 module ScottyCrud.HTML.Core where
 
-import           Prelude hiding (head, id, div)
-import           Text.Blaze.Html5  as H hiding (map)
+import           Prelude                           hiding (head, id, div)
+import           Text.Blaze.Html5            as H  hiding (map)
 import           Text.Blaze.Html5.Attributes as HA hiding (title)
 import           ScottyCrud.Common.Types
-import qualified ScottyCrud.Common.Types as PU (PostAndUserAndCat(..))
+import qualified ScottyCrud.Common.Types     as PU (PostAndUserAndCat(..))
+import qualified ScottyCrud.Common.Types     as CAT (Category(..))
 import           Data.Time.Clock
 import           ScottyCrud.HTML.Common
 import           ScottyCrud.HTML.Comment
+import           Data.Maybe (fromMaybe)
 
 downloadFileButton :: String -> Markup
 downloadFileButton f = do
@@ -16,8 +18,8 @@ downloadFileButton f = do
     input ! type_ "hidden" ! HA.name "file_path" ! HA.value (stringValue f)
     button ! type_ "submit" $ "download" 
 
-homePage :: Maybe User -> [PostAndUserAndCat] -> Markup
-homePage mUser postList = html $ do
+homePage :: Maybe User -> [PostAndUserAndCat] -> [Category] -> Markup
+homePage mUser postList categoryList = html $ do
   headerBar mUser "ScottyCrud - Home Page"
   body $ do
    div ! class_ "main" $ do
@@ -46,12 +48,7 @@ homePage mUser postList = html $ do
             div ! class_ "card-header py-3 px-4 font-semibold text-white bg-blue-500 rounded-t-lg" $ do
               "Featured Posts"
             ul ! class_ "list-group list-group-flush" $ do
-              li ! class_ "list-group-item px-4 py-2 border-b border-gray-200" $ do
-                "Special Post 1"
-              li ! class_ "list-group-item px-4 py-2 border-b border-gray-200" $ do
-                "Special Post 2"
-              li ! class_ "list-group-item px-4 py-2" $ do
-                "Special Post 3"
+              mapM_ (\cat -> li ! class_ "list-group-item px-4 py-2 border-b border-gray-200" $ toMarkup (CAT.categoryName cat)) categoryList
     footerBar
 
 updatePostPage :: Maybe User -> PostAndUserAndCat -> Markup
@@ -64,7 +61,7 @@ updatePostPage mUser postInfo = html $ do
           div ! class_ "w-full max-w-xs mx-auto" $ do
             h2 ! class_ "text-center text-2xl font-bold mb-6" $ do
               "Add Post"
-            H.form ! action "/addPost" ! class_ "bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" ! method "POST" $ do
+            H.form ! action "/updatePost" ! class_ "bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" ! method "POST" ! enctype "multipart/form-data" $ do
               div ! class_ "mb-4" $ do
                 select ! class_ "shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" ! HA.name "category_id" $ do
                   option ! class_ "shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" ! type_ "text" ! HA.value "1" $ "haskell"
@@ -76,12 +73,17 @@ updatePostPage mUser postInfo = html $ do
               div ! class_ "mb-6" $ do
                 H.label ! class_ "block text-gray-700 text-sm font-bold mb-2" $ do "Post Description"
                 textarea ! class_ "shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" ! HA.name "post_description" $ toMarkup (PU.postDescription postInfo)
+                H.label ! class_ "block text-gray-700 text-sm font-bold mb-2" $ do "Upload File"
+                input ! type_ "file" ! HA.name "upload_file" ! HA.value (toValue $ fromMaybe "" $ PU.filePath postInfo)
               div ! class_ "mb-6" $ do
                 button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full" ! type_ "submit" $ "Add Post"
     footerBar
 
-addPostPage :: Maybe User -> Markup
-addPostPage mUser = html $ do
+classTextForOption :: AttributeValue
+classTextForOption = toValue ("shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" :: String)
+
+addPostPage :: Maybe User -> [Category] -> Markup
+addPostPage mUser categoryList = html $ do
   headerBar mUser "ScottyCrud - Add Post Page"
   body $ do
    div ! class_ "main" $ do
@@ -92,9 +94,8 @@ addPostPage mUser = html $ do
               "Add Post"
             H.form ! action "/addPost" ! class_ "bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" ! method "POST" ! enctype "multipart/form-data" $ do
               div ! class_ "mb-4" $ do
-                select ! class_ "shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" ! HA.name "category_id" $ do
-                  option ! class_ "shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" ! type_ "text" ! HA.value "1" $ "haskell"
-                  option ! class_ "shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" ! type_ "text" ! HA.value "2" $ "android"
+                select ! class_ "" ! HA.name "category_id" $ do
+                  mapM_ (\cat -> option ! class_ classTextForOption ! type_ "text" ! HA.value (toValue $ CAT.categoryId cat) $ toMarkup (CAT.categoryName cat)) categoryList
               div ! class_ "mb-4" $ do
                 H.label ! class_ "block text-gray-700 text-sm font-bold mb-2" $ "Post Title"
                 input ! class_ "shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" ! type_ "text" ! HA.name "post_title"
@@ -128,4 +129,3 @@ viewPost mUser postInfo commentList = html $ do
       addCommentForm mUser postInfo
       viewComments mUser commentList
     footerBar
-

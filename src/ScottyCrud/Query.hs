@@ -66,20 +66,21 @@ deletePostByIdQ postId = do
       |] (Only postId)
     pure ()
 
-updatePostQ :: Text -> Text -> Int -> Int -> AppM ()
-updatePostQ postTitle postDescription categoryId postId = do
+updatePostQ :: Text -> Text -> Int -> Int -> Maybe FilePath -> AppM ()
+updatePostQ postTitle postDescription categoryId postId mFilePath = do
   dSetting <- asks dbSetting
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     _ <- execute conn [sql|
       UPDATE 
         reddit_haskell.posts 
       SET 
-          post_title = ?
+          post_title       = ?
         , post_description = ?
-        , category_id = ? 
+        , category_id      = ? 
+        , file_path         = ?
       WHERE 
         post_id = ?;
-      |] (postTitle,postDescription,categoryId,postId)
+      |] (postTitle,postDescription,categoryId,mFilePath,postId)
     pure ()
 
 insertCommentQ :: T.Text -> Int -> Int -> Maybe Int -> AppM ()
@@ -326,3 +327,14 @@ updateUserPasswordQ userId newPassword = do
         user_id = ?
     |] (hashedPassword,userId)
     pure ()
+
+fetchAllCategoriesQ :: AppM ([Category])
+fetchAllCategoriesQ = do
+  dSetting <- asks dbSetting
+  liftIO $ withConnect (getConn dSetting) $ \conn -> do
+    query_ conn [sql|
+      SELECT 
+        *
+      FROM
+        reddit_haskell.category;
+    |] 

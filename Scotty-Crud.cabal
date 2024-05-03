@@ -49,6 +49,7 @@ library
                     , req
                     , mtl
                     , unliftio-core
+                    , filepath
 
     hs-source-dirs:   src
     default-language: GHC2021

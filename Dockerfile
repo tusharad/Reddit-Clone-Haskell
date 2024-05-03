@@ -5,7 +5,7 @@ COPY    . /code
 EXPOSE  3001
 RUN     cabal update
 RUN     apt-get update && \
-        apt-get install build-essential libpq-dev -y
+        apt-get install build-essential libpq-dev ca-certificates vim -y
 RUN     cabal build
 RUN     BUILD_PATH=$(cabal exec which Scotty-Crud) && \
         mkdir /app && \
