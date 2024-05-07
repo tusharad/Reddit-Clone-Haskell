@@ -8,3 +8,9 @@ body {
   bottom: 0;
   width: 100%;
 }
+
+.disabled{
+  pointer-events: none;
+  cursor: default;
+  color: aquamarine;
+}

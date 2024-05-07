@@ -11,6 +11,28 @@ import           Data.Password.Bcrypt
 import           Control.Monad.Reader
 import           Database.PostgreSQL.Simple.SqlQQ
 
+fetchPostByPageQ :: Int -> AppM [PostAndUserAndCat]
+fetchPostByPageQ n = do
+  dSetting <- asks dbSetting
+  liftIO $ withConnect (getConn dSetting) $ \conn -> do
+    query conn [sql|
+      SELECT 
+              posts.post_id
+            , posts.post_title
+            , posts.post_description
+            , posts.user_id
+            , posts.created_at
+            , users.user_name
+            , category.category_name
+            , posts.file_path 
+      FROM 
+        reddit_haskell.posts JOIN reddit_haskell.users 
+        ON 
+          users.user_id = posts.user_id JOIN reddit_haskell.category
+          ON posts.category_id = category.category_id
+      LIMIT 10 OFFSET ? * 10;
+        |] (Only (n-1)) :: IO [PostAndUserAndCat]
+
 fetchSearchedPostsQ :: Text -> AppM [PostAndUserAndCat]
 fetchSearchedPostsQ searchTerm = do
   dSetting <- asks dbSetting

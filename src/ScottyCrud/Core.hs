@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module ScottyCrud.Core where
 
 import           Web.Scotty.Trans
@@ -48,6 +47,7 @@ application AppSetting{..} = do
 homeController :: ScottyT AppM ()
 homeController = do
   get    "/"                     getHomeR
+  get    "/home/:pageNum"        getHomeR
   get    "/addPost"              getAddPostR
   get    "/admin"                getAdminR
   post   "/addPost"              postAddPostR

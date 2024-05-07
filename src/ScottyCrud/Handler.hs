@@ -17,19 +17,23 @@ import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Char8 as BSC
 import           System.FilePath ((</>))
 
-getHomeR :: ActionT AppM ()
+getHomeR :: (ActionT AppM ~ m) =>  m ()
 getHomeR = do
-    mUser <- getAuthUser
-    postList <- lift fetchAllPostsQ
-    categoryList <- lift fetchAllCategoriesQ
-    html $ renderHtml $ homePage mUser postList categoryList
+    (mPageNum :: Maybe Int) <- captureParamMaybe "pageNum"
+    case mPageNum of
+      Nothing -> redirect "/home/1"
+      Just pageNum -> do
+        mUser <- getAuthUser
+        postList <- lift $ fetchPostByPageQ pageNum
+        categoryList <- lift fetchAllCategoriesQ
+        html $ renderHtml $ homePage mUser postList categoryList pageNum
 
 getAddPostR :: ActionT AppM ()
 getAddPostR = do
     mUser <- getAuthUser
     case mUser of
       Nothing   -> redirect "/"
-      Just _ -> (lift fetchAllCategoriesQ) >>= (\categoryList -> html (renderHtml $ addPostPage mUser categoryList))
+      Just _ -> lift fetchAllCategoriesQ >>= (\categoryList -> html (renderHtml $ addPostPage mUser categoryList))
 
 getAdminR :: ActionT AppM ()
 getAdminR = do
@@ -59,7 +63,7 @@ getViewPostR :: ActionT AppM ()
 getViewPostR = do
     mUser <- getAuthUser
     postId' <- pathParam "postId"
-    mPostInfo   <- lift $ fetchPostByIdQ postId' 
+    mPostInfo   <- lift $ fetchPostByIdQ postId'
     commentList <- lift $ fetchCommentsByPostIdQ postId'
     case mPostInfo of
       Nothing -> redirect "/"
@@ -103,10 +107,10 @@ getUpdatePostR = do
           mPostInfo <- lift $ fetchPostByIdQ postId
           case mPostInfo of
             Nothing -> text "unauthorized!!"
-            Just postInfo -> if 
-                              PU.userId postInfo == userId' then 
-                                html $ renderHtml $ updatePostPage mUser postInfo 
-                            else 
+            Just postInfo -> if
+                              PU.userId postInfo == userId' then
+                                html $ renderHtml $ updatePostPage mUser postInfo
+                            else
                               text "unauthorized!"
 
 postUpdatePostR :: ActionT AppM ()
@@ -116,7 +120,7 @@ postUpdatePostR = do
     (postId :: Int)       <- formParam "post_id"
     (postTitle :: T.Text)       <- formParam "post_title"
     (postDescription :: T.Text) <- formParam "post_description"
-    fileList_                    <- files 
+    fileList_                    <- files
     let fileList = filter emptyFiles fileList_
     case mUser of
       Nothing   -> text "unauthorized"
@@ -124,13 +128,13 @@ postUpdatePostR = do
         mPostInfo <- lift $ fetchPostByIdQ postId
         case mPostInfo of
             Nothing -> text "unauthorized!!"
-            Just postInfo -> 
-              if 
+            Just postInfo ->
+              if
                 PU.userId postInfo == user_id user then do
                   mFilePath <- checkAndWriteFile fileList
                   lift $ updatePostQ postTitle postDescription categoryId postId mFilePath
-                  redirect "/?message=updation successful!" 
-              else 
+                  redirect "/?message=updation successful!"
+              else
                 text "unauthorized!"
     where
       emptyFiles (_,fInfo) = (fileName fInfo) /= "\"\""
@@ -152,7 +156,7 @@ getSearchR = do
     mUser        <- getAuthUser
     postList     <- lift $ fetchSearchedPostsQ search_term
     categoryList <- lift fetchAllCategoriesQ
-    html $ renderHtml $ homePage mUser postList categoryList
+    html $ renderHtml $ homePage mUser postList categoryList 1
 
 postDeleteCommentR :: ActionT AppM ()
 postDeleteCommentR = do
