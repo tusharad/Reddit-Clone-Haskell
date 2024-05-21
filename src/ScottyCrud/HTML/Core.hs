@@ -11,6 +11,7 @@ import           Data.Time.Clock
 import           ScottyCrud.HTML.Common
 import           ScottyCrud.HTML.Comment
 import           Data.Maybe (fromMaybe)
+import qualified Data.Text as T
 
 downloadFileButton :: String -> Markup
 downloadFileButton f = do
@@ -32,8 +33,8 @@ paginationSection numberOfRecords pageNum = do
     else
       a ! class_ "bg-gray-200 text-gray-700 px-4 py-2 m-2 rounded-lg" ! href ("/home/" <> toValue (show (pageNum+1))) $ "Next"
 
-homePage :: Maybe User -> [PostAndUserAndCat] -> [Category] -> Int -> Markup
-homePage mUser [] categoryList pageNum = html $ do
+homePage :: Maybe User -> [PostAndUserAndCat] -> [Category] -> Int -> Maybe String -> Markup
+homePage mUser [] categoryList pageNum mMessage = html $ do
   headerBar mUser "ScottyCrud - Home Page"
   body $ do
    div ! class_ "main" $ do
@@ -49,7 +50,7 @@ homePage mUser [] categoryList pageNum = html $ do
               mapM_ (\cat -> li ! class_ "list-group-item px-4 py-2 border-b border-gray-200"
                 $ toMarkup (CAT.categoryName cat)) categoryList
       a ! class_ "bg-gray-200 text-gray-700 px-4 py-2 m-2 rounded-lg" ! href ("/home/" <> toValue (show (pageNum-1))) $ "Prev"
-homePage mUser postList categoryList pageNum = html $ do
+homePage mUser postList categoryList pageNum mMessage = html $ do
   headerBar mUser "ScottyCrud - Home Page"
   body $ do
    div ! class_ "main" $ do
@@ -60,6 +61,7 @@ homePage mUser postList categoryList pageNum = html $ do
               div ! class_ "block mb-6 p-4 hover:bg-blue-200 rounded-lg border border-gray-200 bg-white post-item flex justify-between" $ do
                 a ! class_ "" ! href ("/viewPost/" <> stringValue (show $ PU.postId post)) $ do
                  h5 ! class_ "text-lg font-semibold text-gray-800" $ toMarkup $ PU.postTitle post
+                 p ! class_ "text-gray-500" $ toMarkup $ T.take 30 (PU.postDescription post)
                  maybe mempty downloadFileButton (PU.filePath post)
                 div ! class_ "text-right text-gray-600" $ do
                   strong (toMarkup $ PU.categoryName post) >> br

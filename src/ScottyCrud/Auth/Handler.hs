@@ -40,14 +40,15 @@ sendVerificationMail uid email hashedToken portNum fromEmail apiToken = Req.runR
 
 getVerifyEmail :: ActionT AppM ()
 getVerifyEmail = do
+  dSetting <- asks dbSetting
   uid <- pathParam "uid"
   hashedtoken <- ST.queryParam "token"
-  userList <- lift $ fetchUserTokenQ uid
+  userList <- liftIO $ fetchUserTokenQ dSetting uid
   case userList of
     Nothing     -> redirect "/"
     Just tokenVal -> do
       case checkPassword (mkPassword tokenVal) (PasswordHash hashedtoken) of
-        PasswordCheckSuccess -> lift (verifyUserQ uid) >> redirect "/login"
+        PasswordCheckSuccess -> liftIO (verifyUserQ dSetting uid) >> redirect "/login"
         _                    -> redirect "/?message=verification failed"
 
 getSignupR :: ActionT AppM ()
@@ -65,18 +66,19 @@ getLoginR = do
 
 postSignupUserR :: ActionT AppM ()
 postSignupUserR = do
+    dSetting <- asks dbSetting
     (userName :: T.Text)        <- formParam "userName"
     (email :: T.Text)           <- formParam "email"
     (password :: T.Text)        <- formParam "password"
     (confirmPassword :: T.Text) <- formParam "confirm_password"
-    userNameList                <- lift $ fetchUserByUserNameQ userName
-    userList                    <- lift $ fetchUserByEmailQ email
+    userNameList                <- liftIO $ fetchUserByUserNameQ dSetting userName
+    userList                    <- liftIO $ fetchUserByEmailQ dSetting email
     case userList of
         [] ->  do
           case userNameList of
             [] -> if password /= confirmPassword then redirect "/signup?message=password is did not matched" else do
               tokenVal <- liftIO nextRandom
-              uid <- lift (addUserQ email password userName (toText tokenVal))
+              uid <- liftIO (addUserQ dSetting email password userName (toText tokenVal))
               hashedToken <- hashPassword $ mkPassword (toText tokenVal)
               p <- asks ScottyCrud.Common.Types.port
               apiToken <- asks ScottyCrud.Common.Types.mailerSendAPIToken
@@ -88,9 +90,10 @@ postSignupUserR = do
 
 postLoginUserR :: ActionT AppM ()
 postLoginUserR = do
+    dSetting <- asks dbSetting
     (email :: T.Text)     <- formParam "email"
     (password_ :: String) <- formParam "password"
-    userList              <- lift $ fetchUserByEmailQ email
+    userList              <- liftIO $ fetchUserByEmailQ dSetting email
     case userList of
         [] -> text "sign up first :("
         [user]  -> do
@@ -99,7 +102,7 @@ postLoginUserR = do
               PasswordCheckSuccess -> do
                 if not $ isVerified user then text "please verify account first" else do
                   setSimpleCookie "auth_token" (jwtEncryptUserId (user_id user)) >> redirect "/"
-              _                    -> text "password is wrong!!"
+              _                    -> redirect "/?message=password is wrong!!"
         _       -> undefined
 
 getLogoutR :: ActionT AppM ()
@@ -108,6 +111,7 @@ getLogoutR = deleteCookie "auth_token" >> redirect "/"
 putPasswordResetR :: ActionT AppM ()
 putPasswordResetR = do
     mUser <- getAuthUser
+    dSetting <- asks dbSetting
     case mUser of
       Nothing -> redirect "/?message=user not valid"
       Just user -> do
@@ -117,7 +121,7 @@ putPasswordResetR = do
         if newPassword /= confirmPassword then redirect "/?message=passwords not matching"
         else do
           case checkPassword (mkPassword currentPassword) (PasswordHash (T.pack $ password user)) of
-            PasswordCheckSuccess -> lift (updateUserPasswordQ (user_id user) newPassword) >> redirect "/?message=password has been updated"
+            PasswordCheckSuccess -> liftIO (updateUserPasswordQ dSetting (user_id user) newPassword) >> redirect "/?message=password has been updated"
             _                    -> redirect "/?message=password is wrong"
 
 jwtEncryptUserId :: Int -> T.Text
@@ -134,13 +138,14 @@ fetchUserIdFromJWT res = Map.lookup "user_id" $ unClaimsMap $ unregisteredClaims
 
 checkIfUserIdIsValid :: Value -> AppM (Maybe User)
 checkIfUserIdIsValid (Number user_id) = do
+    dSetting <- asks dbSetting
     let user_id' = fromMaybe (0 :: Int) $ toBoundedInteger user_id
-    userList <- getUserByIdQ user_id'
+    userList <- liftIO $ getUserByIdQ dSetting user_id'
     case userList of
       []     -> pure Nothing
       [user] -> pure $ Just user
       _      -> undefined
-checkIfUserIdIsValid _ = undefined
+checkIfUserIdIsValid _ = undefined    -- impossible case
 
 getAuthUser_ :: Maybe T.Text -> AppM (Maybe User)
 getAuthUser_ Nothing = pure Nothing

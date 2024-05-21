@@ -22,7 +22,7 @@ headerBar mUser titleText = do
           H.a ! href "/" $ do
             "Scotty CRUD"
         div ! class_ "navbar-center space-x-2.5" $ do
-          H.form ! method "GET" ! action "search" $ do
+          H.form ! method "GET" ! action "/search" $ do
             input ! class_ "border p-2 rounded text-gray-700" ! placeholder "Search..." ! type_ "search" ! name "search_term"
             button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" ! type_ "submit" $ "Search"
         div ! class_ "navbar-right space-x-0.5" $ do

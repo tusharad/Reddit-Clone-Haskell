@@ -19,21 +19,24 @@ import           System.FilePath ((</>))
 
 getHomeR :: (ActionT AppM ~ m) =>  m ()
 getHomeR = do
+    dSetting <- asks dbSetting
     (mPageNum :: Maybe Int) <- captureParamMaybe "pageNum"
+    mMessage <- queryParamMaybe "message"
     case mPageNum of
       Nothing -> redirect "/home/1"
       Just pageNum -> do
         mUser <- getAuthUser
-        postList <- lift $ fetchPostByPageQ pageNum
-        categoryList <- lift fetchAllCategoriesQ
-        html $ renderHtml $ homePage mUser postList categoryList pageNum
+        postList <- liftIO $ fetchPostByPageQ dSetting pageNum
+        categoryList <- liftIO $ fetchAllCategoriesQ dSetting
+        html $ renderHtml $ homePage mUser postList categoryList pageNum mMessage
 
 getAddPostR :: ActionT AppM ()
 getAddPostR = do
     mUser <- getAuthUser
+    dSetting <- asks dbSetting
     case mUser of
       Nothing   -> redirect "/"
-      Just _ -> lift fetchAllCategoriesQ >>= (\categoryList -> html (renderHtml $ addPostPage mUser categoryList))
+      Just _ -> (liftIO $ fetchAllCategoriesQ dSetting) >>= (\categoryList -> html (renderHtml $ addPostPage mUser categoryList))
 
 getAdminR :: ActionT AppM ()
 getAdminR = do
@@ -49,12 +52,13 @@ postAddPostR = do
     (postTitle :: T.Text)       <- formParam "post_title"
     (postDescription :: T.Text) <- formParam "post_description"
     fileList_                    <- files
+    dSetting <- asks dbSetting
     let fileList = filter emptyFiles fileList_
     case mUser of
       Nothing   -> redirect "/"
       Just user -> do
         mFilePath <- checkAndWriteFile fileList
-        _ <- lift $ addPostQ postTitle postDescription (user_id user) categoryId mFilePath
+        _ <- liftIO $ addPostQ dSetting postTitle postDescription (user_id user) categoryId mFilePath
         redirect "/"
       where
         emptyFiles (_,fInfo) = (fileName fInfo) /= "\"\""
@@ -63,8 +67,9 @@ getViewPostR :: ActionT AppM ()
 getViewPostR = do
     mUser <- getAuthUser
     postId' <- pathParam "postId"
-    mPostInfo   <- lift $ fetchPostByIdQ postId'
-    commentList <- lift $ fetchCommentsByPostIdQ postId'
+    dSetting <- asks dbSetting
+    mPostInfo   <- liftIO $ fetchPostByIdQ dSetting postId'
+    commentList <- liftIO $ fetchCommentsByPostIdQ dSetting postId'
     case mPostInfo of
       Nothing -> redirect "/"
       Just postInfo -> html $ renderHtml $ viewPost mUser postInfo commentList
@@ -79,7 +84,8 @@ postAddCommentR = do
         (post_id :: Int)               <- formParam "post_id"
         (parentCommentId :: Maybe Int) <- formParamMaybe "parent_comment_id"
         let userId = user_id user
-        lift $ insertCommentQ comment_content post_id userId parentCommentId
+        dSetting <- asks dbSetting
+        liftIO $ insertCommentQ dSetting comment_content post_id userId parentCommentId
         redirect $ "/viewPost/" <> TL.pack (show post_id)
 
 getDeletePostR :: ActionT AppM ()
@@ -90,11 +96,12 @@ getDeletePostR = do
       Nothing   -> text "unauthorized!!"
       Just user -> do
           let userId' = user_id user
-          mPostInfo <- lift $ fetchPostByIdQ postId
+          dSetting <- asks dbSetting
+          mPostInfo <- liftIO $ fetchPostByIdQ dSetting postId
           case mPostInfo of
             Nothing -> text "unauthorized!!"
             Just postInfo -> do
-              (if PU.userId postInfo == userId' then lift (deletePostByIdQ postId) >> redirect "/" else text "unauthorized!")
+              (if PU.userId postInfo == userId' then liftIO (deletePostByIdQ dSetting postId) >> redirect "/" else text "unauthorized!")
 
 getUpdatePostR :: ActionT AppM ()
 getUpdatePostR = do
@@ -104,7 +111,8 @@ getUpdatePostR = do
       Nothing   -> text "unauthorized!!"
       Just user -> do
           let userId' = user_id user
-          mPostInfo <- lift $ fetchPostByIdQ postId
+          dSetting <- asks dbSetting
+          mPostInfo <- liftIO $ fetchPostByIdQ dSetting postId
           case mPostInfo of
             Nothing -> text "unauthorized!!"
             Just postInfo -> if
@@ -125,14 +133,15 @@ postUpdatePostR = do
     case mUser of
       Nothing   -> text "unauthorized"
       Just user -> do
-        mPostInfo <- lift $ fetchPostByIdQ postId
+        dSetting <- asks dbSetting
+        mPostInfo <- liftIO $ fetchPostByIdQ dSetting postId
         case mPostInfo of
             Nothing -> text "unauthorized!!"
             Just postInfo ->
               if
                 PU.userId postInfo == user_id user then do
                   mFilePath <- checkAndWriteFile fileList
-                  lift $ updatePostQ postTitle postDescription categoryId postId mFilePath
+                  liftIO $ updatePostQ dSetting postTitle postDescription categoryId postId mFilePath
                   redirect "/?message=updation successful!"
               else
                 text "unauthorized!"
@@ -154,9 +163,10 @@ getSearchR :: ActionT AppM ()
 getSearchR = do
     search_term  <- queryParam "search_term"
     mUser        <- getAuthUser
-    postList     <- lift $ fetchSearchedPostsQ search_term
-    categoryList <- lift fetchAllCategoriesQ
-    html $ renderHtml $ homePage mUser postList categoryList 1
+    dSetting     <- asks dbSetting
+    postList     <- liftIO $ fetchSearchedPostsQ dSetting search_term
+    categoryList <- liftIO $ fetchAllCategoriesQ dSetting
+    html $ renderHtml $ homePage mUser postList categoryList 1 Nothing
 
 postDeleteCommentR :: ActionT AppM ()
 postDeleteCommentR = do
@@ -165,10 +175,14 @@ postDeleteCommentR = do
   case mUser of
     Nothing   -> redirect "/"
     Just user -> do
-      commentList <- lift $ fetchCommentByIdQ commentId
+      dSetting <- asks dbSetting
+      commentList <- liftIO $ fetchCommentByIdQ dSetting commentId
       case commentList of
         []  -> redirect "/"
-        [c] -> if user_id user /= CU.userId c then redirect "/" else lift (deleteCommentByIdQ commentId) >> redirect "/"
+        [c] -> do
+          if user_id user /= CU.userId c then redirect "/" 
+          else liftIO (deleteCommentByIdQ dSetting commentId)
+          redirect "/"
         _   -> redirect "/" -- impossible case
 
 getUpdateCommentR :: ActionT AppM ()

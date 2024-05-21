@@ -11,9 +11,8 @@ import           Data.Password.Bcrypt
 import           Control.Monad.Reader
 import           Database.PostgreSQL.Simple.SqlQQ
 
-fetchPostByPageQ :: Int -> AppM [PostAndUserAndCat]
-fetchPostByPageQ n = do
-  dSetting <- asks dbSetting
+fetchPostByPageQ :: DBSetting -> Int -> IO [PostAndUserAndCat]
+fetchPostByPageQ dSetting n = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     query conn [sql|
       SELECT 
@@ -33,9 +32,8 @@ fetchPostByPageQ n = do
       LIMIT 10 OFFSET ? * 10;
         |] (Only (n-1)) :: IO [PostAndUserAndCat]
 
-fetchSearchedPostsQ :: Text -> AppM [PostAndUserAndCat]
-fetchSearchedPostsQ searchTerm = do
-  dSetting <- asks dbSetting
+fetchSearchedPostsQ :: DBSetting -> Text -> IO [PostAndUserAndCat]
+fetchSearchedPostsQ dSetting searchTerm = do
   liftIO $ liftIO $ withConnect (getConn dSetting) $ \conn -> do
     query conn [sql|
     SELECT 
@@ -58,9 +56,8 @@ fetchSearchedPostsQ searchTerm = do
     |] ("%" <> searchTerm <> "%", "%" <> searchTerm <> "%")
       :: IO [PostAndUserAndCat]
 
-getUserByIdQ :: Int -> AppM [User]
-getUserByIdQ userId = do
-  dSetting <- asks dbSetting
+getUserByIdQ :: DBSetting -> Int -> IO [User]
+getUserByIdQ dSetting userId = do
   liftIO $ liftIO $ withConnect (getConn dSetting) $ \conn -> do
     query conn [sql|
       SELECT 
@@ -75,9 +72,8 @@ getUserByIdQ userId = do
         user_id = ?;
     |] (Only userId) :: IO [User]
     
-deletePostByIdQ :: Int -> AppM ()
-deletePostByIdQ postId = do
-  dSetting <- asks dbSetting
+deletePostByIdQ :: DBSetting -> Int -> IO ()
+deletePostByIdQ dSetting postId = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     _ <- execute conn [sql|
       DELETE 
@@ -88,9 +84,8 @@ deletePostByIdQ postId = do
       |] (Only postId)
     pure ()
 
-updatePostQ :: Text -> Text -> Int -> Int -> Maybe FilePath -> AppM ()
-updatePostQ postTitle postDescription categoryId postId mFilePath = do
-  dSetting <- asks dbSetting
+updatePostQ :: DBSetting -> Text -> Text -> Int -> Int -> Maybe FilePath -> IO ()
+updatePostQ dSetting postTitle postDescription categoryId postId mFilePath = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     _ <- execute conn [sql|
       UPDATE 
@@ -105,9 +100,8 @@ updatePostQ postTitle postDescription categoryId postId mFilePath = do
       |] (postTitle,postDescription,categoryId,mFilePath,postId)
     pure ()
 
-insertCommentQ :: T.Text -> Int -> Int -> Maybe Int -> AppM ()
-insertCommentQ commentContent postId userId parentCommentId = do
-  dSetting <- asks dbSetting
+insertCommentQ :: DBSetting -> T.Text -> Int -> Int -> Maybe Int -> IO ()
+insertCommentQ dSetting commentContent postId userId parentCommentId = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     _ <- execute conn [sql|
       INSERT INTO 
@@ -122,9 +116,8 @@ insertCommentQ commentContent postId userId parentCommentId = do
     |] (commentContent,postId,userId,parentCommentId)
     pure ()
 
-fetchAllPostsQ :: AppM [PostAndUserAndCat]
-fetchAllPostsQ = do
-  dSetting <- asks dbSetting
+fetchAllPostsQ :: DBSetting -> IO [PostAndUserAndCat]
+fetchAllPostsQ dSetting = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     query_ conn [sql|
       SELECT 
@@ -143,9 +136,8 @@ fetchAllPostsQ = do
           ON posts.category_id = category.category_id;
         |] :: IO [PostAndUserAndCat]
 
-fetchPostByIdQ :: Int -> AppM (Maybe PostAndUserAndCat)
-fetchPostByIdQ postId = do
-  dSetting <- asks dbSetting
+fetchPostByIdQ :: DBSetting -> Int -> IO (Maybe PostAndUserAndCat)
+fetchPostByIdQ dSetting postId = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     postList <- query conn [sql|
       SELECT 
@@ -168,9 +160,8 @@ fetchPostByIdQ postId = do
       [] -> pure Nothing
       [post] -> pure $ Just post
 
-fetchCommentsByPostIdQ :: Int -> AppM [CommentAndUser]
-fetchCommentsByPostIdQ postId = do
-  dSetting <- asks dbSetting
+fetchCommentsByPostIdQ :: DBSetting -> Int -> IO [CommentAndUser]
+fetchCommentsByPostIdQ dSetting postId = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     query conn [sql|
       SELECT  comments.comment_id
@@ -189,9 +180,8 @@ fetchCommentsByPostIdQ postId = do
         comments.comment_id ASC;
       |] (Only postId) :: IO [CommentAndUser]
 
-fetchCommentByIdQ :: Int -> AppM [CommentAndUser]
-fetchCommentByIdQ cId = do
-  dSetting <- asks dbSetting
+fetchCommentByIdQ :: DBSetting -> Int -> IO [CommentAndUser]
+fetchCommentByIdQ dSetting cId = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     query conn [sql|
       SELECT 
@@ -211,9 +201,8 @@ fetchCommentByIdQ cId = do
         comments.comment_id ASC;
       |] (Only cId) :: IO [CommentAndUser]
 
-deleteCommentByIdQ :: Int -> AppM ()
-deleteCommentByIdQ cId = do
-  dSetting <- asks dbSetting
+deleteCommentByIdQ :: DBSetting -> Int -> IO ()
+deleteCommentByIdQ dSetting cId = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     _ <- execute conn [sql| 
       DELETE 
@@ -224,9 +213,8 @@ deleteCommentByIdQ cId = do
       |] (Only cId)
     pure ()
 
-addPostQ :: Text -> Text -> Int -> Int -> Maybe String -> AppM ()
-addPostQ postTitle postDescription userId categoryId mFilePath = do
-  dSetting <- asks dbSetting
+addPostQ :: DBSetting -> Text -> Text -> Int -> Int -> Maybe String -> IO ()
+addPostQ dSetting postTitle postDescription userId categoryId mFilePath = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
         _ <- execute conn [sql|
           INSERT INTO 
@@ -240,9 +228,8 @@ addPostQ postTitle postDescription userId categoryId mFilePath = do
           |] (postTitle,postDescription,userId,categoryId,mFilePath)
         pure ()
 
-fetchUserTokenQ :: Int -> AppM (Maybe Text)
-fetchUserTokenQ uid = do
-  dSetting <- asks dbSetting
+fetchUserTokenQ :: DBSetting -> Int -> IO (Maybe Text)
+fetchUserTokenQ dSetting uid = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     userList <- query conn [sql|
       SELECT 
@@ -256,9 +243,8 @@ fetchUserTokenQ uid = do
       [] -> pure Nothing
       [(Only token)] -> pure $ Just token
 
-verifyUserQ :: Int -> AppM ()
-verifyUserQ userId = do
-  dSetting <- asks dbSetting
+verifyUserQ :: DBSetting -> Int -> IO ()
+verifyUserQ dSetting userId = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     _ <- execute conn [sql|
       UPDATE 
@@ -270,9 +256,8 @@ verifyUserQ userId = do
       |] (Only userId)
     pure ()
 
-fetchUserByUserNameQ :: Text -> AppM [User]
-fetchUserByUserNameQ  userName = do
-  dSetting <- asks dbSetting
+fetchUserByUserNameQ :: DBSetting -> Text -> IO [User]
+fetchUserByUserNameQ  dSetting userName = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     query conn [sql| 
       SELECT 
@@ -286,9 +271,8 @@ fetchUserByUserNameQ  userName = do
       WHERE user_name = ?;
       |] (Only userName) :: IO [User]
 
-fetchUserByEmailQ :: Text -> AppM [User]
-fetchUserByEmailQ email = do
-  dSetting <- asks dbSetting
+fetchUserByEmailQ :: DBSetting -> Text -> IO [User]
+fetchUserByEmailQ dSetting email = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     query conn [sql|
       SELECT user_id
@@ -301,9 +285,8 @@ fetchUserByEmailQ email = do
       WHERE user_email = ?;
     |] (Only email) :: IO [User]
 
-fetchUserByIdQ :: Int -> AppM [User]
-fetchUserByIdQ userId = do
-  dSetting <- asks dbSetting
+fetchUserByIdQ :: DBSetting -> Int -> IO [User]
+fetchUserByIdQ dSetting userId = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     query conn [sql|
       SELECT  user_id
@@ -316,9 +299,8 @@ fetchUserByIdQ userId = do
         user_id = ?;
       |] (Only userId):: IO [User]
 
-addUserQ :: Text -> Text -> Text -> Text -> AppM (Int)
-addUserQ email password userName tokenVal = do
-  dSetting       <- asks dbSetting
+addUserQ :: DBSetting -> Text -> Text -> Text -> Text -> IO (Int)
+addUserQ dSetting email password userName tokenVal = do
   hashedPassword <- hashPassword $ mkPassword password
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     newUserId <- query conn [sql|
@@ -335,9 +317,8 @@ addUserQ email password userName tokenVal = do
     let (Only uid) = head newUserId
     pure uid
 
-updateUserPasswordQ :: Int -> Text -> AppM ()
-updateUserPasswordQ userId newPassword = do
-  dSetting <- asks dbSetting
+updateUserPasswordQ :: DBSetting -> Int -> Text -> IO ()
+updateUserPasswordQ dSetting userId newPassword = do
   hashedPassword <- hashPassword $ mkPassword newPassword
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     _ <- execute conn [sql|
@@ -350,9 +331,8 @@ updateUserPasswordQ userId newPassword = do
     |] (hashedPassword,userId)
     pure ()
 
-fetchAllCategoriesQ :: AppM ([Category])
-fetchAllCategoriesQ = do
-  dSetting <- asks dbSetting
+fetchAllCategoriesQ :: DBSetting -> IO ([Category])
+fetchAllCategoriesQ dSetting = do
   liftIO $ withConnect (getConn dSetting) $ \conn -> do
     query_ conn [sql|
       SELECT 

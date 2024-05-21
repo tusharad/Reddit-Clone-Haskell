@@ -18,7 +18,7 @@ deleteCommentButton :: CommentAndUser -> Markup
 deleteCommentButton comment = div $ do
   H.form ! method "POST" ! action "/deleteComment" $ do
           input ! type_ "hidden" ! HA.name "comment_id" ! HA.value (stringValue (show (commentId comment)))
-          button ! type_ "submit" ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled"  $ "delete"
+          button ! type_ "submit" ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"  $ "delete"
 
 viewComment :: Maybe User -> NestedComment -> Markup
 viewComment mUser nestedComment = do
