@@ -16,6 +16,7 @@ import           Network.Wai.Parse
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Char8 as BSC
 import           System.FilePath ((</>))
+import           Control.Concurrent.Async
 
 getHomeR :: (ActionT AppM ~ m) =>  m ()
 getHomeR = do
@@ -26,8 +27,7 @@ getHomeR = do
       Nothing -> redirect "/home/1"
       Just pageNum -> do
         mUser <- getAuthUser
-        postList <- liftIO $ fetchPostByPageQ dSetting pageNum
-        categoryList <- liftIO $ fetchAllCategoriesQ dSetting
+        (postList,categoryList) <- liftIO $ concurrently (fetchPostByPageQ dSetting pageNum) (fetchAllCategoriesQ dSetting)
         html $ renderHtml $ homePage mUser postList categoryList pageNum mMessage
 
 getAddPostR :: ActionT AppM ()
@@ -36,7 +36,8 @@ getAddPostR = do
     dSetting <- asks dbSetting
     case mUser of
       Nothing   -> redirect "/"
-      Just _ -> (liftIO $ fetchAllCategoriesQ dSetting) >>= (\categoryList -> html (renderHtml $ addPostPage mUser categoryList))
+      Just _ -> (liftIO $ fetchAllCategoriesQ dSetting) >>= 
+                (\categoryList -> html (renderHtml $ addPostPage mUser categoryList))
 
 getAdminR :: ActionT AppM ()
 getAdminR = do
@@ -68,8 +69,8 @@ getViewPostR = do
     mUser <- getAuthUser
     postId' <- pathParam "postId"
     dSetting <- asks dbSetting
-    mPostInfo   <- liftIO $ fetchPostByIdQ dSetting postId'
-    commentList <- liftIO $ fetchCommentsByPostIdQ dSetting postId'
+    (mPostInfo,commentList) <- liftIO $ concurrently 
+      (fetchPostByIdQ dSetting postId') (fetchCommentsByPostIdQ dSetting postId')
     case mPostInfo of
       Nothing -> redirect "/"
       Just postInfo -> html $ renderHtml $ viewPost mUser postInfo commentList
@@ -101,7 +102,9 @@ getDeletePostR = do
           case mPostInfo of
             Nothing -> text "unauthorized!!"
             Just postInfo -> do
-              (if PU.userId postInfo == userId' then liftIO (deletePostByIdQ dSetting postId) >> redirect "/" else text "unauthorized!")
+              (if PU.userId postInfo == userId' then 
+                liftIO (deletePostByIdQ dSetting postId) >> 
+                redirect "/" else text "unauthorized!")
 
 getUpdatePostR :: ActionT AppM ()
 getUpdatePostR = do
@@ -164,8 +167,8 @@ getSearchR = do
     search_term  <- queryParam "search_term"
     mUser        <- getAuthUser
     dSetting     <- asks dbSetting
-    postList     <- liftIO $ fetchSearchedPostsQ dSetting search_term
-    categoryList <- liftIO $ fetchAllCategoriesQ dSetting
+    (postList,categoryList) <- liftIO $ concurrently 
+      (fetchSearchedPostsQ dSetting search_term) (fetchAllCategoriesQ dSetting)
     html $ renderHtml $ homePage mUser postList categoryList 1 Nothing
 
 postDeleteCommentR :: ActionT AppM ()

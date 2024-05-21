@@ -7,6 +7,7 @@ author:             tusharad
 maintainer:         tusharadhatrao@gmail.com
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
+ghc-options:  -threaded
 common warnings
     ghc-options: -Wall
 
