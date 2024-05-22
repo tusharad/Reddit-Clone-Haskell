@@ -17,6 +17,7 @@ import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Char8 as BSC
 import           System.FilePath ((</>))
 import           Control.Concurrent.Async
+import           Data.Maybe
 
 getHomeR :: (ActionT AppM ~ m) =>  m ()
 getHomeR = do
@@ -24,7 +25,7 @@ getHomeR = do
     (mPageNum :: Maybe Int) <- captureParamMaybe "pageNum"
     mMessage <- queryParamMaybe "message"
     case mPageNum of
-      Nothing -> redirect "/home/1"
+      Nothing -> redirect $ "/home/1?" <> fromMaybe "" mMessage
       Just pageNum -> do
         mUser <- getAuthUser
         (postList,categoryList) <- liftIO $ concurrently (fetchPostByPageQ dSetting pageNum) (fetchAllCategoriesQ dSetting)

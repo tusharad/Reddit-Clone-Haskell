@@ -8,6 +8,9 @@ import           ScottyCrud.Common.Types
 import qualified ScottyCrud.Common.Types as U (User (..))
 import           Data.Text (Text)
 
+btnCSS :: AttributeValue
+btnCSS = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded "
+
 headerBar :: Maybe User -> Text -> Html
 headerBar mUser titleText = do
     head $ do
@@ -29,20 +32,21 @@ headerBar mUser titleText = do
           case mUser of
             Nothing -> do
               a ! href "/login" $ do
-                button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded " ! type_ "button" $ "Login"
+                button ! class_  btnCSS ! type_ "button" $ "Login"
               a ! href "/signup" $ do
-                button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" ! type_ "button" $ "Signup"
+                button ! class_ btnCSS ! type_ "button" $ "Signup"
             Just user -> do
               a ! href "/" $ do
-                button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" ! type_ "button" $ toHtml (U.userName user)
+                button ! class_ btnCSS ! type_ "button" $ toHtml (U.userName user)
               a ! href "/logout" $ do
-                button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" ! type_ "button" $ "Logout"
+                button ! class_  btnCSS ! type_ "button" $ "Logout"
               a ! href "/addPost" $ do
-                button ! class_ "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" ! type_ "button" $ "addPost"
+                button ! class_  btnCSS ! type_ "button" $ "addPost"
 
 footerBar :: Html
 footerBar = do
     script ! src "/static/style.js" $ ""
+    script ! src "../../../node_modules/preline/dist/preline.js" $ ""
     div ! class_ "footer-bar bg-gray-800 text-white py-4 px-8" $ do
       p ! class_ "text-center text-sm" $ do
         "Haskell project for learning."

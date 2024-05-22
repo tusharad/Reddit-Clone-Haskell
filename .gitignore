@@ -25,3 +25,4 @@ appsetting.json
 uploads/
 db/
 db-data/
+/node_modules

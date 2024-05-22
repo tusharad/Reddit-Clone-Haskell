@@ -19,7 +19,7 @@ main' :: IO ()
 main' = do
   eAppSettings <- readAppSetting
   case eAppSettings of
-    Left  e           -> TI.putStrLn e
+    Left  e          -> TI.putStrLn e
     Right appSetting -> scottyT (port appSetting) (runIO appSetting) (application appSetting)
   where
     runIO :: AppSetting -> AppM a -> IO a

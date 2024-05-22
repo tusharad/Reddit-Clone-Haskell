@@ -49,7 +49,7 @@ getVerifyEmail = do
     Just tokenVal -> do
       case checkPassword (mkPassword tokenVal) (PasswordHash hashedtoken) of
         PasswordCheckSuccess -> liftIO (verifyUserQ dSetting uid) >> redirect "/login"
-        _                    -> redirect "/?message=verification failed"
+        _                    -> redirect "/home/1?message=verification failed"
 
 getSignupR :: ActionT AppM ()
 getSignupR = do
@@ -102,7 +102,7 @@ postLoginUserR = do
               PasswordCheckSuccess -> do
                 if not $ isVerified user then text "please verify account first" else do
                   setSimpleCookie "auth_token" (jwtEncryptUserId (user_id user)) >> redirect "/"
-              _                    -> redirect "/?message=password is wrong!!"
+              _                    -> redirect "/home/1/?message=password is wrong!!"
         _       -> undefined
 
 getLogoutR :: ActionT AppM ()

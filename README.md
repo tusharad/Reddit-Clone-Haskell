@@ -1,7 +1,6 @@
-/localhost:3000/email_confirmation/?user_id&hash/encrypted
-# HaskRead
+# Reddit clone in haskell.
 
-HaskRead is a web-based blogging application designed to facilitate hands-on learning with the Scotty Web-Framework. This application allows users to experience the simplicity and power of Scotty alongside other technologies like Blaze-html for templating and PostgreSQL for database management.
+It is a web-based blogging application designed to facilitate hands-on learning with the Scotty Web-Framework. This application allows users to experience the simplicity and power of Scotty alongside other technologies like Blaze-html for templating and PostgreSQL for database management.
 
 ## Technologies Used
 
@@ -18,7 +17,7 @@ HaskRead is a web-based blogging application designed to facilitate hands-on lea
 
 ## Getting Started
 
-To get HaskRead up and running on your local machine, follow these simple steps:
+To get application up and running on your local machine, follow these simple steps:
 
 ### Prerequisites
 
@@ -33,11 +32,11 @@ Ensure you have the following installed:
 
    Open your terminal and clone the Scotty-Crud repository using Git:
    ```
-   git clone https://github.com/yourusername/HaskRead.git
+   git clone https://github.com/tusharad/Reddit-Clone-Haskell
    ```
    Navigate into the project directory:
    ```
-   cd HaskRead
+   cd Reddit-Clone-Haskell
    ```
 
 2. **Set up the database**
@@ -52,9 +51,16 @@ Ensure you have the following installed:
 
    Use Cabal to run the application:
    ```
-   cabal run
+   cabal build
+   cabal run Scotty-Crud -- appsetting.json
    ```
 
 The application should now be running on your local server. Open your web browser and navigate to the address provided in your terminal to start using HaskRead.
 
 
+Upcoming Features:
+
+- View my profile
+- Change password
+- View other people profile
+- edit comment

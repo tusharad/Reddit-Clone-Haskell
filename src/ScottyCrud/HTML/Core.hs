@@ -12,6 +12,7 @@ import           ScottyCrud.HTML.Common
 import           ScottyCrud.HTML.Comment
 import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
 
 downloadFileButton :: String -> Markup
 downloadFileButton f = do
@@ -33,13 +34,14 @@ paginationSection numberOfRecords pageNum = do
     else
       a ! class_ "bg-gray-200 text-gray-700 px-4 py-2 m-2 rounded-lg" ! href ("/home/" <> toValue (show (pageNum+1))) $ "Next"
 
-homePage :: Maybe User -> [PostAndUserAndCat] -> [Category] -> Int -> Maybe String -> Markup
-homePage mUser [] categoryList pageNum _ = html $ do
+homePage :: Maybe User -> [PostAndUserAndCat] -> [Category] -> Int -> Maybe TL.Text -> Markup
+homePage mUser [] categoryList pageNum mMessage = html $ do
   headerBar mUser "ScottyCrud - Home Page"
   body $ do
    div ! class_ "main" $ do
     div ! class_ "container mx-auto my-8" $ do
       div ! class_ "flex flex-wrap" $ do
+        h2 $ toMarkup $ fromMaybe mempty mMessage
         div ! class_ "w-full md:w-5/6 px-4" $ do
           h1 ! class_ "text-2xl font-semibold text-gray-800" $ "No Post Found"
         div ! class_ "w-full md:w-1/6 px-4" $ do
@@ -58,8 +60,8 @@ homePage mUser postList categoryList pageNum mMessage = html $ do
       div ! class_ "flex flex-wrap" $ do
         div ! class_ "w-full md:w-5/6 px-4" $ do
           H.span $ mapM_ (\post -> div $ do
+              h2 $ toMarkup $ fromMaybe mempty mMessage
               div ! class_ "block mb-6 p-4 hover:bg-blue-200 rounded-lg border border-gray-200 bg-white post-item flex justify-between" $ do
-                h2 $ toMarkup $ fromMaybe mempty mMessage
                 a ! class_ "" ! href ("/viewPost/" <> stringValue (show $ PU.postId post)) $ do
                  h5 ! class_ "text-lg font-semibold text-gray-800" $ toMarkup $ PU.postTitle post
                  p ! class_ "text-gray-500" $ toMarkup $ T.take 30 (PU.postDescription post)

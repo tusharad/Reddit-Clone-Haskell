@@ -1,10 +1,8 @@
-function toggle() {
-  var elems = document.getElementsByClassName('replyBox');
-  Array.from(elems).forEach((x) => {
-    if (x.style.display === "none") {
-      x.style.display = "block";
-    } else {
-      x.style.display = "none";
-    }
-  })
-}
+document.getElementById("commentEditButton").addEventListener('click',() => {
+  let form = document.getElementById('commentEditForm');
+  
+  if(form.style.display == 'none' || form.style.display == '')
+    form.style.display = 'block';
+  else
+    form.style.display = 'None';
+})
