@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Lib
+import Platform.Core (startApp)
 
 main :: IO ()
-main = someFunc
+main = startApp

@@ -25,6 +25,13 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Platform.API
+      Platform.Common.Types
+      Platform.Common.Utils
+      Platform.Core
+      Platform.Handler
+      Platform.User.DB
+      Platform.User.Handler
   other-modules:
       Paths_haskread_platform_be
   hs-source-dirs:
