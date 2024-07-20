@@ -31,6 +31,7 @@ dependencies:
 - bytestring
 - servant-server
 - bytestring
+- warp
 
 ghc-options:
 - -Wall
