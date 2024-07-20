@@ -176,6 +176,61 @@ Features list:
         - (email,password) should be indexed.
         - trigger on admin to update updatedAt on insert and update.
 
+## Community
+
+Features list:
+    - create community
+    - update community
+    - delete community
+
+- ### Create Community
+    ###### POST /api/v1/community/create
+    JSON Body:
+    {
+        "communityName" : "String",
+        "communityDescription" : "String",
+    }
+    - Future Features:
+        - Array of tags can be associated with community.
+    - Admin can add a certain community.
+    - Checks:
+        - Community with same name shall not exists in DB.
+        - Description and name shall not be empty.
+    - On failure on above checks, the API shall return an error message with status code 400.
+
+- ### Update Community
+    ###### PUT /api/v1/community/update
+    JSON Body:
+    {
+        "communityID" : Int
+      , "communityName" : "String"
+      , "communityDescription" : "String"
+    }
+    - Admin can update any community.
+    - Checks:
+        - Community with same name shall not exists in DB.
+        - Description and name shall not be empty.
+    - On failure on above checks, the API shall return an error message with status code 400.
+
+- ### Delete Community
+    ###### DELETE /api/v1/community/delete/:communityID
+    - Admin can delete any community.
+    - Checks:
+        - CommunityID shall exists in DB.
+    - On failure on above checks, the API shall return an error message with status code 400.
+
+- ### Database Schema
+    - Community Table
+        - id : primary key
+        - communityName : unique
+        - communityDescription : text
+        - createdAt : timestamptz
+        - updatedAt : timestamptz
+
+    - Constraints
+        - (communityName) should be indexed.
+        - trigger on community to update updatedAt on insert and update.
+
 ## Thread -- synonym of post
 
 Features list:
