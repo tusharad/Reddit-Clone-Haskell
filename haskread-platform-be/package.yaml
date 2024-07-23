@@ -32,6 +32,10 @@ dependencies:
 - servant-server
 - bytestring
 - warp
+- haxl
+- orville-postgresql
+- unliftio
+- time
 
 ghc-options:
 - -Wall

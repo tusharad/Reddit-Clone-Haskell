@@ -2,7 +2,8 @@ module Platform.Handler (
     checkHealthH
 ) where
 
-import Servant
+import Platform.Common.AppM
+import Control.Monad.IO.Class
 
-checkHealthH :: Handler String
+checkHealthH :: MonadIO m => AppM m String
 checkHealthH = return "OK"

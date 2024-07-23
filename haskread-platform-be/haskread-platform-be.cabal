@@ -30,9 +30,14 @@ library
       Platform.Common.Types
       Platform.Common.Utils
       Platform.Core
+      Platform.DB.Marshaller
+      Platform.DB.Model
+      Platform.DB.Table
       Platform.Handler
+      Platform.Haxl.DataSource
       Platform.User.DB
       Platform.User.Handler
+      Platform.User.Types
   other-modules:
       Paths_haskread_platform_be
   hs-source-dirs:
@@ -43,12 +48,14 @@ library
     , base >=4.7 && <5
     , bytestring
     , filepath
+    , haxl
     , mtl
     , orville-postgresql
     , servant-auth-server
     , servant-server
     , text
     , time
+    , unliftio
     , warp
   default-language: Haskell2010
 
@@ -65,12 +72,14 @@ executable haskread-platform-be-exe
     , bytestring
     , filepath
     , haskread-platform-be
+    , haxl
     , mtl
     , orville-postgresql
     , servant-auth-server
     , servant-server
     , text
     , time
+    , unliftio
     , warp
   default-language: Haskell2010
 
@@ -88,11 +97,13 @@ test-suite haskread-platform-be-test
     , bytestring
     , filepath
     , haskread-platform-be
+    , haxl
     , mtl
     , orville-postgresql
     , servant-auth-server
     , servant-server
     , text
     , time
+    , unliftio
     , warp
   default-language: Haskell2010

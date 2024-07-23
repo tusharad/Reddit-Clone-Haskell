@@ -5,6 +5,17 @@
 
 packages:
 - completed:
+    commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
+    git: https://github.com/facebook/Haxl.git
+    name: haxl
+    pantry-tree:
+      sha256: 1994b7e0d98b273bf0e3662a2d8c24691fe8acf8f2a1b625bb8ee81cfa364c0a
+      size: 4438
+    version: 2.5.1.0
+  original:
+    commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
+    git: https://github.com/facebook/Haxl.git
+- completed:
     commit: 38f42e06032e31f5ed81b447853b756aecb08209
     git: https://github.com/flipstone/orville
     name: orville-postgresql

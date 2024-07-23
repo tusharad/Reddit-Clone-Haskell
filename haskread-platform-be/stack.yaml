@@ -20,6 +20,7 @@
 resolver:
   url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/29.yaml
 
+allow-newer: true
 # User packages to be built.
 # Various formats can be used as shown in the example below.
 #
@@ -36,6 +37,8 @@ packages:
 # forks / in-progress versions pinned to a git hash. For example:
 #
 extra-deps:
+- git: https://github.com/facebook/Haxl.git
+  commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
 - git: https://github.com/flipstone/orville
   commit: 38f42e06032e31f5ed81b447853b756aecb08209
   subdirs:

@@ -1,1 +1,1 @@
-module Platform.Common.Utils where
+module Platform.Common.Utils () where
