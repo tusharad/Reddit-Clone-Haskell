@@ -4,7 +4,8 @@ module Platform.User.DB
     addUserQ,
     findUserByMailPasswordQ,
     fetchUserByIDQ,
-    changePasswordQ
+    changePasswordQ,
+    deleteUserQ
   )
 where
 
@@ -41,3 +42,6 @@ fetchUserByIDQ = findEntity userTable
 
 changePasswordQ :: (MonadUnliftIO m) => UserID -> UserWrite -> AppM m ()
 changePasswordQ = updateEntity userTable
+
+deleteUserQ :: (MonadUnliftIO m) => UserID -> AppM m ()
+deleteUserQ = deleteEntity userTable

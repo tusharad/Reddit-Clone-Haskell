@@ -84,6 +84,11 @@ Features list:
 
 - ### Delete account
     ###### DELETE /api/v1/user/delete-account
+    JSON Body:
+    {
+        "password" : "string"
+        "areUSure" : "string" 
+    }
     - User can delete his/her account by providing the password.
     - On successful request, the API shall return a success message.
     - Checks:

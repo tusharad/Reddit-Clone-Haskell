@@ -24,6 +24,7 @@ Will try to follow best practices and idiomatic Haskell and PureScript as much a
 - [x] User authentication
 - [x] User profile
 - [x] User Change Password
+- [x] User Delete Account
 - [ ] Admin authentication
 - [ ] Admin dashboard
 - [ ] Create Thread

@@ -24,6 +24,7 @@ mainServer cookieSett jwtSett =
     :<|> loginUserH cookieSett jwtSett
     :<|> userDashboardH
     :<|> userChangePasswordH
+    :<|> userDeleteAccountH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -31,6 +32,7 @@ type MainAPI auths =
     :<|> LoginUserAPI
     :<|> Auth auths UserInfo :> UserDashboard
     :<|> Auth auths UserInfo :> UserChangePasswordAPI
+    :<|> Auth auths UserInfo :> DeleteUserAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -75,3 +77,12 @@ type UserChangePasswordAPI =
     :> "change-password"
     :> ReqBody '[JSON] ChangePasswordBody
     :> Put '[JSON] ChangePasswordResponse
+
+type DeleteUserAPI = 
+    "api"
+      :> "v1"
+      :> "user"
+      :> "profile"
+      :> "delete-account"
+      :> ReqBody '[JSON] DeleteUserBody
+      :> Delete '[JSON] DeleteUserResponse

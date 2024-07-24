@@ -4,7 +4,8 @@
 
 module Platform.User.Handler
   ( userDashboardH,
-  userChangePasswordH
+  userChangePasswordH,
+  userDeleteAccountH
   )
 where
 
@@ -18,6 +19,13 @@ import Platform.User.Types
 import Servant.Auth.Server
 import UnliftIO
 import Control.Monad (when, unless)
+import Platform.User.Types (DeleteUserResponse (DeleteUserResponse))
+
+fetchUserByID uID0 = do
+      eRes :: Either SomeException (Maybe UserRead) <- try $ fetchUserByIDQ uID0
+      case eRes of
+        Left e -> throw400Err $ BSL.pack $ show e
+        Right mUser -> pure mUser
 
 userDashboardH ::
   (MonadUnliftIO m) =>
@@ -48,7 +56,7 @@ userChangePasswordH ::
   ChangePasswordBody ->
   AppM m ChangePasswordResponse
 userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
-  mUser <- fetchUserByID
+  mUser <- fetchUserByID userIDForUserInfo
   case mUser of
     Nothing -> throw400Err "User is invalid!"
     Just u@User {password = uPassword} -> do
@@ -71,9 +79,28 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
       case eRes of
         Left e -> throw400Err $ BSL.pack $ show e
         Right _ -> return ChangePasswordResponse {changePasswordResponseMsg = "Password changed successfully!"}
-    fetchUserByID = do
-      eRes :: Either SomeException (Maybe UserRead) <- try $ fetchUserByIDQ userIDForUserInfo
+userChangePasswordH _ _ = throw401Err "Please login first"
+
+userDeleteAccountH ::
+  (MonadUnliftIO m) =>
+  AuthResult UserInfo ->
+  DeleteUserBody ->
+  AppM m DeleteUserResponse
+userDeleteAccountH (Authenticated UserInfo {..}) DeleteUserBody{..} = do
+  mUser <-fetchUserByID userIDForUserInfo
+  case mUser of
+    Nothing -> throw400Err "User is invalid!"
+    Just User {password = uPassword} -> do
+      checkIfPasswordMatch uPassword
+      if not areUSure
+        then pure $ DeleteUserResponse "User is not sure, not deleting :)"
+      else deleteUserByID
+  where
+    checkIfPasswordMatch uPassword =
+      when (uPassword /= passwordForDeleteUser) $ throw400Err "Password is incorrect!"
+    deleteUserByID = do
+      eRes :: Either SomeException () <- try $ deleteUserQ userIDForUserInfo
       case eRes of
         Left e -> throw400Err $ BSL.pack $ show e
-        Right mUser -> pure mUser
-userChangePasswordH _ _ = throw401Err "Please login first"
+        Right _ -> return $ DeleteUserResponse "Sad to see you go :L"
+userDeleteAccountH _ _ = throw401Err "Please login first"

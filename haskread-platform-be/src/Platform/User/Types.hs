@@ -9,7 +9,9 @@ module Platform.User.Types
     LoginUserResponse (..),
     UserProfileResponse (..),
     ChangePasswordBody (..),
-    ChangePasswordResponse (..)
+    ChangePasswordResponse (..),
+    DeleteUserBody(..),
+    DeleteUserResponse(..)
   )
 where
 
@@ -62,3 +64,12 @@ data ChangePasswordBody = ChangePasswordBody
 newtype ChangePasswordResponse = ChangePasswordResponse
   { changePasswordResponseMsg :: Text }
   deriving (Show, Eq, Generic, ToJSON)
+
+data DeleteUserBody = DeleteUserBody {
+   passwordForDeleteUser :: Text, 
+   areUSure :: Bool 
+} deriving (Show,Eq,Generic,FromJSON,ToJSON)
+
+newtype DeleteUserResponse = DeleteUserResponse {
+  deleteUserResponseMsg :: Text
+} deriving (Show,Eq,Generic,ToJSON)
