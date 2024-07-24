@@ -1,1 +1,1 @@
-module Platform.Auth.DB where
+module Platform.Auth.DB () where

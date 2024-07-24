@@ -58,4 +58,9 @@ type LoginUserAPI =
              LoginUserResponse
          )
 
-type UserDashboard = "dashboard" :> Get '[JSON] String
+type UserDashboard =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "profile"
+    :> Get '[JSON] UserProfileResponse

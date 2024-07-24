@@ -7,11 +7,13 @@ module Platform.User.Types
     RegisterUserResponse (..),
     LoginUserBody (..),
     LoginUserResponse (..),
+    UserProfileResponse (..),
   )
 where
 
 import Data.Aeson
 import Data.Text (Text)
+import Data.Time
 import GHC.Generics
 import Platform.DB.Model
 
@@ -38,5 +40,12 @@ data LoginUserBody = LoginUserBody
 data LoginUserResponse = LoginUserResponse
   { jwtToken :: Text,
     loginUserResponseMsg :: Text
+  }
+  deriving (Show, Eq, Generic, ToJSON)
+
+data UserProfileResponse = UserProfileResponse
+  { userName :: Text,
+    userEmail :: Text,
+    joinedDate :: UTCTime
   }
   deriving (Show, Eq, Generic, ToJSON)

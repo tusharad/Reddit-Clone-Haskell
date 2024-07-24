@@ -3,6 +3,7 @@ module Platform.User.DB
     fetchUserByUserNameQ,
     addUserQ,
     findUserByMailPasswordQ,
+    fetchUserByIDQ,
   )
 where
 
@@ -33,3 +34,6 @@ findUserByMailPasswordQ email0 password0 =
   findFirstEntityBy userTable whereEmailPasswordIs
   where
     whereEmailPasswordIs = where_ $ emailField .== email0 .&& passwordField .== password0
+
+fetchUserByIDQ :: (MonadUnliftIO m) => UserID -> AppM m (Maybe UserRead)
+fetchUserByIDQ uID = findEntity userTable uID

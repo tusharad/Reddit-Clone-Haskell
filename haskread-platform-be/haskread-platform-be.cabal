@@ -28,6 +28,7 @@ library
       Platform.API
       Platform.Auth.DB
       Platform.Auth.Handler
+      Platform.Auth.Types
       Platform.Common.AppM
       Platform.Common.Types
       Platform.Common.Utils

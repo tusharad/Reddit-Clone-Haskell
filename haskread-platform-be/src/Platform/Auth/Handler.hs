@@ -37,9 +37,6 @@ toUserWrite RegisterUserBody {..} =
       updatedAt = ()
     }
 
-throw400Err :: (MonadIO m) => BSL.ByteString -> AppM m a
-throw400Err err = throwError $ err400 {errBody = err}
-
 doesEmailExists :: (MonadUnliftIO m) => Text -> AppM m Bool
 doesEmailExists email0 = do
   (eRes0 :: Either SomeException (Maybe a)) <- try $ fetchUserByEmailQ email0
