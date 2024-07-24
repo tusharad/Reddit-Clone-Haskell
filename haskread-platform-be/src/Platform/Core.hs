@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Platform.Core (startApp) where
+module Platform.Core (startApp, app) where
 
 -- Starting point of the Application
 
@@ -50,9 +50,10 @@ startApp = do
       jwtSett = defaultJWTSettings jwtSecretKey
   let ctx = defaultCookieSettings :. jwtSett :. EmptyContext
   run 8085 (app appST jwtSett ctx)
-  where
-    app appST jwtSett ctx =
-      serveWithContext
-        (Proxy :: Proxy (MainAPI '[JWT, Cookie]))
-        ctx
-        (allServer defaultCookieSettings jwtSett appST)
+
+app :: MyAppState -> JWTSettings -> Context [CookieSettings, JWTSettings] -> Application
+app appST jwtSett ctx =
+  serveWithContext
+    (Proxy :: Proxy (MainAPI '[JWT, Cookie]))
+    ctx
+    (allServer defaultCookieSettings jwtSett appST)

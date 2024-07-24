@@ -23,7 +23,7 @@ data RegisterUserBody = RegisterUserBody
     password :: Text,
     confirmPassword :: Text
   }
-  deriving (Show, Eq, Generic, FromJSON)
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 data RegisterUserResponse = RegisterUserResponse
   { userID :: UserID,
@@ -35,7 +35,7 @@ data LoginUserBody = LoginUserBody
   { email :: Text,
     password :: Text
   }
-  deriving (Show, Eq, Generic, FromJSON)
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 data LoginUserResponse = LoginUserResponse
   { jwtToken :: Text,

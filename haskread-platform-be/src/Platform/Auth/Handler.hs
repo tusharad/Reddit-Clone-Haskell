@@ -39,14 +39,16 @@ toUserWrite RegisterUserBody {..} =
 
 doesEmailExists :: (MonadUnliftIO m) => Text -> AppM m Bool
 doesEmailExists email0 = do
-  (eRes0 :: Either SomeException (Maybe a)) <- try $ fetchUserByEmailQ email0
+  (eRes0 :: Either SomeException (Maybe a)) <-
+    try $ fetchUserByEmailQ email0
   case eRes0 of
     Left e -> throw400Err $ BSL.pack $ show e
     Right r -> return $ isJust r
 
 doesUserNameExists :: (MonadUnliftIO m) => Text -> AppM m Bool
 doesUserNameExists userName0 = do
-  (eRes0 :: Either SomeException (Maybe a)) <- try $ fetchUserByUserNameQ userName0
+  (eRes0 :: Either SomeException (Maybe a)) <-
+    try $ fetchUserByUserNameQ userName0
   case eRes0 of
     Left e -> throw400Err $ BSL.pack $ show e
     Right r -> return $ isJust r
@@ -64,14 +66,19 @@ checkPasswordConstraints password0 = do
 getUserID :: UserRead -> UserID
 getUserID User {..} = userID
 
-registerUserH :: (MonadUnliftIO m) => RegisterUserBody -> AppM m RegisterUserResponse
+registerUserH ::
+  (MonadUnliftIO m) =>
+  RegisterUserBody ->
+  AppM m RegisterUserResponse
 registerUserH userBody@RegisterUserBody {..} = do
   res0 <- doesEmailExists email
   when res0 (throw400Err "email already exists")
   res1 <- doesUserNameExists userName
   when res1 $ throw400Err "UserName already exists :("
-  when (password /= confirmPassword) $ throw400Err "Password and confirm Password do not match"
-  when (checkPasswordConstraints password) $ throw400Err "Password must have upper,lower chars"
+  when (password /= confirmPassword) $
+    throw400Err "Password and confirm Password do not match"
+  when (checkPasswordConstraints password) $
+    throw400Err "Password must have upper,lower chars"
   userRead0 <- addUser (toUserWrite userBody)
   return
     RegisterUserResponse
@@ -112,7 +119,13 @@ loginUserH cookieSett jwtSett LoginUserBody {..} = do
           etoken <- liftIO $ makeJWT userInfo jwtSett Nothing
           case etoken of
             Left _ -> throwError err401 {errBody = "JWT token creation failed"}
-            Right v -> return $ x (LoginUserResponse (T.decodeUtf8 $ BSL.toStrict v) "User loggedIn successfully")
+            Right v ->
+              return $
+                x
+                  ( LoginUserResponse
+                      (T.decodeUtf8 $ BSL.toStrict v)
+                      "User loggedIn successfully"
+                  )
   where
     findUserByMailAndPassword = do
       (eMUser :: Either SomeException (Maybe UserRead)) <-

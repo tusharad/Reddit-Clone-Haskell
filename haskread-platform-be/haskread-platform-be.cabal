@@ -52,10 +52,16 @@ library
     , bytestring
     , filepath
     , haxl
+    , hedgehog
+    , http-types
     , mtl
     , orville-postgresql
     , servant-auth-server
     , servant-server
+    , tasty
+    , tasty-hedgehog
+    , tasty-hunit
+    , tasty-wai
     , text
     , time
     , unliftio
@@ -76,10 +82,16 @@ executable haskread-platform-be-exe
     , filepath
     , haskread-platform-be
     , haxl
+    , hedgehog
+    , http-types
     , mtl
     , orville-postgresql
     , servant-auth-server
     , servant-server
+    , tasty
+    , tasty-hedgehog
+    , tasty-hunit
+    , tasty-wai
     , text
     , time
     , unliftio
@@ -90,6 +102,7 @@ test-suite haskread-platform-be-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      TestAppConfig
       Paths_haskread_platform_be
   hs-source-dirs:
       test
@@ -101,10 +114,16 @@ test-suite haskread-platform-be-test
     , filepath
     , haskread-platform-be
     , haxl
+    , hedgehog
+    , http-types
     , mtl
     , orville-postgresql
     , servant-auth-server
     , servant-server
+    , tasty
+    , tasty-hedgehog
+    , tasty-hunit
+    , tasty-wai
     , text
     , time
     , unliftio

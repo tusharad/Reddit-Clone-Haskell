@@ -36,6 +36,12 @@ dependencies:
 - orville-postgresql
 - unliftio
 - time
+- tasty
+- hedgehog
+- tasty-hedgehog
+- tasty-hunit
+- tasty-wai
+- http-types
 
 ghc-options:
 - -Wall
