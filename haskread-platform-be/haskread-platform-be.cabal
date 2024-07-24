@@ -26,6 +26,8 @@ library
   exposed-modules:
       Lib
       Platform.API
+      Platform.Auth.DB
+      Platform.Auth.Handler
       Platform.Common.AppM
       Platform.Common.Types
       Platform.Common.Utils

@@ -1,24 +1,33 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 module Platform.Core (startApp) where
+
 -- Starting point of the Application
-import Servant
+
+import Control.Monad.Reader
 import Network.Wai.Handler.Warp
+import qualified Orville.PostgreSQL as O
+import Orville.PostgreSQL.Raw.Connection
 import Platform.API
 import Platform.Common.AppM
 import Platform.Common.Types
-import Control.Monad.Reader
-import Orville.PostgreSQL.Raw.Connection
-import qualified Orville.PostgreSQL as O
-
-
+import Servant
+import Servant.Auth.Server
 
 runAppM :: MyAppState -> AppM IO a -> Handler a
-runAppM myAppState appM = Handler $ runReaderT (getApp appM) myAppState 
+runAppM myAppState appM = Handler $ runReaderT (getApp appM) myAppState
 
-allServer :: MyAppState -> Server MainAPI
-allServer myAppState = hoistServer (Proxy :: Proxy MainAPI) (runAppM myAppState) mainServer
-
-app :: MyAppState -> Application
-app myAppState = serve (Proxy :: Proxy MainAPI) (allServer myAppState)
+allServer :: CookieSettings -> JWTSettings -> MyAppState -> Server (MainAPI auths)
+allServer cookieSett jwtSett myAppState =
+  hoistServerWithContext
+    (Proxy :: Proxy (MainAPI '[JWT, Cookie]))
+    (Proxy :: Proxy '[CookieSettings, JWTSettings])
+    (runAppM myAppState)
+    ( mainServer
+        cookieSett
+        jwtSett
+    )
 
 connectionOptions :: ConnectionOptions
 connectionOptions =
@@ -33,8 +42,17 @@ connectionOptions =
 
 startApp :: IO ()
 startApp = do
-    putStrLn "Application running at port 8085"
-    pool <- createConnectionPool connectionOptions
-    let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
-    let appST = MyAppState (AppConfig "uploads") orvilleState
-    run 8085 (app appST) 
+  putStrLn "Application running at port 8085"
+  pool <- createConnectionPool connectionOptions
+  jwtSecretKey <- generateKey
+  let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
+      appST = MyAppState (AppConfig "uploads") orvilleState
+      jwtSett = defaultJWTSettings jwtSecretKey
+  let ctx = defaultCookieSettings :. jwtSett :. EmptyContext
+  run 8085 (app appST jwtSett ctx)
+  where
+    app appST jwtSett ctx =
+      serveWithContext
+        (Proxy :: Proxy (MainAPI '[JWT, Cookie]))
+        ctx
+        (allServer defaultCookieSettings jwtSett appST)
