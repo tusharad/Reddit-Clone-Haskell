@@ -20,9 +20,10 @@ Will try to follow best practices and idiomatic Haskell and PureScript as much a
 
 ### Future Features
 
-- [ ] User registration
-- [ ] User authentication
-- [ ] User profile
+- [x] User registration
+- [x] User authentication
+- [x] User profile
+- [x] User Change Password
 - [ ] Admin authentication
 - [ ] Admin dashboard
 - [ ] Create Thread

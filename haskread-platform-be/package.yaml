@@ -42,6 +42,7 @@ dependencies:
 - tasty-hunit
 - tasty-wai
 - http-types
+- string-interpolate
 
 ghc-options:
 - -Wall

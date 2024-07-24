@@ -58,6 +58,7 @@ library
     , orville-postgresql
     , servant-auth-server
     , servant-server
+    , string-interpolate
     , tasty
     , tasty-hedgehog
     , tasty-hunit
@@ -88,6 +89,7 @@ executable haskread-platform-be-exe
     , orville-postgresql
     , servant-auth-server
     , servant-server
+    , string-interpolate
     , tasty
     , tasty-hedgehog
     , tasty-hunit
@@ -120,6 +122,7 @@ test-suite haskread-platform-be-test
     , orville-postgresql
     , servant-auth-server
     , servant-server
+    , string-interpolate
     , tasty
     , tasty-hedgehog
     , tasty-hunit

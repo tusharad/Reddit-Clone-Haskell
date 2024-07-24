@@ -23,12 +23,14 @@ mainServer cookieSett jwtSett =
     :<|> registerUserH
     :<|> loginUserH cookieSett jwtSett
     :<|> userDashboardH
+    :<|> userChangePasswordH
 
 type MainAPI auths =
   CheckHealthAPI
     :<|> RegisterUserAPI
     :<|> LoginUserAPI
     :<|> Auth auths UserInfo :> UserDashboard
+    :<|> Auth auths UserInfo :> UserChangePasswordAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -64,3 +66,12 @@ type UserDashboard =
     :> "user"
     :> "profile"
     :> Get '[JSON] UserProfileResponse
+  
+type UserChangePasswordAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "profile"
+    :> "change-password"
+    :> ReqBody '[JSON] ChangePasswordBody
+    :> Put '[JSON] ChangePasswordResponse

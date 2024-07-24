@@ -4,12 +4,9 @@
 import Control.Exception
 import Network.HTTP.Types
 import qualified Orville.PostgreSQL as O
-import qualified Orville.PostgreSQL.Raw.Connection as Conn
 import Servant
-import System.Exit
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.Hedgehog
 import Test.Tasty.Wai
 import TestAppConfig
 

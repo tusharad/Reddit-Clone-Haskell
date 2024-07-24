@@ -9,13 +9,11 @@ module Platform.Auth.Handler
   )
 where
 
-import Control.Monad (when)
+import Control.Monad (when,unless)
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy.Char8 as BSL
-import Data.Char
 import Data.Maybe (isJust)
 import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Platform.Common.AppM
 import Platform.Common.Utils
@@ -53,16 +51,6 @@ doesUserNameExists userName0 = do
     Left e -> throw400Err $ BSL.pack $ show e
     Right r -> return $ isJust r
 
--- Constraints:
--- at least 1 uppercase, 1 lowercase, 1 digit
--- length at lease 8 chars
--- 1 special character
-checkPasswordConstraints :: Text -> Bool
-checkPasswordConstraints password0 = do
-  let res0 = T.length password0 >= 8
-      res1 = all (== True) $ [isDigit, isUpper, isLower] <*> (T.unpack password0)
-  res0 && res1
-
 getUserID :: UserRead -> UserID
 getUserID User {..} = userID
 
@@ -77,13 +65,13 @@ registerUserH userBody@RegisterUserBody {..} = do
   when res1 $ throw400Err "UserName already exists :("
   when (password /= confirmPassword) $
     throw400Err "Password and confirm Password do not match"
-  when (checkPasswordConstraints password) $
+  unless (validatePassword password) $
     throw400Err "Password must have upper,lower chars"
   userRead0 <- addUser (toUserWrite userBody)
   return
     RegisterUserResponse
       { registerUserResponseMessage = "User registered successfully",
-        userID = getUserID userRead0
+        userIDForRUR = getUserID userRead0
       }
   where
     addUser userWrite0 = do

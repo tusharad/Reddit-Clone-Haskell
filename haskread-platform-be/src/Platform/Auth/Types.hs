@@ -13,7 +13,7 @@ import Platform.DB.Model
 import Servant.Auth.Server
 
 data UserInfo = UserInfo
-  { userID :: UserID,
+  { userIDForUserInfo :: UserID,
     userName :: Text
   }
   deriving (Show, Eq, Generic, ToJWT, ToJSON, FromJSON, FromJWT)

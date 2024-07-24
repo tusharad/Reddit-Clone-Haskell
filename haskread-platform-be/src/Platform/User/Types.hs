@@ -8,6 +8,8 @@ module Platform.User.Types
     LoginUserBody (..),
     LoginUserResponse (..),
     UserProfileResponse (..),
+    ChangePasswordBody (..),
+    ChangePasswordResponse (..)
   )
 where
 
@@ -26,7 +28,7 @@ data RegisterUserBody = RegisterUserBody
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 data RegisterUserResponse = RegisterUserResponse
-  { userID :: UserID,
+  { userIDForRUR :: UserID,
     registerUserResponseMessage :: Text
   }
   deriving (Show, Eq, Generic, ToJSON)
@@ -48,4 +50,15 @@ data UserProfileResponse = UserProfileResponse
     userEmail :: Text,
     joinedDate :: UTCTime
   }
+  deriving (Show, Eq, Generic, ToJSON)
+
+data ChangePasswordBody = ChangePasswordBody
+  { oldPassword :: Text,
+    newPassword :: Text,
+    confirmPassword :: Text
+  }
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
+newtype ChangePasswordResponse = ChangePasswordResponse
+  { changePasswordResponseMsg :: Text }
   deriving (Show, Eq, Generic, ToJSON)
