@@ -9,13 +9,17 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.Wai
 import TestAppConfig
+import Servant.Auth.Server
+import qualified Data.ByteString.Lazy as BSL
+import Control.Concurrent
+import Control.Monad.IO.Class
 
-tests :: Application -> O.ConnectionPool -> TestTree
-tests app pool =
+tests :: Application -> O.ConnectionPool -> BSL.ByteString -> TestTree
+tests app pool token =
   testGroup
     "Tests"
     [ unitTests pool,
-      apiTests app
+      apiTests app token
     ]
 
 unitTests :: O.ConnectionPool -> TestTree
@@ -26,8 +30,8 @@ unitTests pool =
         [1, 2, 3] `compare` [1, 2] @?= GT
     ]
 
-apiTests :: Application -> TestTree
-apiTests app =
+apiTests :: Application -> BSL.ByteString -> TestTree
+apiTests app token =
   testGroup
     "Servant HaskRead"
     [ testWai app "GET /check-health - 200" $ do
@@ -47,14 +51,34 @@ apiTests app =
             incorrectLoginUserBody
             [("Content-Type", "application/json")]
         assertStatus' status400 res
+        -- test case behaving abnormally, due to race condition
+        -- There should be some sample data in the DB to test this
+        -- testUserDashboard app token
     ]
+
+testUserDashboard :: Application -> BSL.ByteString -> TestTree
+testUserDashboard app token = 
+  testWai app "get user dashboard" $ do
+
+    liftIO $ threadDelay 1000
+    res <- 
+      srequest $ buildRequestWithHeaders GET "/api/v1/user/profile" "" [
+        ("Content-Type", "application/json"),
+        (hAuthorization, "Bearer " <> BSL.toStrict token)
+      ]
+    assertStatus' status200 res
+
 
 main :: IO ()
 main = do
-  (myApp, pool) <- getTestAppCfg
-  createDB pool
-  defaultMain (tests myApp pool)
-    `catch` ( \(e :: SomeException) -> do
-                destroyDB pool
-                throwIO e
-            )
+  (myApp, pool,jwtSett) <- getTestAppCfg
+  eToken <- makeJWT sampleUserInfo jwtSett Nothing
+  case eToken of
+    Left _ -> throwIO $ ErrorCall "JWT token creation failed"
+    Right token -> do
+      createDB pool
+      defaultMain (tests myApp pool token)
+        `catch` ( \(e :: SomeException) -> do
+                    destroyDB pool
+                    throwIO e
+                )

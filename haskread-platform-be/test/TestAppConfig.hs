@@ -6,6 +6,7 @@ module TestAppConfig
     destroyDB,
     registerUserBody,
     incorrectLoginUserBody,
+    sampleUserInfo
   )
 where
 
@@ -24,6 +25,8 @@ import qualified Platform.User.Types as UT (RegisterUserBody (..))
 import Servant
 import Servant.Auth.Server
 import Test.Tasty
+import Platform.Auth.Types
+import Platform.DB.Model (UserID(..))
 
 connectionOptionsForTest :: ConnectionOptions
 connectionOptionsForTest =
@@ -36,7 +39,7 @@ connectionOptionsForTest =
       connectionPoolLingerTime = 10
     }
 
-getTestAppCfg :: IO (Application, ConnectionPool)
+getTestAppCfg :: IO (Application, ConnectionPool, JWTSettings)
 getTestAppCfg = do
   pool <- createConnectionPool connectionOptionsForTest
   jwtSecretKey <- generateKey
@@ -44,7 +47,7 @@ getTestAppCfg = do
       appST = MyAppState (AppConfig "uploads") orvilleState
       jwtSett = defaultJWTSettings jwtSecretKey
   let ctx = defaultCookieSettings :. jwtSett :. EmptyContext
-  return (app appST jwtSett ctx, pool)
+  return (app appST jwtSett ctx, pool,jwtSett)
 
 schemaList :: [SchemaItem]
 schemaList =
@@ -96,3 +99,9 @@ incorrectLoginUserBody =
             password = "1234"
           }
    in encode l
+
+sampleUserInfo :: UserInfo
+sampleUserInfo = UserInfo {
+    userIDForUserInfo = UserID 1
+ ,  userNameForUserInfo = "asd"
+}

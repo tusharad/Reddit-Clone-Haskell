@@ -124,9 +124,13 @@ createServerFilePath tempFP fName = do
   case eRes of
     Left e -> throw400Err $ BSL.pack $ show e
     Right content -> do
+      checkImageSize content
       let serverFilePath = "/home/user/Documents/github/Reddit-Clone-Haskell/haskread-platform-be/file-upload/" <> T.unpack fName
       liftIO $ BSL.writeFile serverFilePath content 
       pure serverFilePath
+  where
+     checkImageSize imageContent = do
+      unless (BSL.length imageContent < 1000000) $ throw400Err "Image to large :("
 
 userUpdateProfileImageH ::
   (MonadUnliftIO m) =>
@@ -134,8 +138,9 @@ userUpdateProfileImageH ::
   UpdateUserImageBody ->
   AppM m UpdateUserImageResponse
 userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} = do
+  let (tempFP,fType,fName) = userImageInfo
+  checkValidImageType fType
   mUserProfile <- fetchUserProfileImage userIDForUserInfo
-  let (tempFP,_,fName) = userImageInfo
   serverFilePath <- createServerFilePath tempFP fName
   let userProfileImage = UserProfileImage {
     userIDForProfileImage = userIDForUserInfo,
@@ -150,4 +155,8 @@ userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} =
     Just _  -> do
       updateUserProfileImageQ userIDForUserInfo userProfileImage
       pure $ UpdateUserImageResponse "Profile image added successfully!"
+  where
+    checkValidImageType fType = do
+      let validImageTypes = ["image/png", "image/jpeg", "image/jpg"]
+      unless (fType `elem` validImageTypes) $ throw400Err "Invalid image type!"
 userUpdateProfileImageH _ _ = throw401Err "Please login first"

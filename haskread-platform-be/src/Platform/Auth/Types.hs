@@ -14,6 +14,6 @@ import Servant.Auth.Server
 
 data UserInfo = UserInfo
   { userIDForUserInfo :: UserID,
-    userName :: Text
+    userNameForUserInfo :: Text
   }
   deriving (Show, Eq, Generic, ToJWT, ToJSON, FromJSON, FromJWT)
