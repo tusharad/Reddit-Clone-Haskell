@@ -7,6 +7,7 @@ module Platform.API
   )
 where
 
+import Platform.Admin.Types
 import Platform.Auth.Handler
 import Platform.Auth.Types
 import Platform.Common.AppM
@@ -23,6 +24,7 @@ mainServer cookieSett jwtSett =
   checkHealthH
     :<|> registerUserH
     :<|> loginUserH cookieSett jwtSett
+    :<|> adminLoginH cookieSett jwtSett
     :<|> userDashboardH
     :<|> userChangePasswordH
     :<|> userDeleteAccountH
@@ -32,6 +34,7 @@ type MainAPI auths =
   CheckHealthAPI
     :<|> RegisterUserAPI
     :<|> LoginUserAPI
+    :<|> AdminLoginAPI
     :<|> Auth auths UserInfo :> UserDashboard
     :<|> Auth auths UserInfo :> UserChangePasswordAPI
     :<|> Auth auths UserInfo :> DeleteUserAPI
@@ -98,3 +101,21 @@ type UpdateUserImageAPI =
     :> "update-image"
     :> MultipartForm Tmp UpdateUserImageBody
     :> Put '[JSON] UpdateUserImageResponse
+
+-- Admin APIs
+
+type AdminLoginAPI =
+  "api"
+    :> "v1"
+    :> "admin"
+    :> "auth"
+    :> "login"
+    :> ReqBody '[JSON] AdminLoginBodyReq
+    :> Post
+         '[JSON]
+         ( Headers
+             '[ Header "Set-Cookie" SetCookie,
+                Header "Set-Cookie" SetCookie
+              ]
+             AdminLoginResponse
+         )

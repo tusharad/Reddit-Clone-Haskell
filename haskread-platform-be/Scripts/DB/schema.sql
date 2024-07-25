@@ -16,6 +16,7 @@ create table user_profile_image (
 
 create table admin (
 	admin_id serial primary key
+  , admin_name varchar(255) not null unique
   , email varchar(255) not null unique
   , password text not null
   , created_at timestamptz default now()

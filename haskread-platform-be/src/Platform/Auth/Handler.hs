@@ -6,15 +6,17 @@
 module Platform.Auth.Handler
   ( registerUserH,
     loginUserH,
+    adminLoginH,
   )
 where
 
-import Control.Monad (when,unless)
+import Control.Monad (unless, when)
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Maybe (isJust)
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
+import Platform.Admin.Types
 import Platform.Common.AppM
 import Platform.Common.Utils
 import Platform.DB.Model
@@ -122,3 +124,26 @@ loginUserH cookieSett jwtSett LoginUserBody {..} = do
         Left e -> throw400Err $ BSL.pack $ show e
         Right r -> pure r
 
+adminLoginH ::
+  (MonadUnliftIO m) =>
+  CookieSettings ->
+  JWTSettings ->
+  AdminLoginBodyReq ->
+  AppM
+    m
+    ( Headers
+        '[ Header "Set-Cookie" SetCookie,
+           Header "Set-Cookie" SetCookie
+         ]
+        AdminLoginResponse
+    )
+adminLoginH cookieSett jwtSett AdminLoginBodyReq {..} = do
+  mRes <- findAdminByMailAndPassword
+  case mRes of
+    Nothing -> throw400Err "Email/Password is incorrect"
+    Just adminRead0 -> do
+      let adminInfo = toAdminInfo adminRead0
+      mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett adminInfo
+      case mLoginAccepted of
+        Nothing -> throw401Err
+        Just loginAcceptedResp -> undefined

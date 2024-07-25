@@ -12,6 +12,10 @@ module Platform.DB.Model
     UserProfileImageWrite,
     UserProfileImageRead,
     UserProfileImage (..),
+    Admin (..),
+    AdminRead,
+    AdminWrite,
+    AdminID (..),
   )
 where
 
@@ -49,3 +53,20 @@ data UserProfileImage a = UserProfileImage
 type UserProfileImageWrite = UserProfileImage ()
 
 type UserProfileImageRead = UserProfileImage UTCTime
+
+newtype AdminID = AdminID Int32
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON)
+
+data Admin a b = Admin
+  { adminID :: a,
+    adminName :: Text,
+    adminEmail :: Text,
+    adminPassword :: Text,
+    createdAtForAdmin :: b,
+    updatedAtForAdmin :: b
+  }
+  deriving (Show, Eq, Generic, ToJSON)
+
+type AdminRead = Admin AdminID UTCTime
+
+type AdminWrite = Admin () ()

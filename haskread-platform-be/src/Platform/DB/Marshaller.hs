@@ -10,6 +10,8 @@ module Platform.DB.Marshaller
     userMarshaller,
     userProfileImageMarshaller,
     userImageField,
+    adminMarshaller,
+    adminIDField,
   )
 where
 
@@ -17,6 +19,12 @@ import Data.Text (Text)
 import Data.Time (UTCTime)
 import Orville.PostgreSQL
 import Platform.DB.Model
+
+adminNameField :: FieldDefinition NotNull Text
+adminNameField = boundedTextField "admin_name" 255
+
+adminIDField :: FieldDefinition NotNull AdminID
+adminIDField = coerceField $ serialField "admin_id"
 
 userIDField :: FieldDefinition NotNull UserID
 userIDField = coerceField $ serialField "user_id"
@@ -87,3 +95,20 @@ userProfileImageMarshaller =
           (\UserProfileImage {..} -> updatedAtForProfileImage)
           updatedAtField
       )
+
+adminMarshaller ::
+  SqlMarshaller
+    AdminWrite
+    AdminRead
+adminMarshaller =
+  Admin
+    <$> marshallReadOnly
+      ( marshallField
+          (\Admin {..} -> adminID)
+          adminIDField
+      )
+    <*> marshallField (\Admin {..} -> adminEmail) emailField
+    <*> marshallField (\Admin {..} -> adminName) adminNameField
+    <*> marshallField (\Admin {..} -> adminPassword) passwordField
+    <*> marshallReadOnly (marshallField (\Admin {..} -> createdAtForAdmin) createdAtField)
+    <*> marshallReadOnly (marshallField (\Admin {..} -> updatedAtForAdmin) updatedAtField)

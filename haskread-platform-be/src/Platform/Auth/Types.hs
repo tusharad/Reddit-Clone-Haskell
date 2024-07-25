@@ -3,6 +3,7 @@
 
 module Platform.Auth.Types
   ( UserInfo (..),
+    AdminInfo (..),
   )
 where
 
@@ -15,5 +16,11 @@ import Servant.Auth.Server
 data UserInfo = UserInfo
   { userIDForUserInfo :: UserID,
     userNameForUserInfo :: Text
+  }
+  deriving (Show, Eq, Generic, ToJWT, ToJSON, FromJSON, FromJWT)
+
+data AdminInfo = AdminInfo
+  { adminIDForAdminInfo :: AdminID,
+    adminNameForAdminInfo :: Text
   }
   deriving (Show, Eq, Generic, ToJWT, ToJSON, FromJSON, FromJWT)

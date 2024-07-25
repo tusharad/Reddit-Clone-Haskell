@@ -1,6 +1,7 @@
 module Platform.DB.Table
   ( userTable,
     userProfileImageTable,
+    adminTable
   )
 where
 
@@ -13,8 +14,8 @@ userTable :: TableDefinition (HasKey UserID) UserWrite UserRead
 userTable =
   addTableConstraints
     [ uniqueConstraint
-        ( (fieldName emailField)
-            :| [(fieldName userNameField)]
+        ( fieldName emailField
+            :| [fieldName userNameField]
         )
     ]
     ( mkTableDefinition
@@ -32,10 +33,9 @@ userProfileImageTable =
   addTableConstraints
     [ foreignKeyConstraint
         (tableIdentifier userTable)
-        ( ( foreignReference
+        ( foreignReference
               (fieldName userIDField)
               (fieldName userIDField)
-          )
             :| []
         )
     ]
@@ -43,4 +43,22 @@ userProfileImageTable =
         "user_profile_image"
         (primaryKey userIDField)
         userProfileImageMarshaller
+    )
+
+adminTable ::
+  TableDefinition
+  (HasKey AdminID)
+  AdminWrite
+  AdminRead
+adminTable =
+  addTableConstraints
+    [ uniqueConstraint
+        ( fieldName emailField
+            :| []
+    )]
+    (
+      mkTableDefinition
+        "admin"
+        (primaryKey adminIDField)
+        adminMarshaller
     )

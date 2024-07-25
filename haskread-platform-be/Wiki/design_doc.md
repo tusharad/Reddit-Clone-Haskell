@@ -43,3 +43,7 @@ The application will be a monolithic application. The application will have a fr
 - Type-level-programming : We will use type-level-programming for type-level programming in the application.
 - Lens : Lens is a library for working with data structures. We will use lens for working with data structures in the application.
 - Tasty : Tasty is a library for testing. We will use tasty for testing in the application.
+
+### Some Notes:
+
+- All password must be hashed before storing in the database.
