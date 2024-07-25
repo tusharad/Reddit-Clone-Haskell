@@ -43,6 +43,7 @@ dependencies:
 - tasty-wai
 - http-types
 - string-interpolate
+- servant-multipart
 
 ghc-options:
 - -Wall

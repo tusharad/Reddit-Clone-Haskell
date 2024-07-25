@@ -3,13 +3,15 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
 module Platform.DB.Model
   ( UserID (..),
     User (..),
     UserRead,
     UserWrite,
+    UserProfileImageWrite,
+    UserProfileImageRead,
+    UserProfileImage (..),
   )
 where
 
@@ -35,3 +37,15 @@ data User a b = User
 type UserRead = User UserID UTCTime
 
 type UserWrite = User () ()
+
+data UserProfileImage a = UserProfileImage
+  { userIDForProfileImage :: UserID,
+    userImage :: Text,
+    createdAtForProfileImage :: a,
+    updatedAtForProfileImage :: a
+  }
+  deriving (Show, Eq, Generic, ToJSON)
+
+type UserProfileImageWrite = UserProfileImage ()
+
+type UserProfileImageRead = UserProfileImage UTCTime

@@ -57,6 +57,7 @@ library
     , mtl
     , orville-postgresql
     , servant-auth-server
+    , servant-multipart
     , servant-server
     , string-interpolate
     , tasty
@@ -88,6 +89,7 @@ executable haskread-platform-be-exe
     , mtl
     , orville-postgresql
     , servant-auth-server
+    , servant-multipart
     , servant-server
     , string-interpolate
     , tasty
@@ -121,6 +123,7 @@ test-suite haskread-platform-be-test
     , mtl
     , orville-postgresql
     , servant-auth-server
+    , servant-multipart
     , servant-server
     , string-interpolate
     , tasty

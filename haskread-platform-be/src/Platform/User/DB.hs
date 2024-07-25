@@ -5,7 +5,10 @@ module Platform.User.DB
     findUserByMailPasswordQ,
     fetchUserByIDQ,
     changePasswordQ,
-    deleteUserQ
+    deleteUserQ,
+    updateUserProfileImageQ,
+    fetchUserProfileQ,
+    addUserProfileImageQ,
   )
 where
 
@@ -45,3 +48,12 @@ changePasswordQ = updateEntity userTable
 
 deleteUserQ :: (MonadUnliftIO m) => UserID -> AppM m ()
 deleteUserQ = deleteEntity userTable
+
+updateUserProfileImageQ :: (MonadUnliftIO m) => UserID -> UserProfileImageWrite -> AppM m ()
+updateUserProfileImageQ = updateEntity userProfileImageTable
+
+fetchUserProfileQ :: (MonadUnliftIO m) => UserID -> AppM m (Maybe UserProfileImageRead)
+fetchUserProfileQ = findEntity userProfileImageTable
+
+addUserProfileImageQ :: (MonadUnliftIO m) => UserProfileImageWrite -> AppM m ()
+addUserProfileImageQ = insertEntity userProfileImageTable

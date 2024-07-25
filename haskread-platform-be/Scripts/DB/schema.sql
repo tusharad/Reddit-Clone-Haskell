@@ -9,7 +9,7 @@ create table users (
 
 create table user_profile_image (
 	user_id int references users on delete cascade primary key
- ,  user_profile_image bytea not null
+ ,  user_profile_image text not null
  ,  created_at timestamptz default now()
  ,  updated_at timestamptz default now()
 );

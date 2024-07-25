@@ -97,8 +97,24 @@ Features list:
     - On failure, the API shall return an error message with status code 400.
     - At application level, the user record shall be delete from the primary table and all the related records shall be deleted from the related tables. And the user shall be logged out. The user info shall be added in some kind of archive table for future reference.
 
+
+- ### Update Profile image
+    ###### PUT /api/v1/user/update-profile-image
+    JSON Body:
+    {
+        "image" : temp file path
+    }
+    - User can update his/her profile image by providing the image.
+    - On successful request, the API shall return a success message.
+    - At database level, the image shall be stored on the server with image path in the database.
+    - In table, the record with corresponding user id may or may not exist, if exist then update the image, otherwise insert the image.
+    - Checks:
+        - User should be logged in.
+        - Image should be valid.
+    - On failure, the API shall return an error message with status code 400.
+
 - Future Features
-    - Add, update, delete profile image.
+    - Delete profile image.
 
 - ### Database Schema
     - User Table
@@ -111,7 +127,7 @@ Features list:
 
     - User Profile Image Table
         - userID : foreign key to user table on delete cascade
-        - image : blob
+        - image : text
         - createdAt : timestamptz
         - updatedAt : timestamptz
 

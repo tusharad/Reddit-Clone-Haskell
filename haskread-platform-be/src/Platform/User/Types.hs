@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Platform.User.Types
   ( RegisterUserBody (..),
@@ -10,8 +12,10 @@ module Platform.User.Types
     UserProfileResponse (..),
     ChangePasswordBody (..),
     ChangePasswordResponse (..),
-    DeleteUserBody(..),
-    DeleteUserResponse(..)
+    DeleteUserBody (..),
+    DeleteUserResponse (..),
+    UpdateUserImageBody (..),
+    UpdateUserImageResponse (..),
   )
 where
 
@@ -20,6 +24,7 @@ import Data.Text (Text)
 import Data.Time
 import GHC.Generics
 import Platform.DB.Model
+import Servant.Multipart
 
 data RegisterUserBody = RegisterUserBody
   { userName :: Text,
@@ -62,14 +67,37 @@ data ChangePasswordBody = ChangePasswordBody
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 newtype ChangePasswordResponse = ChangePasswordResponse
-  { changePasswordResponseMsg :: Text }
+  {changePasswordResponseMsg :: Text}
   deriving (Show, Eq, Generic, ToJSON)
 
-data DeleteUserBody = DeleteUserBody {
-   passwordForDeleteUser :: Text, 
-   areUSure :: Bool 
-} deriving (Show,Eq,Generic,FromJSON,ToJSON)
+data DeleteUserBody = DeleteUserBody
+  { passwordForDeleteUser :: Text,
+    areUSure :: Bool
+  }
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
-newtype DeleteUserResponse = DeleteUserResponse {
-  deleteUserResponseMsg :: Text
-} deriving (Show,Eq,Generic,ToJSON)
+newtype DeleteUserResponse = DeleteUserResponse
+  { deleteUserResponseMsg :: Text
+  }
+  deriving (Show, Eq, Generic, ToJSON)
+
+newtype UpdateUserImageBody = UpdateUserImageBody
+  { userImageInfo :: (FilePath, TheFileType, TheFileName)
+  }
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
+newtype UpdateUserImageResponse = UpdateUserImageResponse
+  { updateUserImageResponseMsg :: Text
+  }
+  deriving (Show, Eq, Generic, ToJSON)
+
+type TheFileType = Text
+
+type TheFileName = Text
+
+instance FromMultipart Tmp UpdateUserImageBody where
+  fromMultipart multipartData =
+    UpdateUserImageBody <$> getFileInfo (lookupFile "pic" multipartData)
+    where
+      getFileInfo (Left e) = Left e
+      getFileInfo (Right fData) = Right $ (fdPayload fData, fdFileCType fData, fdFileName fData)

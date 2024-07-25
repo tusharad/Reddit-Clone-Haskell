@@ -121,3 +121,4 @@ loginUserH cookieSett jwtSett LoginUserBody {..} = do
       case eMUser of
         Left e -> throw400Err $ BSL.pack $ show e
         Right r -> pure r
+

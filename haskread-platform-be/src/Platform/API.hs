@@ -15,6 +15,7 @@ import Platform.User.Handler
 import Platform.User.Types
 import Servant
 import Servant.Auth.Server
+import Servant.Multipart
 import UnliftIO
 
 mainServer :: (MonadUnliftIO m) => CookieSettings -> JWTSettings -> ServerT (MainAPI auths) (AppM m)
@@ -25,6 +26,7 @@ mainServer cookieSett jwtSett =
     :<|> userDashboardH
     :<|> userChangePasswordH
     :<|> userDeleteAccountH
+    :<|> userUpdateProfileImageH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -33,6 +35,7 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> UserDashboard
     :<|> Auth auths UserInfo :> UserChangePasswordAPI
     :<|> Auth auths UserInfo :> DeleteUserAPI
+    :<|> Auth auths UserInfo :> UpdateUserImageAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -68,7 +71,7 @@ type UserDashboard =
     :> "user"
     :> "profile"
     :> Get '[JSON] UserProfileResponse
-  
+
 type UserChangePasswordAPI =
   "api"
     :> "v1"
@@ -78,11 +81,20 @@ type UserChangePasswordAPI =
     :> ReqBody '[JSON] ChangePasswordBody
     :> Put '[JSON] ChangePasswordResponse
 
-type DeleteUserAPI = 
-    "api"
-      :> "v1"
-      :> "user"
-      :> "profile"
-      :> "delete-account"
-      :> ReqBody '[JSON] DeleteUserBody
-      :> Delete '[JSON] DeleteUserResponse
+type DeleteUserAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "profile"
+    :> "delete-account"
+    :> ReqBody '[JSON] DeleteUserBody
+    :> Delete '[JSON] DeleteUserResponse
+
+type UpdateUserImageAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "profile"
+    :> "update-image"
+    :> MultipartForm Tmp UpdateUserImageBody
+    :> Put '[JSON] UpdateUserImageResponse
