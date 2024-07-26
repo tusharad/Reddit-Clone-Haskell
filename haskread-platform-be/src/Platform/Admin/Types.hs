@@ -5,6 +5,8 @@ module Platform.Admin.Types
   ( AdminLoginBodyReq (..),
     AdminLoginResponse (..),
     AdminDashboardResponse(..),
+    AdminChangePasswordBody(..),
+    AdminChangePasswordResponse(..),
   )
 where
 
@@ -13,8 +15,8 @@ import Data.Text (Text)
 import GHC.Generics
 
 data AdminLoginBodyReq = AdminLoginBodyReq
-  { adminEmail :: Text,
-    adminPassword :: Text
+  { adminEmailForLogin :: Text,
+    adminPasswordForLogin :: Text
   }
   deriving (Eq, Show, Generic, FromJSON)
 
@@ -31,5 +33,19 @@ data AdminDashboardResponse = AdminDashboardResponse
     , adminEmailForAdminDashboard :: Text
     , adminRole :: Text
     , createdDate :: Text
+  }
+  deriving (Eq, Show, Generic, ToJSON)
+
+data AdminChangePasswordBody = AdminChangePasswordBody
+  { 
+      oldPassword :: Text
+    , newPassword :: Text
+    , confirmNewPassword :: Text
+  }
+  deriving (Eq, Show, Generic, FromJSON)
+
+newtype AdminChangePasswordResponse = AdminChangePasswordResponse
+  { 
+      adminChangePasswordRespMsg :: Text
   }
   deriving (Eq, Show, Generic, ToJSON)

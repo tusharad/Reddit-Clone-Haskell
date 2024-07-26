@@ -27,10 +27,10 @@ import Platform.DB.Model
 import Servant.Multipart
 
 data RegisterUserBody = RegisterUserBody
-  { userName :: Text,
-    email :: Text,
-    password :: Text,
-    confirmPassword :: Text
+  { userNameForRegister :: Text,
+    emailForRegister :: Text,
+    passwordForRegister :: Text,
+    confirmPasswordForRegister :: Text
   }
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
@@ -41,8 +41,8 @@ data RegisterUserResponse = RegisterUserResponse
   deriving (Show, Eq, Generic, ToJSON)
 
 data LoginUserBody = LoginUserBody
-  { email :: Text,
-    password :: Text
+  { emailForLogin :: Text,
+    passwordForLogin :: Text
   }
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
@@ -53,16 +53,16 @@ data LoginUserResponse = LoginUserResponse
   deriving (Show, Eq, Generic, ToJSON)
 
 data UserProfileResponse = UserProfileResponse
-  { userName :: Text,
-    userEmail :: Text,
-    joinedDate :: UTCTime
+  { userNameForUPR :: Text,
+    userEmailForUPR :: Text,
+    joinedDateForUPR :: UTCTime
   }
   deriving (Show, Eq, Generic, ToJSON)
 
 data ChangePasswordBody = ChangePasswordBody
-  { oldPassword :: Text,
-    newPassword :: Text,
-    confirmPassword :: Text
+  { oldPasswordForChangePass :: Text,
+    newPasswordForChangePass :: Text,
+    confirmPasswordForChangePass :: Text
   }
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 

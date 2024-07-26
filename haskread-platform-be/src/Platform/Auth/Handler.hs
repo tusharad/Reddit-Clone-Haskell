@@ -31,9 +31,9 @@ toUserWrite :: RegisterUserBody -> UserWrite
 toUserWrite RegisterUserBody {..} =
   User
     { userID = (),
-      userName = userName,
-      email = email,
-      password = password,
+      userName = userNameForRegister,
+      email = emailForRegister,
+      password = passwordForRegister,
       createdAt = (),
       updatedAt = ()
     }
@@ -62,13 +62,13 @@ registerUserH ::
   RegisterUserBody ->
   AppM m RegisterUserResponse
 registerUserH userBody@RegisterUserBody {..} = do
-  res0 <- doesEmailExists email
+  res0 <- doesEmailExists emailForRegister
   when res0 (throw400Err "email already exists")
-  res1 <- doesUserNameExists userName
+  res1 <- doesUserNameExists userNameForRegister
   when res1 $ throw400Err "UserName already exists :("
-  when (password /= confirmPassword) $
+  when (passwordForRegister /= confirmPasswordForRegister) $
     throw400Err "Password and confirm Password do not match"
-  unless (validatePassword password) $
+  unless (validatePassword passwordForRegister) $
     throw400Err "Password must have upper,lower chars"
   userRead0 <- addUser (toUserWrite userBody)
   return
@@ -120,7 +120,7 @@ loginUserH cookieSett jwtSett LoginUserBody {..} = do
   where
     findUserByMailAndPassword = do
       (eMUser :: Either SomeException (Maybe UserRead)) <-
-        try $ findUserByMailPasswordQ email password
+        try $ findUserByMailPasswordQ emailForLogin passwordForLogin
       case eMUser of
         Left e -> throw400Err $ BSL.pack $ show e
         Right r -> pure r
@@ -161,7 +161,7 @@ adminLoginH cookieSett jwtSett AdminLoginBodyReq {..} = do
   where
     findAdminByMailAndPassword = do
       (eMAdmin :: Either SomeException (Maybe AdminRead)) <-
-        try $ findAdminByMailPasswordQ adminEmail adminPassword
+        try $ findAdminByMailPasswordQ adminEmailForLogin adminPasswordForLogin
       case eMAdmin of
         Left e -> throw400Err $ BSL.pack $ show e
         Right r -> pure r

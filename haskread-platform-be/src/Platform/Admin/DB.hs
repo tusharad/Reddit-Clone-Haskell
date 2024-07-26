@@ -1,6 +1,7 @@
 module Platform.Admin.DB (
     findAdminByMailPasswordQ,
-    fetchAdminByIDQ
+    fetchAdminByIDQ,
+    updateAdminPasswordQ
 ) where
 
 import Data.Text (Text)
@@ -19,3 +20,6 @@ findAdminByMailPasswordQ email0 password0 =
 
 fetchAdminByIDQ :: (MonadUnliftIO m) => AdminID -> AppM m (Maybe AdminRead)
 fetchAdminByIDQ = findEntity adminTable
+
+updateAdminPasswordQ :: (MonadUnliftIO m) => AdminID -> AdminWrite -> AppM m ()
+updateAdminPasswordQ  = updateEntity adminTable

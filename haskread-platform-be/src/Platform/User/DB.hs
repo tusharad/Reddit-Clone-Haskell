@@ -31,7 +31,7 @@ fetchUserByUserNameQ userName0 =
   where
     whereUserNameIs = where_ $ userNameField .== userName0
 
-addUserQ :: (MonadUnliftIO m) => UserWrite -> AppM m UserRead
+addUserQ :: (MonadOrville m) => UserWrite -> m UserRead
 addUserQ = insertAndReturnEntity userTable
 
 findUserByMailPasswordQ :: (MonadUnliftIO m) => Text -> Text -> AppM m (Maybe UserRead)

@@ -31,6 +31,7 @@ mainServer cookieSett jwtSett =
     :<|> userDeleteAccountH
     :<|> userUpdateProfileImageH
     :<|> adminDashboardH
+    :<|> adminChangePasswordH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -42,6 +43,7 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> DeleteUserAPI
     :<|> Auth auths UserInfo :> UpdateUserImageAPI
     :<|> Auth auths AdminInfo :> AdminDashboardAPI
+    :<|> Auth auths AdminInfo :> AdminChangePasswordAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -129,3 +131,12 @@ type AdminDashboardAPI =
     :> "admin"
     :> "dashboard"
     :> Get '[JSON] AdminDashboardResponse
+
+type AdminChangePasswordAPI =
+  "api"
+    :> "v1"
+    :> "admin"
+    :> "profile"
+    :> "change-password"
+    :> ReqBody '[JSON] AdminChangePasswordBody
+    :> Put '[JSON] AdminChangePasswordResponse

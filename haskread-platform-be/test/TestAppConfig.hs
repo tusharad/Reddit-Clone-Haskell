@@ -5,8 +5,11 @@ module TestAppConfig
     createDB,
     destroyDB,
     registerUserBody,
-    incorrectLoginUserBody,
-    sampleUserInfo
+    correctLoginUserBody,
+    sampleUserInfoList,
+    sampleChangePasswordBody,
+    sampleDeleteUserBody,
+    sampleUsers
   )
 where
 
@@ -20,13 +23,12 @@ import Orville.PostgreSQL.Expr
 import Platform.Common.Types
 import Platform.Core (app)
 import Platform.DB.Table (userTable)
-import Platform.User.Types hiding (RegisterUserBody (..))
-import qualified Platform.User.Types as UT (RegisterUserBody (..))
+import Platform.User.Types
 import Servant
 import Servant.Auth.Server
-import Test.Tasty
 import Platform.Auth.Types
-import Platform.DB.Model (UserID(..))
+import Platform.DB.Model
+import Platform.User.DB
 
 connectionOptionsForTest :: ConnectionOptions
 connectionOptionsForTest =
@@ -59,49 +61,101 @@ schemaDropList =
   [ SchemaDropTable $ tableIdentifier userTable
   ]
 
+setDefaultNow :: String -> AlterTableAction
 setDefaultNow colName = alterColumnSetDefault (columnName colName) now
 
+mkTableFieldDefault :: TableDefinition key writeEntity readEntity -> String -> AlterTableExpr
 mkTableFieldDefault tableDef colName =
   alterTableExpr
     (O.tableName tableDef)
     (setDefaultNow colName :| [])
 
+sampleUsers :: [UserWrite]
+sampleUsers = [
+  User {
+    userName = "batman",
+    email = "bruce@abc.com",
+    password = "Bruce123",
+    userID = (),
+    createdAt = (),
+    updatedAt = ()
+  },
+  User {
+    userName = "spiderman",
+    email = "peter@abc.com",
+    password = "Peter123",
+    userID = (),
+    createdAt = (),
+    updatedAt = ()
+  },
+  User {
+    userName = "superman",
+    email = "clark@abc.com",
+    password = "Clark123",
+    userID = (),
+    createdAt = (),
+    updatedAt = ()
+  } ]
+
+sampleUserInfoList :: [UserInfo]
+sampleUserInfoList = [
+  UserInfo {
+    userIDForUserInfo = UserID 1,
+    userNameForUserInfo = "batman"
+  }
+  , UserInfo {
+    userIDForUserInfo = UserID 2,
+    userNameForUserInfo = "spiderman"
+  }
+  , UserInfo {
+    userIDForUserInfo = UserID 3,
+    userNameForUserInfo = "superman"
+  }]
+
+insertUserSampleData :: MonadOrville m => [UserWrite] -> m ()
+insertUserSampleData = mapM_ addUserQ
+  
 createDB :: ConnectionPool -> IO ()
 createDB pool = do
   runOrville pool $ do
     autoMigrateSchema defaultOptions schemaList
     executeVoid DDLQuery $ mkTableFieldDefault userTable "created_at"
     executeVoid DDLQuery $ mkTableFieldDefault userTable "updated_at"
-  print "database created"
+    insertUserSampleData sampleUsers
 
 destroyDB :: ConnectionPool -> IO ()
 destroyDB pool = do
-  print "inside truncate DB"
   runOrville pool $ autoMigrateSchema defaultOptions schemaDropList
-  print "database deleted"
 
 registerUserBody :: ByteString
 registerUserBody =
   let r =
-        UT.RegisterUserBody
-          { UT.userName = "tushar",
-            UT.email = "tushar@abc",
-            UT.password = "Tushar123",
-            UT.confirmPassword = "Tushar123"
+        RegisterUserBody
+          { userNameForRegister = "tushar",
+            emailForRegister = "tushar@abc",
+            passwordForRegister = "Tushar123",
+            confirmPasswordForRegister = "Tushar123"
           }
    in encode r
 
-incorrectLoginUserBody :: ByteString
-incorrectLoginUserBody =
+correctLoginUserBody :: ByteString
+correctLoginUserBody =
   let l =
         LoginUserBody
-          { email = "tushar@abc.com",
-            password = "1234"
+          { emailForLogin = "peter@abc.com",
+            passwordForLogin = "Peter123"
           }
    in encode l
 
-sampleUserInfo :: UserInfo
-sampleUserInfo = UserInfo {
-    userIDForUserInfo = UserID 1
- ,  userNameForUserInfo = "asd"
+sampleChangePasswordBody :: ByteString
+sampleChangePasswordBody = encode ChangePasswordBody {
+  oldPasswordForChangePass = "Bruce123"
+, newPasswordForChangePass = "Bruce1235"
+, confirmPasswordForChangePass = "Bruce1235"
+}
+
+sampleDeleteUserBody :: ByteString
+sampleDeleteUserBody = encode DeleteUserBody {
+  passwordForDeleteUser = "Clark123",
+  areUSure = True
 }

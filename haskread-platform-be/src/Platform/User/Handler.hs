@@ -53,9 +53,9 @@ userDashboardH (Authenticated UserInfo {..}) = do
     Just User {userName = uName, email = uEmail, createdAt = uCreatedAt} -> do
       return
         UserProfileResponse
-          { userName = uName,
-            userEmail = uEmail,
-            joinedDate = uCreatedAt
+          { userNameForUPR = uName,
+            userEmailForUPR = uEmail,
+            joinedDateForUPR = uCreatedAt
           }
 userDashboardH _ = throw401Err "Please login first"
 
@@ -76,15 +76,15 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
       changePassword u
   where
     checkOldPasswordMatch uPassword =
-      when (uPassword /= oldPassword) $ throw400Err "Old password is incorrect!"
+      when (uPassword /= oldPasswordForChangePass) $ throw400Err "Old password is incorrect!"
     checkOldNewPasswordNotMatch =
-      when (oldPassword == newPassword) $ throw400Err "Old password and new password cannot be the same!"
+      when (oldPasswordForChangePass == newPasswordForChangePass) $ throw400Err "Old password and new password cannot be the same!"
     checkIfPasswordsConfirmPasswordMatch =
-      when (newPassword /= confirmPassword) $ throw400Err "New password and confirm password do not match!"
+      when (newPasswordForChangePass /= confirmPasswordForChangePass) $ throw400Err "New password and confirm password do not match!"
     validateNewPassword =
-      unless (validatePassword newPassword) $ throw400Err passwordConstraintMessage
+      unless (validatePassword newPasswordForChangePass) $ throw400Err passwordConstraintMessage
     changePassword u = do
-      eRes :: Either SomeException () <- try $ changePasswordQ userIDForUserInfo (passwordUpdatedUser u newPassword)
+      eRes :: Either SomeException () <- try $ changePasswordQ userIDForUserInfo (passwordUpdatedUser u newPasswordForChangePass)
       case eRes of
         Left e -> throw400Err $ BSL.pack $ show e
         Right _ -> return ChangePasswordResponse {changePasswordResponseMsg = "Password changed successfully!"}
