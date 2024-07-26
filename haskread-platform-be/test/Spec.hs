@@ -2,18 +2,17 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import Control.Exception
+import Control.Monad.IO.Class
+import qualified Data.ByteString.Lazy as BSL
+import Data.Either (isRight)
 import Network.HTTP.Types
 import qualified Orville.PostgreSQL as O
 import Servant
+import Servant.Auth.Server
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.Wai
 import TestAppConfig
-import Servant.Auth.Server
-import qualified Data.ByteString.Lazy as BSL
-import Data.Either (isRight)
-import Control.Monad.IO.Class
-
 
 tests :: Application -> O.ConnectionPool -> [BSL.ByteString] -> TestTree
 tests app pool tokens =
@@ -32,7 +31,7 @@ unitTests _ =
     ]
 
 apiTests :: Application -> [BSL.ByteString] -> TestTree
-apiTests app [token1,token2,token3] =
+apiTests app [token1, token2, token3] =
   testGroup
     "Servant HaskRead"
     [ testWai app "GET /check-health - 200" $ do
@@ -52,39 +51,51 @@ apiTests app [token1,token2,token3] =
             correctLoginUserBody
             [("Content-Type", "application/json")]
         assertStatus' status200 res,
-        testUserDashboard app token2,
-        testUserChangePassword app token1,
-        testUserDeleteAccount app token3
+      testUserDashboard app token2,
+      testUserChangePassword app token1,
+      testUserDeleteAccount app token3
     ]
 
 testUserDeleteAccount :: Application -> BSL.ByteString -> TestTree
 testUserDeleteAccount app token =
   testWai app "DELETE /user/profile/delete-account - 200" $ do
     res <-
-      srequest $ buildRequestWithHeaders DELETE "/api/v1/user/profile/delete-account" sampleDeleteUserBody [
-        ("Content-Type", "application/json"),
-        (hAuthorization, "Bearer " <> BSL.toStrict token)
-      ]
+      srequest $
+        buildRequestWithHeaders
+          DELETE
+          "/api/v1/user/profile/delete-account"
+          sampleDeleteUserBody
+          [ ("Content-Type", "application/json"),
+            (hAuthorization, "Bearer " <> BSL.toStrict token)
+          ]
     assertStatus' status200 res
 
 testUserChangePassword :: Application -> BSL.ByteString -> TestTree
 testUserChangePassword app token =
   testWai app "PUT /user/profile/change-password - 200" $ do
     res <-
-      srequest $ buildRequestWithHeaders PUT "/api/v1/user/profile/change-password" sampleChangePasswordBody [
-        ("Content-Type", "application/json"),
-        (hAuthorization, "Bearer " <> BSL.toStrict token)
-      ]
+      srequest $
+        buildRequestWithHeaders
+          PUT
+          "/api/v1/user/profile/change-password"
+          sampleChangePasswordBody
+          [ ("Content-Type", "application/json"),
+            (hAuthorization, "Bearer " <> BSL.toStrict token)
+          ]
     assertStatus' status200 res
 
 testUserDashboard :: Application -> BSL.ByteString -> TestTree
 testUserDashboard app token =
   testWai app "GET /user/profile - 200" $ do
     res <-
-      srequest $ buildRequestWithHeaders GET "/api/v1/user/profile" "" [
-        ("Content-Type", "application/json"),
-        (hAuthorization, "Bearer " <> BSL.toStrict token)
-      ]
+      srequest $
+        buildRequestWithHeaders
+          GET
+          "/api/v1/user/profile"
+          ""
+          [ ("Content-Type", "application/json"),
+            (hAuthorization, "Bearer " <> BSL.toStrict token)
+          ]
     assertStatus' status200 res
 
 flip3 :: (a -> b -> c -> d) -> c -> b -> a -> d
@@ -92,13 +103,18 @@ flip3 f x y z = f z y x
 
 main :: IO ()
 main = do
-  (myApp, pool,jwtSett) <- getTestAppCfg
+  (myApp, pool, jwtSett) <- getTestAppCfg
   eTokens <- mapM (flip3 makeJWT Nothing jwtSett) sampleUserInfoList
-  (if all isRight eTokens then (do
-    let tokens = fmap (\(Right t) -> t) eTokens
-    createDB pool
-    defaultMain (tests myApp pool tokens)
-      `catch` ( \(e :: SomeException) -> do
-                  destroyDB pool
-                  throwIO e
-              )) else throwIO $ ErrorCall "JWT token creation failed")
+  ( if all isRight eTokens
+      then
+        ( do
+            let tokens = fmap (\(Right t) -> t) eTokens
+            createDB pool
+            defaultMain (tests myApp pool tokens)
+              `catch` ( \(e :: SomeException) -> do
+                          destroyDB pool
+                          throwIO e
+                      )
+        )
+      else throwIO $ ErrorCall "JWT token creation failed"
+    )

@@ -7,13 +7,13 @@ module Platform.API
   )
 where
 
+import Platform.Admin.Handler
 import Platform.Admin.Types
 import Platform.Auth.Handler
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Handler
 import Platform.User.Handler
-import Platform.Admin.Handler
 import Platform.User.Types
 import Servant
 import Servant.Auth.Server
@@ -32,6 +32,7 @@ mainServer cookieSett jwtSett =
     :<|> userUpdateProfileImageH
     :<|> adminDashboardH
     :<|> adminChangePasswordH
+    :<|> adminCreateAdminH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -44,6 +45,7 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> UpdateUserImageAPI
     :<|> Auth auths AdminInfo :> AdminDashboardAPI
     :<|> Auth auths AdminInfo :> AdminChangePasswordAPI
+    :<|> Auth auths AdminInfo :> AdminCreateAdminAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -140,3 +142,11 @@ type AdminChangePasswordAPI =
     :> "change-password"
     :> ReqBody '[JSON] AdminChangePasswordBody
     :> Put '[JSON] AdminChangePasswordResponse
+
+type AdminCreateAdminAPI =
+  "api"
+    :> "v1"
+    :> "admin"
+    :> "create-admin"
+    :> ReqBody '[JSON] AdminCreateAdminReqBody
+    :> Post '[JSON] AdminCreateAdminResponse
