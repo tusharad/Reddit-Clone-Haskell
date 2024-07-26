@@ -4,6 +4,7 @@
 module Platform.Admin.Types
   ( AdminLoginBodyReq (..),
     AdminLoginResponse (..),
+    AdminDashboardResponse(..),
   )
 where
 
@@ -18,6 +19,17 @@ data AdminLoginBodyReq = AdminLoginBodyReq
   deriving (Eq, Show, Generic, FromJSON)
 
 data AdminLoginResponse = AdminLoginResponse
-  { adminLoginRespMsg :: Text
+  { 
+      eToken :: Text
+    , adminLoginRespMsg :: Text
+  }
+  deriving (Eq, Show, Generic, ToJSON)
+
+data AdminDashboardResponse = AdminDashboardResponse
+  { 
+      adminName :: Text
+    , adminEmailForAdminDashboard :: Text
+    , adminRole :: Text
+    , createdDate :: Text
   }
   deriving (Eq, Show, Generic, ToJSON)

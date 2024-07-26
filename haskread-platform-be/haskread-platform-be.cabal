@@ -25,6 +25,9 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Platform.Admin.DB
+      Platform.Admin.Handler
+      Platform.Admin.Types
       Platform.API
       Platform.Auth.DB
       Platform.Auth.Handler

@@ -25,6 +25,7 @@ import Platform.User.Types
 import Servant
 import Servant.Auth.Server
 import UnliftIO
+import Platform.Admin.DB
 
 toUserWrite :: RegisterUserBody -> UserWrite
 toUserWrite RegisterUserBody {..} =
@@ -145,5 +146,22 @@ adminLoginH cookieSett jwtSett AdminLoginBodyReq {..} = do
       let adminInfo = toAdminInfo adminRead0
       mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett adminInfo
       case mLoginAccepted of
-        Nothing -> throw401Err
-        Just loginAcceptedResp -> undefined
+        Nothing -> throw401Err "Login failed"
+        Just loginAcceptedResp -> do
+          etoken <- liftIO $ makeJWT adminInfo jwtSett Nothing
+          case etoken of
+            Left _ -> throw401Err "JWT token creation failed"
+            Right v ->
+              return $
+                loginAcceptedResp
+                  ( AdminLoginResponse
+                      (T.decodeUtf8 $ BSL.toStrict v)
+                      "Admin loggedIn successfully"
+                  )
+  where
+    findAdminByMailAndPassword = do
+      (eMAdmin :: Either SomeException (Maybe AdminRead)) <-
+        try $ findAdminByMailPasswordQ adminEmail adminPassword
+      case eMAdmin of
+        Left e -> throw400Err $ BSL.pack $ show e
+        Right r -> pure r

@@ -7,7 +7,8 @@ module Platform.Common.Utils
     throw401Err,
     passwordUpdatedUser,
     validatePassword,
-    passwordConstraintMessage
+    passwordConstraintMessage,
+    toAdminInfo
   )
 where
 
@@ -24,6 +25,9 @@ import Data.String.Interpolate
 
 toUserInfo :: UserRead -> UserInfo
 toUserInfo User {..} = UserInfo userID userName
+
+toAdminInfo :: AdminRead -> AdminInfo
+toAdminInfo Admin {..} = AdminInfo adminID adminName
 
 throw400Err :: (MonadIO m) => BSL.ByteString -> AppM m a
 throw400Err err = throwError $ err400 {errBody = err}

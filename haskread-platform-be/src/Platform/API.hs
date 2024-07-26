@@ -13,6 +13,7 @@ import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Handler
 import Platform.User.Handler
+import Platform.Admin.Handler
 import Platform.User.Types
 import Servant
 import Servant.Auth.Server
@@ -29,6 +30,7 @@ mainServer cookieSett jwtSett =
     :<|> userChangePasswordH
     :<|> userDeleteAccountH
     :<|> userUpdateProfileImageH
+    :<|> adminDashboardH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -39,6 +41,7 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> UserChangePasswordAPI
     :<|> Auth auths UserInfo :> DeleteUserAPI
     :<|> Auth auths UserInfo :> UpdateUserImageAPI
+    :<|> Auth auths AdminInfo :> AdminDashboardAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -119,3 +122,10 @@ type AdminLoginAPI =
               ]
              AdminLoginResponse
          )
+
+type AdminDashboardAPI =
+  "api"
+    :> "v1"
+    :> "admin"
+    :> "dashboard"
+    :> Get '[JSON] AdminDashboardResponse

@@ -1,7 +1,9 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes #-}
 module Platform.Common.AppM (
-   AppM(..)
+   AppM(..),
+   MyExceptT(..)
 ) where
 
 import Platform.Common.Types
@@ -13,16 +15,15 @@ import qualified Orville.PostgreSQL as O
 import UnliftIO
 import Control.Monad ((<=<))
 
-type ServerExcept m = ExceptT ServerError m
-
-newtype AppM m a = AppM { 
-  getApp :: ReaderT MyAppState (ServerExcept m) a
+-- Newtype wrapper around ExceptT
+newtype MyExceptT e m a = MyExceptT {
+  runMyExceptT :: ExceptT e m a
 } deriving newtype (
         Functor
       , Applicative
       , Monad
       , MonadIO
-      , MonadError ServerError
+      , MonadError e
       )
 
 instance Monad m => O.HasOrvilleState (AppM m) where
@@ -37,14 +38,26 @@ instance (MonadIO m,UnliftIO.MonadUnliftIO m) => UnliftIO.MonadUnliftIO (AppM m)
       withRunInIO $ \runInIO ->
         inner (runInIO . runAppT r)
 
-runAppT :: MyAppState -> AppM m a -> ServerExcept m a
+newtype AppM m a = AppM { 
+  getApp :: ReaderT MyAppState (MyExceptT ServerError m) a
+} deriving newtype (
+        Functor
+      , Applicative
+      , Monad
+      , MonadIO
+      , MonadError ServerError
+      )
+
+runAppT :: MyAppState -> AppM m a -> MyExceptT ServerError m a
 runAppT r (AppM m) = runReaderT m r
 
--- taken from https://github.com/freckle/yesod-auth-oauth2/blob/acb69f8da40b9c91b4020296ce105119e76fdf1d/src/UnliftIO/Except.hs#L9
-instance (MonadUnliftIO m, Exception e) => MonadUnliftIO (ExceptT e m) where
-  withRunInIO exceptToIO = ExceptT $ try $ do
-    withRunInIO $ \runInIO ->
-      exceptToIO (runInIO . (either throwIO pure <=< runExceptT))
+instance forall m e. (MonadUnliftIO m, Exception e) => MonadUnliftIO (MyExceptT e m) where
+  withRunInIO exceptToIO = someFunc
+    where
+      someFunc = MyExceptT $ ExceptT someFunc2
+      someFunc2 = try $ do
+        withRunInIO $ \runInIO ->
+          exceptToIO (runInIO . (either throwIO pure <=< (runExceptT . runMyExceptT)))
 
 -- https://hackage.haskell.org/package/orville-postgresql-1.0.0.0/docs/Orville-PostgreSQL-UnliftIO.html#v:liftWithConnectionViaUnliftIO
 instance (MonadIO m,UnliftIO.MonadUnliftIO m) => O.MonadOrvilleControl (AppM m) where

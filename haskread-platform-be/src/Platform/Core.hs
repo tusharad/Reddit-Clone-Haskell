@@ -16,7 +16,7 @@ import Servant
 import Servant.Auth.Server
 
 runAppM :: MyAppState -> AppM IO a -> Handler a
-runAppM myAppState appM = Handler $ runReaderT (getApp appM) myAppState
+runAppM myAppState appM = Handler $ runMyExceptT $ runReaderT (getApp appM) myAppState
 
 allServer :: CookieSettings -> JWTSettings -> MyAppState -> Server (MainAPI auths)
 allServer cookieSett jwtSett myAppState =
