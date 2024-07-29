@@ -2,7 +2,8 @@ module Platform.DB.Table
   ( userTable,
     userProfileImageTable,
     adminTable,
-    communityTable
+    communityTable,
+    threadTable
   )
 where
 
@@ -81,3 +82,29 @@ communityTable =
         (primaryKey communityIDField)
         communityMarshaller
     )
+
+threadTable ::
+  TableDefinition
+  (HasKey ThreadID)
+  ThreadWrite
+  ThreadRead
+threadTable =
+  addTableConstraints
+    [ threadToUserForeignKeyConstraint,threadToCommunityForeignKeyConstraint ]
+    (
+      mkTableDefinition
+        "thread"
+        (primaryKey threadIDField)
+        threadMarshaller
+    )
+  where
+    threadToUserForeignKeyConstraint = 
+      foreignKeyConstraint
+      (tableIdentifier userTable) 
+      (foreignReference 
+        (fieldName userIDField) (fieldName userIDField) :| [])
+    threadToCommunityForeignKeyConstraint =
+      foreignKeyConstraint
+      (tableIdentifier communityTable)
+      (foreignReference
+        (fieldName communityIDField) (fieldName communityIDField) :| [])

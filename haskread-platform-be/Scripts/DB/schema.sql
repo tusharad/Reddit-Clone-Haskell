@@ -30,3 +30,23 @@ create table community (
   , created_at timestamptz default now()
   , updated_at timestamptz default now()
 );
+
+alter table community add column label_list jsonb;
+
+create table thread (
+	thread_id serial primary key,
+	thread_title varchar(255) not null,
+	thread_description text,
+	user_id int references users on delete cascade on update cascade,
+	community_id int references community on delete cascade on update cascade,
+	created_at timestamptz default now(),
+	updated_at timestamptz default now()
+);
+
+create table vote_thread (
+	user_id int references users on delete cascade on update cascade,
+	thread_id int references thread on delete cascade on update cascade,
+	vote bool not null,
+	created_at timestamptz default now(),
+	updated_at timestamptz default now()
+);

@@ -275,7 +275,7 @@ Features list:
     JSON Body:
     {
         "title": "string",
-        "content": "string",
+        "content": "string" (Optional),
         "communityId": "string"
     }
     - Future Features
@@ -356,3 +356,33 @@ Features list:
         - page and limit should be valid. I.e page should be greater than 0 and limit should be greater than 0.
         - If the page has no data, the API shall return an empty array.
     - On failure, the API shall return an error message with status code 400.
+
+
+## Upvote/Downvote thread
+    - Upvote thread
+        ###### PUT /api/v1/thread/upvote/:threadId
+        - User can upvote a thread by providing threadId.
+        - On successful request, the API shall return the thread details.
+        - Checks:
+            - ThreadID should exist in the database.
+            - User should be logged in.
+        - On failure, the API shall return an error message with status code 400.
+
+    - Downvote thread
+        ###### PUT /api/v1/thread/downvote/:threadId
+        - User can downvote a thread by providing threadId.
+        - On successful request, the API shall return the thread details.
+        - Checks:
+            - ThreadID should exist in the database.
+            - User should be logged in.
+        - On failure, the API shall return an error message with status code 400.
+
+    -  ### Database Schema
+        - threadVote table
+            - threadID : foreign key to thread table on delete cascade
+            - userID : foreign key to user table on delete cascade
+            - vote : boolean
+            - createdAt : timestamptz
+            - updatedAt : timestamptz
+        - constraints
+            - (threadID,userID) should be primary key.

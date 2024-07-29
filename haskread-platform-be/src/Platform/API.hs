@@ -12,11 +12,13 @@ import Platform.Admin.Handler
 import Platform.Admin.Community.Handler
 import Platform.User.Handler
 import Platform.Auth.Handler
+import Platform.User.Thread.Handler
 
 import Platform.Admin.Types
 import Platform.Auth.Types
 import Platform.User.Types
 import Platform.Admin.Community.Types
+import Platform.User.Thread.Types
 
 import Platform.Common.AppM
 
@@ -42,6 +44,9 @@ mainServer cookieSett jwtSett =
     :<|> communityCreateH
     :<|> communityUpdateH
     :<|> communityDeleteH
+    :<|> createThreadH
+    :<|> updateThreadH
+    :<|> deleteThreadH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -58,6 +63,9 @@ type MainAPI auths =
     :<|> Auth auths AdminInfo :> CommunityCreateAPI
     :<|> Auth auths AdminInfo :> CommunityUpdateAPI
     :<|> Auth auths AdminInfo :> DeleteCommunityAPI
+    :<|> Auth auths UserInfo :> CreateThreadAPI
+    :<|> Auth auths UserInfo :> UpdateThreadAPI
+    :<|> Auth auths UserInfo :> DeleteThreadAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -191,3 +199,32 @@ type DeleteCommunityAPI =
     :> "delete"
     :> Capture "communityID" CommunityID
     :> Delete '[JSON] CommunityDeleteResponse
+
+-- Thread APIs
+
+type CreateThreadAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "thread"
+    :> "create"
+    :> ReqBody '[JSON] CreateThreadReqBody
+    :> Post '[JSON] CreateThreadResponse
+
+type UpdateThreadAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "thread"
+    :> "update"
+    :> ReqBody '[JSON] UpdateThreadReqBody
+    :> Put '[JSON] UpdateThreadResponse
+
+type DeleteThreadAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "thread"
+    :> "delete"
+    :> Capture "threadID" ThreadID
+    :> Delete '[JSON] DeleteThreadResponse

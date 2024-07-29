@@ -46,6 +46,9 @@ library
       Platform.Haxl.DataSource
       Platform.User.DB
       Platform.User.Handler
+      Platform.User.Thread.DB
+      Platform.User.Thread.Handler
+      Platform.User.Thread.Types
       Platform.User.Types
   other-modules:
       Paths_haskread_platform_be

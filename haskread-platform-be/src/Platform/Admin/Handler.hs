@@ -45,6 +45,7 @@ adminDashboardH (Authenticated AdminInfo {..}) = do
             }
   where
     aRole = "Admin"
+    fetchAdminByID :: MonadUnliftIO m => AdminID -> AppM m (Maybe AdminRead)
     fetchAdminByID adminID0 = do
       (eRes :: Either SomeException (Maybe AdminRead)) <- try $ fetchAdminByIDQ adminID0
       case eRes of
@@ -67,12 +68,15 @@ adminChangePasswordH (Authenticated AdminInfo {..}) AdminChangePasswordBody {..}
       validateNewPassword
       updateAdminPassword oldAdminData
   where
+    checkOldPassword :: MonadUnliftIO m => T.Text -> AppM m ()
     checkOldPassword aPassword =
       when (aPassword /= oldPassword) $ throw400Err "Old password is incorrect!"
     checkNewAndConfirmPassword =
       when (newPassword /= confirmNewPassword) $ throw400Err "New password and confirm password do not match!"
     validateNewPassword =
       when (newPassword == oldPassword) $ throw400Err "New password should be different from old password!"
+    
+    updateAdminPassword :: MonadUnliftIO m => AdminRead -> AppM m AdminChangePasswordResponse
     updateAdminPassword oldPassword0 = do
       let newAdmin =
             oldPassword0
@@ -89,6 +93,8 @@ adminChangePasswordH (Authenticated AdminInfo {..}) AdminChangePasswordBody {..}
             AdminChangePasswordResponse
               { adminChangePasswordRespMsg = "Password updated successfully!"
               }
+
+    fetchAdminByID :: MonadUnliftIO m => AdminID -> AppM m (Maybe AdminRead)
     fetchAdminByID adminID0 = do
       (eRes :: Either SomeException (Maybe AdminRead)) <- try $ fetchAdminByIDQ adminID0
       case eRes of
@@ -115,6 +121,8 @@ adminCreateAdminH (Authenticated _) AdminCreateAdminReqBody {..} = do
     checkIfPasswordConfirms =
       when (adminPasswordForCreate /= adminConfirmPasswordForCreate) $
         throw400Err "password and confirm password don't match!"
+
+    addAdmin :: MonadUnliftIO m => AppM m AdminCreateAdminResponse
     addAdmin = do
       eRes :: Either SomeException () <-
         try $

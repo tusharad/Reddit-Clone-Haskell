@@ -19,7 +19,11 @@ module Platform.DB.Model
     Community(..),
     CommunityRead,
     CommunityWrite,
-    CommunityID(..)
+    CommunityID(..),
+    Thread(..),
+    ThreadRead,
+    ThreadWrite,
+    ThreadID(..)
   )
 where
 
@@ -30,7 +34,7 @@ import GHC.Generics
 import GHC.Int (Int32)
 import Web.HttpApiData
 
-
+-- User Model
 newtype UserID = UserID Int32
   deriving newtype (Show, Eq, Ord, ToJSON, FromJSON)
 
@@ -48,6 +52,8 @@ type UserRead = User UserID UTCTime
 
 type UserWrite = User () ()
 
+
+-- User Profile Model
 data UserProfileImage a = UserProfileImage
   { userIDForProfileImage :: UserID,
     userImage :: Text,
@@ -60,6 +66,7 @@ type UserProfileImageWrite = UserProfileImage ()
 
 type UserProfileImageRead = UserProfileImage UTCTime
 
+-- Admin Model
 newtype AdminID = AdminID Int32
   deriving newtype (Show, Eq, Ord, ToJSON, FromJSON)
 
@@ -77,8 +84,10 @@ type AdminRead = Admin AdminID UTCTime
 
 type AdminWrite = Admin () ()
 
+-- Community Model
 newtype CommunityID = CommunityID Int32
   deriving newtype (Show, Eq, Ord, ToJSON, FromJSON,FromHttpApiData)
+  
 data Community a b = Community
   { communityID :: a,
     communityName :: Text,
@@ -91,3 +100,21 @@ data Community a b = Community
 
 type CommunityRead = Community CommunityID UTCTime
 type CommunityWrite = Community () ()
+
+-- Thread
+
+newtype ThreadID = ThreadID Int32
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON,FromHttpApiData)
+
+data Thread a b = Thread {
+    threadID :: a
+  , threadTitle :: Text
+  , threadDescription :: Maybe Text
+  , threadUserID :: UserID
+  , threadCommunityID :: CommunityID
+  , threadCreatedAt :: b
+  , threadUpdatedAt :: b
+} deriving (Show, Eq, Generic, ToJSON)
+
+type ThreadRead = Thread ThreadID UTCTime
+type ThreadWrite = Thread () ()

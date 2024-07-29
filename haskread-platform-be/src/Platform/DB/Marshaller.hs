@@ -14,7 +14,9 @@ module Platform.DB.Marshaller
     adminIDField,
     communityMarshaller,
     communityIDField,
-    communityNameField
+    communityNameField,
+    threadMarshaller,
+    threadIDField
   )
 where
 
@@ -22,6 +24,9 @@ import Data.Text (Text)
 import Data.Time (UTCTime)
 import Orville.PostgreSQL
 import Platform.DB.Model
+
+threadIDField :: FieldDefinition NotNull ThreadID
+threadIDField = coerceField $ serialField "thread_id"
 
 adminNameField :: FieldDefinition NotNull Text
 adminNameField = boundedTextField "admin_name" 255
@@ -67,6 +72,12 @@ updatedAtField =
 
 userImageField :: FieldDefinition NotNull Text
 userImageField = unboundedTextField "user_profile_image"
+
+threadTitleField :: FieldDefinition NotNull Text
+threadTitleField = boundedTextField "thread_title" 255
+
+threadDescriptionField :: FieldDefinition NotNull Text
+threadDescriptionField = unboundedTextField "thread_description"
 
 userMarshaller :: SqlMarshaller UserWrite UserRead
 userMarshaller =
@@ -146,3 +157,20 @@ communityMarshaller =
     <*> marshallReadOnly (marshallField (\Community {..} -> communityUpdatedAt) updatedAtField)
   
 
+threadMarshaller ::
+  SqlMarshaller
+    ThreadWrite
+    ThreadRead
+threadMarshaller =
+  Thread
+    <$> marshallReadOnly (
+      marshallField
+        (\Thread {..} -> threadID)
+        threadIDField
+    )
+    <*> marshallField (\Thread {..} -> threadTitle) threadTitleField
+    <*> marshallField (\Thread {..} -> threadDescription) (nullableField threadDescriptionField)
+    <*> marshallField (\Thread {..} -> threadUserID) userIDField
+    <*> marshallField (\Thread {..} -> threadCommunityID) communityIDField
+    <*> marshallReadOnly (marshallField (\Thread {..} -> threadCreatedAt) createdAtField)
+    <*> marshallReadOnly (marshallField (\Thread {..} -> threadUpdatedAt) updatedAtField)
