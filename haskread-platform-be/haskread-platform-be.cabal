@@ -25,6 +25,9 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Platform.Admin.Community.DB
+      Platform.Admin.Community.Handler
+      Platform.Admin.Community.Types
       Platform.Admin.DB
       Platform.Admin.Handler
       Platform.Admin.Types
@@ -56,6 +59,7 @@ library
     , filepath
     , haxl
     , hedgehog
+    , http-api-data
     , http-types
     , mtl
     , orville-postgresql
@@ -88,6 +92,7 @@ executable haskread-platform-be-exe
     , haskread-platform-be
     , haxl
     , hedgehog
+    , http-api-data
     , http-types
     , mtl
     , orville-postgresql
@@ -122,6 +127,7 @@ test-suite haskread-platform-be-test
     , haskread-platform-be
     , haxl
     , hedgehog
+    , http-api-data
     , http-types
     , mtl
     , orville-postgresql

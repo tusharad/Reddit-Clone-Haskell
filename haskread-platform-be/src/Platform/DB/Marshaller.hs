@@ -12,6 +12,9 @@ module Platform.DB.Marshaller
     userImageField,
     adminMarshaller,
     adminIDField,
+    communityMarshaller,
+    communityIDField,
+    communityNameField
   )
 where
 
@@ -37,6 +40,18 @@ emailField = boundedTextField "email" 255
 
 passwordField :: FieldDefinition NotNull Text
 passwordField = unboundedTextField "password"
+
+communityIDField :: FieldDefinition NotNull CommunityID
+communityIDField = coerceField $ serialField "community_id"
+
+communityNameField :: FieldDefinition NotNull Text
+communityNameField = boundedTextField "community_name" 255
+
+communityDescriptionField :: FieldDefinition NotNull Text
+communityDescriptionField = unboundedTextField "community_description"
+
+communityLabelListField :: FieldDefinition NotNull Text
+communityLabelListField = unboundedTextField "label_list"
 
 createdAtField :: FieldDefinition NotNull UTCTime
 createdAtField =
@@ -112,3 +127,22 @@ adminMarshaller =
     <*> marshallField (\Admin {..} -> adminPassword) passwordField
     <*> marshallReadOnly (marshallField (\Admin {..} -> createdAtForAdmin) createdAtField)
     <*> marshallReadOnly (marshallField (\Admin {..} -> updatedAtForAdmin) updatedAtField)
+
+communityMarshaller ::
+  SqlMarshaller
+    CommunityWrite
+    CommunityRead
+communityMarshaller =
+  Community
+    <$> marshallReadOnly
+      ( marshallField
+          (\Community {..} -> communityID)
+          communityIDField
+      )
+    <*> marshallField (\Community {..} -> communityName) communityNameField
+    <*> marshallField (\Community {..} -> communityDescription) communityDescriptionField
+    <*> marshallField (\Community {..} -> communityLabelList) communityLabelListField
+    <*> marshallReadOnly (marshallField (\Community {..} -> communityCreatedAt) createdAtField)
+    <*> marshallReadOnly (marshallField (\Community {..} -> communityUpdatedAt) updatedAtField)
+  
+

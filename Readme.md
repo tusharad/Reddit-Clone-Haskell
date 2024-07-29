@@ -25,8 +25,14 @@ Will try to follow best practices and idiomatic Haskell and PureScript as much a
 - [x] User profile
 - [x] User Change Password
 - [x] User Delete Account
-- [ ] Admin authentication
-- [ ] Admin dashboard
+- [x] Admin authentication
+- [x] Admin dashboard
+- [x] Adding/Updating User Profile Picture
+- [x] Admin Change Password
+- [x] Create new admin using admin
+- [x] Add/Remove Community by Admin
+- [ ] Log system
+- [ ] Take configuration from environment variables
 - [ ] Create Thread
 - [ ] Update Thread
 - [ ] Delete Thread

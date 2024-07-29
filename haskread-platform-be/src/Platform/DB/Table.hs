@@ -1,7 +1,8 @@
 module Platform.DB.Table
   ( userTable,
     userProfileImageTable,
-    adminTable
+    adminTable,
+    communityTable
   )
 where
 
@@ -61,4 +62,22 @@ adminTable =
         "admin"
         (primaryKey adminIDField)
         adminMarshaller
+    )
+
+communityTable ::
+  TableDefinition
+  (HasKey CommunityID)
+  CommunityWrite
+  CommunityRead
+communityTable =
+  addTableConstraints
+    [ uniqueConstraint
+        ( fieldName communityNameField
+            :| []
+    )]
+    (
+      mkTableDefinition
+        "community"
+        (primaryKey communityIDField)
+        communityMarshaller
     )

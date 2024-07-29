@@ -210,13 +210,15 @@ Features list:
     {
         "communityName" : "String",
         "communityDescription" : "String",
+        "communityLabelList" : ["String"]
     }
-    - Future Features:
-        - Array of tags can be associated with community.
     - Admin can add a certain community.
     - Checks:
         - Community with same name shall not exists in DB.
         - Description and name shall not be empty.
+        - There shall be at max 10 tags in community label list/tags.
+        - Each tag shall be at max 50 characters long.
+        - Each tag shall be unique.
     - On failure on above checks, the API shall return an error message with status code 400.
 
 - ### Update Community
@@ -226,11 +228,11 @@ Features list:
         "communityID" : Int
       , "communityName" : "String"
       , "communityDescription" : "String"
+      , "communityLabelList" : ["String"]
     }
     - Admin can update any community.
     - Checks:
-        - Community with same name shall not exists in DB.
-        - Description and name shall not be empty.
+        - Same as community create checks.
     - On failure on above checks, the API shall return an error message with status code 400.
 
 - ### Delete Community
@@ -245,6 +247,7 @@ Features list:
         - id : primary key
         - communityName : unique
         - communityDescription : text
+        - communityLabelList : jsonb
         - createdAt : timestamptz
         - updatedAt : timestamptz
 

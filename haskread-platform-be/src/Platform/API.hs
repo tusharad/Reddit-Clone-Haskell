@@ -7,18 +7,24 @@ module Platform.API
   )
 where
 
-import Platform.Admin.Handler
-import Platform.Admin.Types
-import Platform.Auth.Handler
-import Platform.Auth.Types
-import Platform.Common.AppM
 import Platform.Handler
+import Platform.Admin.Handler
+import Platform.Admin.Community.Handler
 import Platform.User.Handler
+import Platform.Auth.Handler
+
+import Platform.Admin.Types
+import Platform.Auth.Types
 import Platform.User.Types
+import Platform.Admin.Community.Types
+
+import Platform.Common.AppM
+
 import Servant
 import Servant.Auth.Server
 import Servant.Multipart
 import UnliftIO
+import Platform.DB.Model
 
 mainServer :: (MonadUnliftIO m) => CookieSettings -> JWTSettings -> ServerT (MainAPI auths) (AppM m)
 mainServer cookieSett jwtSett =
@@ -33,6 +39,9 @@ mainServer cookieSett jwtSett =
     :<|> adminDashboardH
     :<|> adminChangePasswordH
     :<|> adminCreateAdminH
+    :<|> communityCreateH
+    :<|> communityUpdateH
+    :<|> communityDeleteH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -46,6 +55,9 @@ type MainAPI auths =
     :<|> Auth auths AdminInfo :> AdminDashboardAPI
     :<|> Auth auths AdminInfo :> AdminChangePasswordAPI
     :<|> Auth auths AdminInfo :> AdminCreateAdminAPI
+    :<|> Auth auths AdminInfo :> CommunityCreateAPI
+    :<|> Auth auths AdminInfo :> CommunityUpdateAPI
+    :<|> Auth auths AdminInfo :> DeleteCommunityAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -150,3 +162,32 @@ type AdminCreateAdminAPI =
     :> "create-admin"
     :> ReqBody '[JSON] AdminCreateAdminReqBody
     :> Post '[JSON] AdminCreateAdminResponse
+
+-- Community APIs
+
+type CommunityCreateAPI =
+  "api"
+    :> "v1"
+    :> "admin"
+    :> "community"
+    :> "create"
+    :> ReqBody '[JSON] CommunityCreateReqBody
+    :> Post '[JSON] CommunityCreateResponse
+
+type CommunityUpdateAPI =
+  "api"
+    :> "v1"
+    :> "admin"
+    :> "community"
+    :> "update"
+    :> ReqBody '[JSON] CommunityUpdateReqBody
+    :> Put '[JSON] CommunityUpdateResponse
+    
+type DeleteCommunityAPI =
+  "api"
+    :> "v1"
+    :> "admin"
+    :> "community"
+    :> "delete"
+    :> Capture "communityID" CommunityID
+    :> Delete '[JSON] CommunityDeleteResponse

@@ -44,6 +44,7 @@ dependencies:
 - http-types
 - string-interpolate
 - servant-multipart
+- http-api-data
 
 ghc-options:
 - -Wall

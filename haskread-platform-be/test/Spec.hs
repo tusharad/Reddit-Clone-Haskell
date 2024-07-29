@@ -55,6 +55,7 @@ apiTests app [token1, token2, token3] =
       testUserChangePassword app token1,
       testUserDeleteAccount app token3
     ]
+apiTests _ _ = testGroup "Servant HaskRead" []
 
 testUserDeleteAccount :: Application -> BSL.ByteString -> TestTree
 testUserDeleteAccount app token =

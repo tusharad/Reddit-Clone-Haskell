@@ -8,7 +8,8 @@ module Platform.Common.Utils
     passwordUpdatedUser,
     validatePassword,
     passwordConstraintMessage,
-    toAdminInfo
+    toAdminInfo,
+    toJsonbArray
   )
 where
 
@@ -57,3 +58,6 @@ validatePassword password0 = do
   let res0 = T.length password0 >= 8
       res1 = T.any isUpper password0 && T.any isLower password0 && T.any isDigit password0
   res0 && res1
+
+toJsonbArray :: [Text] -> Text
+toJsonbArray = T.pack . show

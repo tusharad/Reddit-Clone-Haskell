@@ -16,6 +16,10 @@ module Platform.DB.Model
     AdminRead,
     AdminWrite,
     AdminID (..),
+    Community(..),
+    CommunityRead,
+    CommunityWrite,
+    CommunityID(..)
   )
 where
 
@@ -24,6 +28,8 @@ import Data.Text (Text)
 import Data.Time (UTCTime)
 import GHC.Generics
 import GHC.Int (Int32)
+import Web.HttpApiData
+
 
 newtype UserID = UserID Int32
   deriving newtype (Show, Eq, Ord, ToJSON, FromJSON)
@@ -70,3 +76,18 @@ data Admin a b = Admin
 type AdminRead = Admin AdminID UTCTime
 
 type AdminWrite = Admin () ()
+
+newtype CommunityID = CommunityID Int32
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON,FromHttpApiData)
+data Community a b = Community
+  { communityID :: a,
+    communityName :: Text,
+    communityDescription :: Text,
+    communityLabelList :: Text,
+    communityCreatedAt :: b,
+    communityUpdatedAt :: b
+  }
+  deriving (Show, Eq, Generic, ToJSON)
+
+type CommunityRead = Community CommunityID UTCTime
+type CommunityWrite = Community () ()
