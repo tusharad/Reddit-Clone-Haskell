@@ -39,10 +39,10 @@ Will try to follow best practices and idiomatic Haskell and PureScript as much a
 - [ ] Create Comment
 - [ ] Update Comment
 - [ ] Delete Comment
-- [ ] Upvote Thread
-- [ ] Downvote Thread
+- [x] Upvote Thread
+- [x] Downvote Thread
 - [ ] Upvote Comment
-- [ ] Downvote Comment
+- [] Downvote Comment
 - [ ] Search Thread
 - [ ] Search Comment
 - [ ] Search User

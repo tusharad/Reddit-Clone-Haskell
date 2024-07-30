@@ -16,7 +16,8 @@ module Platform.DB.Marshaller
     communityIDField,
     communityNameField,
     threadMarshaller,
-    threadIDField
+    threadIDField,
+    threadVoteMarshaller
   )
 where
 
@@ -78,6 +79,9 @@ threadTitleField = boundedTextField "thread_title" 255
 
 threadDescriptionField :: FieldDefinition NotNull Text
 threadDescriptionField = unboundedTextField "thread_description"
+
+voteField :: FieldDefinition NotNull Bool
+voteField = booleanField "vote"
 
 userMarshaller :: SqlMarshaller UserWrite UserRead
 userMarshaller =
@@ -174,3 +178,15 @@ threadMarshaller =
     <*> marshallField (\Thread {..} -> threadCommunityID) communityIDField
     <*> marshallReadOnly (marshallField (\Thread {..} -> threadCreatedAt) createdAtField)
     <*> marshallReadOnly (marshallField (\Thread {..} -> threadUpdatedAt) updatedAtField)
+
+threadVoteMarshaller ::
+  SqlMarshaller
+    ThreadVoteWrite
+    ThreadVoteRead
+threadVoteMarshaller =
+  ThreadVote
+    <$> marshallField (\ThreadVote{..} -> threadVoteUserID) userIDField
+    <*> marshallField (\ThreadVote{..} -> threadVoteThreadID) threadIDField
+    <*> marshallField (\ThreadVote{..} -> vote) voteField
+    <*> marshallReadOnly (marshallField (\ThreadVote{..} -> threadVoteCreatedAt) createdAtField)
+    <*> marshallReadOnly (marshallField (\ThreadVote{..} -> threadVoteUpdatedAt) updatedAtField)

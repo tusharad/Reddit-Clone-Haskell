@@ -377,6 +377,16 @@ Features list:
             - User should be logged in.
         - On failure, the API shall return an error message with status code 400.
 
+    - RemoveVote thread
+        ##### DELETE /api/v1/thread/remove-vote/:threadId
+        - User can remove his/her vote by providing threadId.
+        - On successful request, the API shall return the thread details.
+        - Checks:
+            - ThreadID should exist in the database.
+            - User should be logged in.
+            - (UserID,ThredID) should exist in the database.
+        - On failure, the API shall return an error message with status code 400.
+
     -  ### Database Schema
         - threadVote table
             - threadID : foreign key to thread table on delete cascade

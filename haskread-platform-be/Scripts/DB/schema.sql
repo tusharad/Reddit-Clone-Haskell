@@ -48,5 +48,6 @@ create table vote_thread (
 	thread_id int references thread on delete cascade on update cascade,
 	vote bool not null,
 	created_at timestamptz default now(),
-	updated_at timestamptz default now()
+	updated_at timestamptz default now(),
+	primary key (user_id,thread_id)
 );

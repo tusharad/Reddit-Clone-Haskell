@@ -23,7 +23,11 @@ module Platform.DB.Model
     Thread(..),
     ThreadRead,
     ThreadWrite,
-    ThreadID(..)
+    ThreadID(..),
+    ThreadVote(..),
+    ThreadVoteRead,
+    ThreadVoteWrite,
+    ThreadVoteID(..)
   )
 where
 
@@ -118,3 +122,22 @@ data Thread a b = Thread {
 
 type ThreadRead = Thread ThreadID UTCTime
 type ThreadWrite = Thread () ()
+
+-- ThreadVote Model
+
+data ThreadVoteID = ThreadVoteID {
+    threadVoteIDUserID :: UserID 
+  , threadVoteIDThreadID :: ThreadID
+}
+  deriving (Show, Eq, Ord)
+
+data ThreadVote a = ThreadVote {
+    threadVoteUserID :: UserID
+  , threadVoteThreadID :: ThreadID
+  , vote :: Bool
+  , threadVoteCreatedAt :: a
+  , threadVoteUpdatedAt :: a
+} deriving (Show, Eq, Generic, ToJSON)
+
+type ThreadVoteRead = ThreadVote UTCTime
+type ThreadVoteWrite = ThreadVote ()

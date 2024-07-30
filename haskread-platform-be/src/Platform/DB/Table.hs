@@ -1,9 +1,11 @@
+{-# LANGUAGE RecordWildCards #-}
 module Platform.DB.Table
   ( userTable,
     userProfileImageTable,
     adminTable,
     communityTable,
-    threadTable
+    threadTable,
+    threadVoteTable
   )
 where
 
@@ -108,3 +110,37 @@ threadTable =
       (tableIdentifier communityTable)
       (foreignReference
         (fieldName communityIDField) (fieldName communityIDField) :| [])
+
+
+
+userThreadCompositeKey :: PrimaryKey ThreadVoteID
+userThreadCompositeKey = 
+  compositePrimaryKey
+    (primaryKeyPart (\ThreadVoteID {..} -> threadVoteIDUserID) userIDField)
+    [primaryKeyPart (\ThreadVoteID {..} -> threadVoteIDThreadID) threadIDField]    
+
+threadVoteTable ::
+  TableDefinition
+  (HasKey ThreadVoteID)
+  ThreadVoteWrite
+  ThreadVoteRead
+threadVoteTable =
+  addTableConstraints
+    [ threadVoteToUserForeignKeyConstraint,threadVoteToThreadForeignKeyConstraint ]
+    (
+      mkTableDefinition
+        "vote_thread"
+        userThreadCompositeKey
+        threadVoteMarshaller
+    )
+  where
+    threadVoteToUserForeignKeyConstraint = 
+      foreignKeyConstraint
+      (tableIdentifier userTable) 
+      (foreignReference 
+        (fieldName userIDField) (fieldName userIDField) :| [])
+    threadVoteToThreadForeignKeyConstraint =
+      foreignKeyConstraint
+      (tableIdentifier threadTable)
+      (foreignReference
+        (fieldName threadIDField) (fieldName threadIDField) :| [])

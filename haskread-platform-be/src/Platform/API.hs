@@ -13,12 +13,14 @@ import Platform.Admin.Community.Handler
 import Platform.User.Handler
 import Platform.Auth.Handler
 import Platform.User.Thread.Handler
+import Platform.User.Thread.VoteThread.Handler
 
 import Platform.Admin.Types
 import Platform.Auth.Types
 import Platform.User.Types
 import Platform.Admin.Community.Types
 import Platform.User.Thread.Types
+import Platform.User.Thread.VoteThread.Types
 
 import Platform.Common.AppM
 
@@ -47,6 +49,8 @@ mainServer cookieSett jwtSett =
     :<|> createThreadH
     :<|> updateThreadH
     :<|> deleteThreadH
+    :<|> voteThreadH True
+    :<|> voteThreadH False
 
 type MainAPI auths =
   CheckHealthAPI
@@ -66,6 +70,8 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> CreateThreadAPI
     :<|> Auth auths UserInfo :> UpdateThreadAPI
     :<|> Auth auths UserInfo :> DeleteThreadAPI
+    :<|> Auth auths UserInfo :> UpvoteThreadAPI
+    :<|> Auth auths UserInfo :> DownvoteThreadAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -228,3 +234,23 @@ type DeleteThreadAPI =
     :> "delete"
     :> Capture "threadID" ThreadID
     :> Delete '[JSON] DeleteThreadResponse
+
+-- ThreadVote APIs
+
+type UpvoteThreadAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "thread"
+    :> "upvote"
+    :> Capture "threadID" ThreadID
+    :> Post '[JSON] VoteThreadResponse
+
+type DownvoteThreadAPI = 
+  "api"
+    :> "v1"
+    :> "user"
+    :> "thread"
+    :> "downvote"
+    :> Capture "threadID" ThreadID
+    :> Post '[JSON] VoteThreadResponse
