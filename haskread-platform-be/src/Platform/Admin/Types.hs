@@ -20,7 +20,7 @@ data AdminLoginBodyReq = AdminLoginBodyReq
   { adminEmailForLogin :: Text,
     adminPasswordForLogin :: Text
   }
-  deriving (Eq, Show, Generic, FromJSON)
+  deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
 data AdminLoginResponse = AdminLoginResponse
   { eToken :: Text,
@@ -41,7 +41,7 @@ data AdminChangePasswordBody = AdminChangePasswordBody
     newPassword :: Text,
     confirmNewPassword :: Text
   }
-  deriving (Eq, Show, Generic, FromJSON)
+  deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
 newtype AdminChangePasswordResponse = AdminChangePasswordResponse
   { adminChangePasswordRespMsg :: Text
@@ -54,7 +54,7 @@ data AdminCreateAdminReqBody = AdminCreateAdminReqBody
     adminPasswordForCreate :: Text,
     adminConfirmPasswordForCreate :: Text
   }
-  deriving (Eq, Show, Generic, FromJSON)
+  deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
 newtype AdminCreateAdminResponse = AdminCreateAdminResponse
   { adminCreateAdminResponseMsg :: Text

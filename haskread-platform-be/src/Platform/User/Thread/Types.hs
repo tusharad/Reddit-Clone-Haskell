@@ -15,9 +15,9 @@ import Platform.DB.Model
 
 
 data CreateThreadReqBody = CreateThreadReqBody {   
-    threadTitle :: Text
-  , threadDescription :: Maybe Text
-  , threadCommunityID :: CommunityID
+    threadTitleForCreate :: Text
+  , threadDescriptionForCreate :: Maybe Text
+  , threadCommunityIDForCreate :: CommunityID
   }
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 

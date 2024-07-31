@@ -1,16 +1,18 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-module Platform.Admin.Community.Types (
-    CommunityCreateReqBody(..),
-    CommunityCreateResponse(..),
-    CommunityUpdateReqBody(..),
-    CommunityUpdateResponse(..),
-    CommunityDeleteResponse(..)
-) where
 
-import GHC.Generics
+module Platform.Admin.Community.Types
+  ( CommunityCreateReqBody (..),
+    CommunityCreateResponse (..),
+    CommunityUpdateReqBody (..),
+    CommunityUpdateResponse (..),
+    CommunityDeleteResponse (..),
+  )
+where
+
 import Data.Aeson
 import Data.Text (Text)
+import GHC.Generics
 import Platform.DB.Model
 
 data CommunityCreateReqBody = CommunityCreateReqBody
@@ -18,25 +20,27 @@ data CommunityCreateReqBody = CommunityCreateReqBody
     communityDescriptionForCreate :: Text,
     communityLabelListForCreate :: [Text]
   }
-  deriving (Generic, Show, Eq,FromJSON)
+  deriving (Generic, Show, Eq, FromJSON, ToJSON)
 
-newtype CommunityCreateResponse = CommunityCreateResponse {
-    communityCreateResponseMsg :: Text
-} deriving (Generic, Show, Eq, ToJSON)
+newtype CommunityCreateResponse = CommunityCreateResponse
+  { communityCreateResponseMsg :: Text
+  }
+  deriving (Generic, Show, Eq, ToJSON)
 
 data CommunityUpdateReqBody = CommunityUpdateReqBody
-  { 
-    communityIDForUpdate :: CommunityID,
+  { communityIDForUpdate :: CommunityID,
     communityNameForUpdate :: Text,
     communityDescriptionForUpdate :: Text,
     communityLabelListForUpdate :: [Text]
   }
-  deriving (Generic, Show, Eq,FromJSON)
+  deriving (Generic, Show, Eq, FromJSON, ToJSON)
 
-newtype CommunityUpdateResponse = CommunityUpdateResponse {
-    communityUpdateResponseMsg :: Text
-} deriving (Generic, Show, Eq, ToJSON)
+newtype CommunityUpdateResponse = CommunityUpdateResponse
+  { communityUpdateResponseMsg :: Text
+  }
+  deriving (Generic, Show, Eq, ToJSON)
 
-newtype CommunityDeleteResponse = CommunityDeleteResponse {
-    communityDeleteResponseMsg :: Text
-} deriving (Generic, Show, Eq, ToJSON)
+newtype CommunityDeleteResponse = CommunityDeleteResponse
+  { communityDeleteResponseMsg :: Text
+  }
+  deriving (Generic, Show, Eq, ToJSON)

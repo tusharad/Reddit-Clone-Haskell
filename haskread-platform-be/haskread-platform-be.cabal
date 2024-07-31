@@ -120,6 +120,12 @@ test-suite haskread-platform-be-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      TestApp.Admin
+      TestApp.Auth
+      TestApp.Community
+      TestApp.SampleData
+      TestApp.Thread
+      TestApp.Users
       TestAppConfig
       Paths_haskread_platform_be
   hs-source-dirs:

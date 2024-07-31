@@ -35,13 +35,14 @@ userProfileImageTable ::
     UserProfileImageRead
 userProfileImageTable =
   addTableConstraints
-    [ foreignKeyConstraint
+    [ foreignKeyConstraintWithOptions
         (tableIdentifier userTable)
         ( foreignReference
               (fieldName userIDField)
               (fieldName userIDField)
             :| []
         )
+      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
     ]
     ( mkTableDefinition
         "user_profile_image"
@@ -101,15 +102,19 @@ threadTable =
     )
   where
     threadToUserForeignKeyConstraint = 
-      foreignKeyConstraint
+      foreignKeyConstraintWithOptions
       (tableIdentifier userTable) 
       (foreignReference 
         (fieldName userIDField) (fieldName userIDField) :| [])
+      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+      
     threadToCommunityForeignKeyConstraint =
-      foreignKeyConstraint
+      foreignKeyConstraintWithOptions
       (tableIdentifier communityTable)
       (foreignReference
         (fieldName communityIDField) (fieldName communityIDField) :| [])
+      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+      
 
 
 
@@ -135,12 +140,16 @@ threadVoteTable =
     )
   where
     threadVoteToUserForeignKeyConstraint = 
-      foreignKeyConstraint
+      foreignKeyConstraintWithOptions
       (tableIdentifier userTable) 
       (foreignReference 
         (fieldName userIDField) (fieldName userIDField) :| [])
+      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+      
     threadVoteToThreadForeignKeyConstraint =
-      foreignKeyConstraint
+      foreignKeyConstraintWithOptions
       (tableIdentifier threadTable)
       (foreignReference
         (fieldName threadIDField) (fieldName threadIDField) :| [])
+      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+      

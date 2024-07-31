@@ -37,9 +37,9 @@ checkThreadTitleNotEmpty tTitle = when (T.null tTitle) $
 addThread :: MonadUnliftIO m => UserID -> CreateThreadReqBody -> AppM m CreateThreadResponse
 addThread userID CreateThreadReqBody{..} = do
     let threadWrite = Thread 
-            { threadTitle = threadTitle
-            , threadDescription = threadDescription
-            , threadCommunityID = threadCommunityID
+            { threadTitle = threadTitleForCreate
+            , threadDescription = threadDescriptionForCreate
+            , threadCommunityID = threadCommunityIDForCreate
             , threadUserID = userID
             , threadCreatedAt = ()
             , threadUpdatedAt = ()
@@ -64,8 +64,8 @@ checkIfUserOwnsThread tID uID = do
 createThreadH :: 
    (MonadUnliftIO m) => AuthResult UserInfo -> CreateThreadReqBody -> AppM m CreateThreadResponse
 createThreadH (Authenticated UserInfo{..}) CreateThreadReqBody{..} = do
-    void $ checkIfCommunityExists threadCommunityID
-    void $ checkThreadTitleNotEmpty threadTitle
+    void $ checkIfCommunityExists threadCommunityIDForCreate
+    void $ checkThreadTitleNotEmpty threadTitleForCreate
     addThread userIDForUserInfo CreateThreadReqBody{..}
 createThreadH _ _ = throw401Err "Please login first"
 
