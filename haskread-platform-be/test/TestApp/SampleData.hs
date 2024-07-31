@@ -12,6 +12,21 @@ import Platform.User.Thread.Types
 import Platform.DB.Model
 import Platform.User.Types
 
+{-
+import           Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
+
+genAdmin :: Gen AdminWrite
+genAdmin =
+  Admin () 
+    <$> Gen.text (Range.linear 10 19) Gen.alpha
+    <*> Gen.text (Range.linear 10 19) Gen.alpha
+    <*> Gen.text (Range.linear 10 19) Gen.alpha
+    <*> pure ()
+    <*> pure ()
+-}
+
 sampleAdmins :: [AdminWrite]
 sampleAdmins =
   [ Admin
@@ -74,7 +89,7 @@ sampleUserInfoList =
 
 sampleCommunities :: [CommunityWrite]
 sampleCommunities = [
-   Community { 
+   Community {
     communityID = (),
     communityName = "haskell",
     communityDescription = "functional programming language",
@@ -91,6 +106,28 @@ sampleCommunities = [
     communityUpdatedAt = ()
   }
   ]
+
+sampleThreads :: [ThreadWrite]
+sampleThreads = [
+  Thread {
+    threadID = (),
+    threadTitle = "HaskRead",
+    threadDescription = Just "A Reddit Clone in Haskell",
+    threadCommunityID = CommunityID 1,
+    threadUserID = UserID 1,
+    threadCreatedAt = (),
+    threadUpdatedAt = ()
+  },
+  Thread {
+    threadID = (),
+    threadTitle = "HaskRead 2",
+    threadDescription = Just "A Reddit Clone in Haskell updated.",
+    threadCommunityID = CommunityID 1,
+    threadUserID = UserID 1,
+    threadCreatedAt = (),
+    threadUpdatedAt = ()
+  }
+ ]
 
 registerUserBody :: ByteString
 registerUserBody =
@@ -176,7 +213,7 @@ communityUpdateReqBody =
       }
 
 sampleUpdateUserProfileImageBody :: IO ByteString
-sampleUpdateUserProfileImageBody = 
+sampleUpdateUserProfileImageBody =
   BSL.readFile "/home/user/haskell/Reddit-Clone-Haskell/haskread-platform-be/test/_sampleData/random_image.png"
 
 threadCreateReqBody :: ByteString
@@ -197,25 +234,3 @@ threadUpdateReqBody =
       threadDescriptionForUpdate = Just "A Reddit Clone in Haskell updated.",
       threadCommunityIDForUpdate = CommunityID 1
     }
-
-sampleThreads :: [ThreadWrite]
-sampleThreads = [
-  Thread {
-    threadID = (),
-    threadTitle = "HaskRead",
-    threadDescription = Just "A Reddit Clone in Haskell",
-    threadCommunityID = CommunityID 1,
-    threadUserID = UserID 1,
-    threadCreatedAt = (),
-    threadUpdatedAt = ()
-  },
-  Thread {
-    threadID = (),
-    threadTitle = "HaskRead 2",
-    threadDescription = Just "A Reddit Clone in Haskell updated.",
-    threadCommunityID = CommunityID 1,
-    threadUserID = UserID 1,
-    threadCreatedAt = (),
-    threadUpdatedAt = ()
-  }
- ]

@@ -1,14 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module TestApp.Thread (threadAPITests) where
+module TestApp.Thread (threadAPITests,voteThreadAPITests) where
 
 import qualified Data.ByteString.Lazy as BSL
 import Network.HTTP.Types
-import Servant
 import Test.Tasty
 import Test.Tasty.Wai
 import TestApp.SampleData
 import Control.Monad.IO.Class (liftIO)
+import Servant (Application)
+
+voteThreadAPITests :: Application -> [BSL.ByteString] -> TestTree
+voteThreadAPITests app userTokens = testGroup "vote thread api" [
+  testVoteThreadAPI app (Prelude.head userTokens)
+ ]
 
 threadAPITests :: Application -> [BSL.ByteString] -> TestTree
 threadAPITests app userTokens =
@@ -18,6 +23,22 @@ threadAPITests app userTokens =
       testUpdateThreadAPI app (Prelude.head userTokens),
       testDeleteThreadAPI app (Prelude.head userTokens)
     ]
+
+testVoteThreadAPI :: Application -> BSL.ByteString -> TestTree
+testVoteThreadAPI app token = do
+  testWai app "/upvote - 200" $ do
+    res <-
+      srequest
+        (
+          buildRequestWithHeaders
+          POST
+          "/api/v1/user/thread/upvote/2"
+          ""
+          [ ("Content-Type", "application/json"),
+            (hAuthorization,"Bearer " <> BSL.toStrict token)
+          ]
+        )
+    assertStatus' status200 res
 
 testCreateThreadAPI :: Application -> BSL.ByteString -> TestTree
 testCreateThreadAPI app token = do
