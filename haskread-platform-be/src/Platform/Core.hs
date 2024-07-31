@@ -14,6 +14,7 @@ import Platform.Common.AppM
 import Platform.Common.Types
 import Servant
 import Servant.Auth.Server
+import System.Log.FastLogger
 
 runAppM :: MyAppState -> AppM IO a -> Handler a
 runAppM myAppState appM = Handler $ runMyExceptT $ runReaderT (getApp appM) myAppState
@@ -45,8 +46,9 @@ startApp = do
   putStrLn "Application running at port 8085"
   pool <- createConnectionPool connectionOptions
   jwtSecretKey <- generateKey
+  loggerSet_ <- newFileLoggerSet defaultBufSize "/home/user/haskell/imdb-logs.txt"
   let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
-      appST = MyAppState (AppConfig "uploads") orvilleState
+      appST = MyAppState (AppConfig "uploads" loggerSet_ LevelDebug) orvilleState
       jwtSett = defaultJWTSettings jwtSecretKey
   let ctx = defaultCookieSettings :. jwtSett :. EmptyContext
   run 8085 (app appST jwtSett ctx)

@@ -45,6 +45,7 @@ dependencies:
 - string-interpolate
 - servant-multipart
 - http-api-data
+- fast-logger
 
 ghc-options:
 - -Wall

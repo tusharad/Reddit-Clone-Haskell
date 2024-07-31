@@ -47,6 +47,7 @@ library
       Platform.DB.Table
       Platform.Handler
       Platform.Haxl.DataSource
+      Platform.Log
       Platform.User.DB
       Platform.User.Handler
       Platform.User.Thread.DB
@@ -65,6 +66,7 @@ library
       aeson
     , base >=4.7 && <5
     , bytestring
+    , fast-logger
     , filepath
     , haxl
     , hedgehog
@@ -97,6 +99,7 @@ executable haskread-platform-be-exe
       aeson
     , base >=4.7 && <5
     , bytestring
+    , fast-logger
     , filepath
     , haskread-platform-be
     , haxl
@@ -139,6 +142,7 @@ test-suite haskread-platform-be-test
       aeson
     , base >=4.7 && <5
     , bytestring
+    , fast-logger
     , filepath
     , haskread-platform-be
     , haxl

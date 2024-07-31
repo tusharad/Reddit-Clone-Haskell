@@ -46,6 +46,7 @@ newtype AppM m a = AppM {
       , Monad
       , MonadIO
       , MonadError ServerError
+      , MonadReader MyAppState
       )
 
 runAppT :: MyAppState -> AppM m a -> MyExceptT ServerError m a
