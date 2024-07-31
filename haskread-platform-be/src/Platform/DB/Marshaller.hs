@@ -17,7 +17,9 @@ module Platform.DB.Marshaller
     communityNameField,
     threadMarshaller,
     threadIDField,
-    threadVoteMarshaller
+    threadVoteMarshaller,
+    commentMarshaller,
+    commentIDField
   )
 where
 
@@ -82,6 +84,15 @@ threadDescriptionField = unboundedTextField "thread_description"
 
 voteField :: FieldDefinition NotNull Bool
 voteField = booleanField "vote"
+
+commentIDField :: FieldDefinition NotNull CommentID
+commentIDField = coerceField $ serialField "comment_id"
+
+commentContentField :: FieldDefinition NotNull Text
+commentContentField = boundedTextField "comment_content" 255
+
+parentCommentIDFiled :: FieldDefinition NotNull CommentID
+parentCommentIDFiled = coerceField $ integerField "parent_comment_id"
 
 userMarshaller :: SqlMarshaller UserWrite UserRead
 userMarshaller =
@@ -190,3 +201,21 @@ threadVoteMarshaller =
     <*> marshallField (\ThreadVote{..} -> vote) voteField
     <*> marshallReadOnly (marshallField (\ThreadVote{..} -> threadVoteCreatedAt) createdAtField)
     <*> marshallReadOnly (marshallField (\ThreadVote{..} -> threadVoteUpdatedAt) updatedAtField)
+
+commentMarshaller ::
+  SqlMarshaller
+    CommentWrite
+    CommentRead
+commentMarshaller =
+  Comment
+    <$> marshallReadOnly
+      ( marshallField
+          (\Comment {..} -> commentID)
+          commentIDField
+      )
+    <*> marshallField (\Comment {..} -> userIDForComment) userIDField
+    <*> marshallField (\Comment {..} -> threadIDForComment) threadIDField
+    <*> marshallField (\Comment {..} -> commentContent) commentContentField
+    <*> marshallField (\Comment {..} -> parentCommentID) (nullableField parentCommentIDFiled)
+    <*> marshallReadOnly (marshallField (\Comment {..} -> createdAtForComment) createdAtField)
+    <*> marshallReadOnly (marshallField (\Comment {..} -> updatedAtForComment) updatedAtField)

@@ -51,3 +51,13 @@ create table vote_thread (
 	updated_at timestamptz default now(),
 	primary key (user_id,thread_id)
 );
+
+create table comment (
+	comment_id serial primary key,
+	user_id int not null references users on delete cascade on update cascade,
+	thread_id int not null references thread on delete cascade on update cascade,
+	comment_content varchar(255) not null,
+	parent_comment_id int references comment(comment_id) on delete cascade on update cascade,
+	created_at timestamptz default now(),
+	updated_at timestamptz default now()
+);

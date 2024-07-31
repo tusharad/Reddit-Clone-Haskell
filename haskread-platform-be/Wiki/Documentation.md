@@ -396,3 +396,101 @@ Features list:
             - updatedAt : timestamptz
         - constraints
             - (threadID,userID) should be primary key.
+
+## Comment
+    - Feature list:
+        - Create comment
+        - Update comment
+        - Delete comment
+        - Get comment
+        - Get all comment by thread (paginated)
+        - Upvote/Downvote comment
+            - Upvote comment
+            - Downvote comment
+    - Note:
+        - Comments will be in the nested strucutre. In the comment table, there would be an extra field called,
+          parent_comment_id.
+        - If the parent_comment_id is null, then it is a top level comment.
+        - There can be multiple levels of comments. Each comment can have multiple childs.
+        - At application level, there should be a strucutre to create nested structure of comments.
+    - ### Create comment
+        ###### POST /api/v1/user/thread/comment/create
+        JSON Body:
+        {
+            "threadId": "string",
+            "content": "string"
+        }
+        - User can create a comment by providing threadId and content.
+        - On successful request, the API shall return the comment details.
+        - Checks:
+            - User should be logged in.
+            - ThreadId should exist in the database.
+            - Content should not be empty.
+            - Content can be at most 1000 characters long (frontend should also have this check).
+        - On failure, the API shall return an error message with status code 400.
+    - ### Update comment
+        ###### PUT /api/v1/user/thread/comment/update/:commentId
+        - User can update his/her comment by providing commentId and content.
+        - On successful request, the API shall return the comment details.
+        - Checks:
+            - CommentID should exist in the database.
+            - User should be logged in.
+            - User should be the owner of the comment.
+            - Content should not be empty.
+            - Content can be at most 1000 characters long (frontend should also have this check).
+        - On failure, the API shall return an error message with status code 400.
+    - ### Delete comment
+        ###### DELETE /api/v1/user/thread/comment/delete/:commentId
+        - User can delete his/her comment by providing commentId.
+        - On successful request, the API shall return a success message.
+        - Checks:
+            - User should be logged in.
+            - CommentID should exist in the database.
+            - User should be the owner of the comment.
+        - On failure, the API shall return an error message with status code 400.
+    - ### Get comment
+        ###### GET /api/v1/user/thread/comment/get/:commentId
+        - User can view a comment by providing commentId.
+        - On successful request, the API shall return the comment details.
+        - Checks:
+            - CommentID should exist in the database.
+        - On failure, the API shall return an error message with status code 400.
+    - ### Get all comment by thread (paginated)
+        ###### GET /api/v1/user/thread/comment/get-all-by-thread/:threadId?page=1&limit=10
+        - User can view all comments by providing threadId, page and limit.
+        - On successful request, the API shall return the comment details.
+        - Checks:
+            - ThreadID should exist in the database.
+            - page and limit should be valid. I.e page should be greater than 0 and limit should be greater than 0.
+            - If the page has no data, the API shall return an empty array.
+        - On failure, the API shall return an error message with status code 400.
+    - ### Upvote/Downvote comment
+        - Upvote/Downvote comment
+            ###### PUT /api/v1/user/thread/comment/vote/:commentId:upvote
+            - User can upvote a comment by providing commentId.
+            - On successful request, the API shall return the comment details.
+            - Checks:
+                - CommentID should exist in the database.
+                - User should be logged in.
+                - If comment is already voted, then the vote shall be updated.
+                - If comment is not voted, then the vote shall be inserted.
+                - If comment is already voted with same type, then the vote shall be removed.
+            - On failure, the API shall return an error message with status code 400.
+        -  ### Database Schema
+            - commentVote table
+                - commentID : foreign key to comment table on delete cascade
+                - userID : foreign key to user table on delete cascade
+                - vote : boolean
+                - createdAt : timestamptz
+                - updatedAt : timestamptz
+            - constraints
+                - (commentID,userID) should be primary key.
+
+            - Comment Table
+                - id : primary key
+                - threadID : foreign key to thread table on delete cascade
+                - userID : foreign key to user table on delete cascade
+                - content : text
+                - parent_comment_id : foreign key to comment table on delete cascade
+                - createdAt : timestamptz
+                - updatedAt : timestamptz

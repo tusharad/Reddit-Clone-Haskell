@@ -15,6 +15,7 @@ import TestApp.Admin
 import TestApp.Auth
 import TestApp.Thread
 import TestApp.Community
+import TestApp.Comment
 import TestApp.SampleData
 import TestApp.Users
 import TestAppConfig
@@ -38,7 +39,8 @@ apiTests app userTokens adminTokens =
       adminAPITests app adminTokens,
       communityAPITests app adminTokens,
       threadAPITests app userTokens,
-      voteThreadAPITests app userTokens
+      voteThreadAPITests app userTokens,
+      commentAPITests app userTokens
     ]
 
 testCheckHealth :: Application -> TestTree

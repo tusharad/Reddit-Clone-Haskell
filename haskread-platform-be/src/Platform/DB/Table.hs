@@ -5,7 +5,8 @@ module Platform.DB.Table
     adminTable,
     communityTable,
     threadTable,
-    threadVoteTable
+    threadVoteTable,
+    commentTable
   )
 where
 
@@ -114,10 +115,7 @@ threadTable =
       (foreignReference
         (fieldName communityIDField) (fieldName communityIDField) :| [])
       (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
-      
-
-
-
+    
 userThreadCompositeKey :: PrimaryKey ThreadVoteID
 userThreadCompositeKey = 
   compositePrimaryKey
@@ -152,4 +150,32 @@ threadVoteTable =
       (foreignReference
         (fieldName threadIDField) (fieldName threadIDField) :| [])
       (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+
+commentTable ::
+  TableDefinition
+  (HasKey CommentID)
+  CommentWrite
+  CommentRead
+commentTable =
+  addTableConstraints
+    [ commentToUserForeignKeyConstraint,commentToThreadForeignKeyConstraint ]
+    (
+      mkTableDefinition
+        "comment"
+        (primaryKey commentIDField)
+        commentMarshaller
+    )
+  where
+    commentToUserForeignKeyConstraint = 
+      foreignKeyConstraintWithOptions
+      (tableIdentifier userTable) 
+      (foreignReference 
+        (fieldName userIDField) (fieldName userIDField) :| [])
+      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
       
+    commentToThreadForeignKeyConstraint =
+      foreignKeyConstraintWithOptions
+      (tableIdentifier threadTable)
+      (foreignReference
+        (fieldName threadIDField) (fieldName threadIDField) :| [])
+      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})

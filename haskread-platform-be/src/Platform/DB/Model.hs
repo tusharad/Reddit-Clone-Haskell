@@ -27,7 +27,11 @@ module Platform.DB.Model
     ThreadVote(..),
     ThreadVoteRead,
     ThreadVoteWrite,
-    ThreadVoteID(..)
+    ThreadVoteID(..),
+    Comment(..),
+    CommentRead,
+    CommentWrite,
+    CommentID(..)
   )
 where
 
@@ -141,3 +145,21 @@ data ThreadVote a = ThreadVote {
 
 type ThreadVoteRead = ThreadVote UTCTime
 type ThreadVoteWrite = ThreadVote ()
+
+-- Comment Model
+
+newtype CommentID = CommentID Int32
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON,FromHttpApiData)
+
+data Comment a b = Comment {
+    commentID :: a,
+    userIDForComment :: UserID,
+    threadIDForComment :: ThreadID,
+    commentContent :: Text,
+    parentCommentID :: Maybe CommentID,
+    createdAtForComment :: b,
+    updatedAtForComment :: b
+} deriving (Show, Eq, Generic, ToJSON)
+
+type CommentRead = Comment CommentID UTCTime
+type CommentWrite = Comment () ()

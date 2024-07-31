@@ -13,6 +13,7 @@ import Platform.DB.Table
 import Platform.User.DB
 import Platform.Admin.Community.DB
 import Platform.User.Thread.DB
+import Platform.Comment.DB
 import Servant
 import Servant.Auth.Server
 import TestApp.SampleData
@@ -45,7 +46,8 @@ schemaList =
     SchemaTable userProfileImageTable,
     SchemaTable communityTable,
     SchemaTable threadTable,
-    SchemaTable threadVoteTable
+    SchemaTable threadVoteTable,
+    SchemaTable commentTable
   ]
 
 schemaDropList :: [SchemaItem]
@@ -53,6 +55,7 @@ schemaDropList =
   [ 
     SchemaDropTable $ tableIdentifier userProfileImageTable,
     SchemaDropTable $ tableIdentifier threadVoteTable,
+    SchemaDropTable $ tableIdentifier commentTable,
     SchemaDropTable $ tableIdentifier threadTable,
     SchemaDropTable $ tableIdentifier communityTable,
     SchemaDropTable $ tableIdentifier userTable,
@@ -71,6 +74,9 @@ insertCommunitySampleData = mapM_ addCommunityQ
 insertThreadSampleData :: (MonadOrville m) => [ThreadWrite] -> m ()
 insertThreadSampleData = mapM_ addThreadQ
 
+insertCommentSampleData :: MonadOrville m => [CommentWrite] -> m ()
+insertCommentSampleData = mapM_ addCommentQ
+
 createDB :: ConnectionPool -> IO ()
 createDB pool = runOrville pool $ do
   autoMigrateSchema defaultOptions schemaList
@@ -78,6 +84,7 @@ createDB pool = runOrville pool $ do
   insertAdminSampleData sampleAdmins
   insertCommunitySampleData sampleCommunities
   insertThreadSampleData sampleThreads
+  insertCommentSampleData sampleComments
 
 destroyDB :: ConnectionPool -> IO ()
 destroyDB pool = runOrville pool $ autoMigrateSchema defaultOptions schemaDropList

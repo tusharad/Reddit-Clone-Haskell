@@ -14,6 +14,7 @@ import Platform.User.Handler
 import Platform.Auth.Handler
 import Platform.User.Thread.Handler
 import Platform.User.Thread.VoteThread.Handler
+import Platform.Comment.Handler
 
 import Platform.Admin.Types
 import Platform.Auth.Types
@@ -21,6 +22,7 @@ import Platform.User.Types
 import Platform.Admin.Community.Types
 import Platform.User.Thread.Types
 import Platform.User.Thread.VoteThread.Types
+import Platform.Comment.Types
 
 import Platform.Common.AppM
 
@@ -51,6 +53,9 @@ mainServer cookieSett jwtSett =
     :<|> deleteThreadH
     :<|> voteThreadH True
     :<|> voteThreadH False
+    :<|> createCommentH
+    :<|> deleteCommentH
+    :<|> updateCommentH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -72,6 +77,9 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> DeleteThreadAPI
     :<|> Auth auths UserInfo :> UpvoteThreadAPI
     :<|> Auth auths UserInfo :> DownvoteThreadAPI
+    :<|> Auth auths UserInfo :> CreateCommentAPI
+    :<|> Auth auths UserInfo :> DeleteCommentAPI
+    :<|> Auth auths UserInfo :> UpdateCommentAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -254,3 +262,34 @@ type DownvoteThreadAPI =
     :> "downvote"
     :> Capture "threadID" ThreadID
     :> Post '[JSON] VoteThreadResponse
+
+-- Comment APIs
+
+type CreateCommentAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "comment"
+    :> "create"
+    :> ReqBody '[JSON] CreateCommentReqBody
+    :> Post '[JSON] CreateCommentResponse
+
+type DeleteCommentAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "comment"
+    :> "delete"
+    :> Capture "commentID" CommentID
+    :> Delete '[JSON] DeleteCommentResponse
+
+type UpdateCommentAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "comment"
+    :> "update"
+    :> Capture "commentID" CommentID
+    :> ReqBody '[JSON] UpdateCommentReqBody
+    :> Put '[JSON] UpdateCommentResponse
+  

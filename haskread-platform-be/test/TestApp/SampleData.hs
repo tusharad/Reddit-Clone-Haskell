@@ -11,6 +11,7 @@ import Platform.Auth.Types
 import Platform.User.Thread.Types
 import Platform.DB.Model
 import Platform.User.Types
+import Platform.Comment.Types
 
 {-
 import           Hedgehog
@@ -128,6 +129,43 @@ sampleThreads = [
     threadUpdatedAt = ()
   }
  ]
+
+sampleComments :: [CommentWrite]
+sampleComments = [
+  Comment {
+    commentID = (),
+    commentContent = "Great work!",
+    threadIDForComment = ThreadID 1,
+    userIDForComment = UserID 1,
+    createdAtForComment = (),
+    updatedAtForComment = (),
+    parentCommentID = Nothing
+  },
+  Comment {
+    commentID = (),
+    commentContent = "Great work! Updated.",
+    threadIDForComment = ThreadID 1,
+    userIDForComment = UserID 1,
+    createdAtForComment = (),
+    updatedAtForComment = (),
+    parentCommentID = Just $ CommentID 1
+  }
+ ]
+
+commentUpdateReqBody :: ByteString
+commentUpdateReqBody =
+  encode
+    UpdateCommentReqBody {
+      commentContentForUpdate = "Great work! Updated."
+    }
+
+commentCreateReqBody :: ByteString
+commentCreateReqBody =
+  encode
+    CreateCommentReqBody {
+      commentContentForCreate = "Great work!",
+      threadIDForCommentCreate = ThreadID 2
+    }
 
 registerUserBody :: ByteString
 registerUserBody =

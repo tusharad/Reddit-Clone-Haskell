@@ -35,6 +35,9 @@ library
       Platform.Auth.DB
       Platform.Auth.Handler
       Platform.Auth.Types
+      Platform.Comment.DB
+      Platform.Comment.Handler
+      Platform.Comment.Types
       Platform.Common.AppM
       Platform.Common.Types
       Platform.Common.Utils
@@ -122,6 +125,7 @@ test-suite haskread-platform-be-test
   other-modules:
       TestApp.Admin
       TestApp.Auth
+      TestApp.Comment
       TestApp.Community
       TestApp.SampleData
       TestApp.Thread
