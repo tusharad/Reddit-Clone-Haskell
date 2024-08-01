@@ -149,6 +149,15 @@ sampleComments = [
     createdAtForComment = (),
     updatedAtForComment = (),
     parentCommentID = Just $ CommentID 1
+  },
+  Comment {
+    commentID = (),
+    commentContent = "Great work again!",
+    threadIDForComment = ThreadID 2,
+    userIDForComment = UserID 1,
+    createdAtForComment = (),
+    updatedAtForComment = (),
+    parentCommentID = Nothing
   }
  ]
 

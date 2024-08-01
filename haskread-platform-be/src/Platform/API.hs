@@ -56,6 +56,7 @@ mainServer cookieSett jwtSett =
     :<|> createCommentH
     :<|> deleteCommentH
     :<|> updateCommentH
+    :<|> voteCommentH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -80,6 +81,7 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> CreateCommentAPI
     :<|> Auth auths UserInfo :> DeleteCommentAPI
     :<|> Auth auths UserInfo :> UpdateCommentAPI
+    :<|> Auth auths UserInfo :> CommentVoteAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -293,3 +295,12 @@ type UpdateCommentAPI =
     :> ReqBody '[JSON] UpdateCommentReqBody
     :> Put '[JSON] UpdateCommentResponse
   
+type CommentVoteAPI =
+    "api"
+      :> "v1"
+      :> "user"
+      :> "comment"
+      :> "vote"
+      :> Capture "commentID" CommentID
+      :> Capture "vote" Bool
+      :> Put '[JSON] VoteCommentResponse

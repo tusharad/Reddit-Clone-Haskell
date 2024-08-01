@@ -4,7 +4,8 @@
 module Platform.Comment.Handler (    
     createCommentH,
      deleteCommentH,
-     updateCommentH
+     updateCommentH,
+     voteCommentH
      ) where
 
 import Platform.Common.AppM
@@ -97,3 +98,65 @@ updateCommentH (Authenticated UserInfo{..}) commentID0 UpdateCommentReqBody{..} 
         Left e -> throw400Err $ BSL.pack $ show e
         Right _ -> return $ UpdateCommentResponse "Comment updated successfully!"
 updateCommentH _ _ _ = throw401Err "Please login first"
+
+voteCommentH :: MonadUnliftIO m => AuthResult UserInfo -> CommentID -> Bool -> AppM m VoteCommentResponse
+voteCommentH (Authenticated UserInfo{..}) cID vote = do
+    {-
+                - Checks:
+                - CommentID should exist in the database.
+                - User should be logged in.
+                - If comment is already voted, then the vote shall be updated.
+                - If comment is not voted, then the vote shall be inserted.
+                - If comment is already voted with same type, then the vote shall be removed.
+            - On failure, the API shall return an error message with status code 400.
+    -}
+    mVoteComment <- fetchVoteComment cID userIDForUserInfo
+    case mVoteComment of
+        Nothing -> addVoteComment userIDForUserInfo cID vote
+        Just voteComment -> if vote == commentVote voteComment then
+            removeVoteComment userIDForUserInfo cID
+        else updateVoteComment cID userIDForUserInfo vote
+voteCommentH _ _ _ = throw401Err "Please login first"
+
+fetchVoteComment :: MonadUnliftIO m => CommentID -> UserID -> AppM m (Maybe CommentVoteRead)
+fetchVoteComment cID uID = do
+    eRes :: Either SomeException (Maybe CommentVoteRead) <- 
+            try $ fetchCommentVoteQ cID uID
+    case eRes of
+        Left e -> throw400Err $ BSL.pack $ show e
+        Right r -> pure r
+
+addVoteComment :: MonadUnliftIO m => UserID -> CommentID -> Bool -> AppM m VoteCommentResponse
+addVoteComment uID cID vote = do
+    let commentVoteWrite = CommentVote
+            { userIDForCommentVote = uID
+            , commentIDForCommentVote = cID
+            , commentVote = vote
+            , createdAtForCommentVote = ()
+            , updatedAtForCommentVote = ()
+            }
+    (eRes :: Either SomeException ()) <- try $ addCommentVoteQ commentVoteWrite
+    case eRes of
+        Left e -> throw400Err $ BSL.pack $ show e
+        Right _ -> return $ VoteCommentResponse "Vote added successfully!"
+
+removeVoteComment :: MonadUnliftIO m => UserID -> CommentID -> AppM m VoteCommentResponse
+removeVoteComment uID cID = do
+    (eRes :: Either SomeException ()) <- try $ deleteCommentVoteQ cID uID
+    case eRes of
+        Left e -> throw400Err $ BSL.pack $ show e
+        Right _ -> return $ VoteCommentResponse "Vote removed successfully!"
+
+updateVoteComment :: MonadUnliftIO m => CommentID -> UserID -> Bool -> AppM m VoteCommentResponse
+updateVoteComment cID uID vote = do
+    let commentVoteWrite = CommentVote
+            { userIDForCommentVote = uID
+            , commentIDForCommentVote = cID
+            , commentVote = vote
+            , createdAtForCommentVote = ()
+            , updatedAtForCommentVote = ()
+            }
+    (eRes :: Either SomeException ()) <- try $ updateCommentVoteQ cID uID commentVoteWrite
+    case eRes of
+        Left e -> throw400Err $ BSL.pack $ show e
+        Right _ -> return $ VoteCommentResponse "Vote updated successfully!"

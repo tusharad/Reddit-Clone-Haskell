@@ -1,3 +1,5 @@
+begin;
+
 create table users (
 	user_id serial primary key
   , user_name varchar(255) not null unique
@@ -61,3 +63,16 @@ create table comment (
 	created_at timestamptz default now(),
 	updated_at timestamptz default now()
 );
+
+alter table thread alter column user_id set not null;
+alter table thread alter column thread_id set not null;
+
+create table vote_comment (
+	comment_id int references comment on delete cascade on update cascade,
+	user_id int references users on delete cascade on update cascade,
+	vote boolean not null,
+	created_at timestamptz default now(),
+	updated_at timestamptz default now()
+);
+
+commit;

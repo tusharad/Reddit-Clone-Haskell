@@ -31,7 +31,11 @@ module Platform.DB.Model
     Comment(..),
     CommentRead,
     CommentWrite,
-    CommentID(..)
+    CommentID(..),
+    CommentVoteID(..),
+    CommentVote(..),
+    CommentVoteRead,
+    CommentVoteWrite
   )
 where
 
@@ -138,7 +142,7 @@ data ThreadVoteID = ThreadVoteID {
 data ThreadVote a = ThreadVote {
     threadVoteUserID :: UserID
   , threadVoteThreadID :: ThreadID
-  , vote :: Bool
+  , threadVote :: Bool
   , threadVoteCreatedAt :: a
   , threadVoteUpdatedAt :: a
 } deriving (Show, Eq, Generic, ToJSON)
@@ -163,3 +167,22 @@ data Comment a b = Comment {
 
 type CommentRead = Comment CommentID UTCTime
 type CommentWrite = Comment () ()
+
+-- CommentVote Model
+
+data CommentVoteID = CommentVoteID {
+    commentVoteIDUserID :: UserID
+  , commentVoteIDCommentID :: CommentID
+}
+  deriving (Show, Eq, Ord)
+
+data CommentVote a = CommentVote {
+    userIDForCommentVote :: UserID
+  , commentIDForCommentVote :: CommentID
+  , commentVote :: Bool
+  , createdAtForCommentVote :: a
+  , updatedAtForCommentVote :: a
+} deriving (Show, Eq, Generic, ToJSON)
+
+type CommentVoteRead = CommentVote UTCTime
+type CommentVoteWrite = CommentVote ()

@@ -40,7 +40,8 @@ apiTests app userTokens adminTokens =
       communityAPITests app adminTokens,
       threadAPITests app userTokens,
       voteThreadAPITests app userTokens,
-      commentAPITests app userTokens
+      commentAPITests app userTokens,
+      voteCommentAPITests app userTokens
     ]
 
 testCheckHealth :: Application -> TestTree

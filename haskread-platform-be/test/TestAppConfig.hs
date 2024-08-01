@@ -17,6 +17,7 @@ import Platform.Comment.DB
 import Servant
 import Servant.Auth.Server
 import TestApp.SampleData
+import System.Log.FastLogger
 
 connectionOptionsForTest :: ConnectionOptions
 connectionOptionsForTest =
@@ -33,8 +34,10 @@ getTestAppCfg :: IO (Application, ConnectionPool, JWTSettings)
 getTestAppCfg = do
   pool <- createConnectionPool connectionOptionsForTest
   jwtSecretKey <- generateKey
+  loggerSet_ <- newFileLoggerSet defaultBufSize "/home/user/haskell/imdb-logs.txt"
+  
   let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
-      appST = MyAppState (AppConfig "uploads") orvilleState
+      appST = MyAppState (AppConfig "uploads" loggerSet_ LevelDebug) orvilleState
       jwtSett = defaultJWTSettings jwtSecretKey
   let ctx = defaultCookieSettings :. jwtSett :. EmptyContext
   return (app appST jwtSett ctx, pool, jwtSett)
@@ -47,7 +50,8 @@ schemaList =
     SchemaTable communityTable,
     SchemaTable threadTable,
     SchemaTable threadVoteTable,
-    SchemaTable commentTable
+    SchemaTable commentTable,
+    SchemaTable commentVoteTable
   ]
 
 schemaDropList :: [SchemaItem]
@@ -55,6 +59,7 @@ schemaDropList =
   [ 
     SchemaDropTable $ tableIdentifier userProfileImageTable,
     SchemaDropTable $ tableIdentifier threadVoteTable,
+    SchemaDropTable $ tableIdentifier commentVoteTable,
     SchemaDropTable $ tableIdentifier commentTable,
     SchemaDropTable $ tableIdentifier threadTable,
     SchemaDropTable $ tableIdentifier communityTable,

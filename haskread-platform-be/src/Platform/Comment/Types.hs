@@ -8,7 +8,8 @@ module Platform.Comment.Types (
     CreateCommentResponse(..),
     DeleteCommentResponse(..),
     UpdateCommentReqBody(..),
-    UpdateCommentResponse(..)
+    UpdateCommentResponse(..),
+    VoteCommentResponse(..)
 ) where
 
 import Data.Aeson
@@ -37,4 +38,9 @@ data UpdateCommentReqBody = UpdateCommentReqBody
 
 newtype UpdateCommentResponse = UpdateCommentResponse
   { updateCommentResponseMsg :: Text }
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData)
+
+newtype VoteCommentResponse = VoteCommentResponse {
+  voteCommentResponseMsg :: Text
+}
   deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData)

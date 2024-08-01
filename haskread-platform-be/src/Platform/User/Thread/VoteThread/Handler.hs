@@ -32,7 +32,7 @@ voteThreadH isUpvote (Authenticated UserInfo {..}) threadID = do
   case mVoteThread of
     Nothing -> addVoteThread userIDForUserInfo threadID isUpvote
     Just voteThread ->
-      if isUpvote == vote voteThread
+      if isUpvote == threadVote voteThread
         then removeVoteThread userIDForUserInfo threadID
         else updateVoteThread threadID userIDForUserInfo isUpvote
 voteThreadH _ _ _ = throw401Err "Unauthorized!"
@@ -68,7 +68,7 @@ addVoteThread userID threadID isUpvote = do
         ThreadVote
           { threadVoteUserID = userID,
             threadVoteThreadID = threadID,
-            vote = isUpvote,
+            threadVote = isUpvote,
             threadVoteCreatedAt = (),
             threadVoteUpdatedAt = ()
           } -- userID threadID isUpvote
@@ -84,7 +84,7 @@ updateVoteThread threadID userID isUpvote = do
         ThreadVote
           { threadVoteUserID = userID,
             threadVoteThreadID = threadID,
-            vote = isUpvote,
+            threadVote = isUpvote,
             threadVoteCreatedAt = (),
             threadVoteUpdatedAt = ()
           }

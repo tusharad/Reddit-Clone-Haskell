@@ -397,6 +397,9 @@ Features list:
         - constraints
             - (threadID,userID) should be primary key.
 
+### Note:
+    - Vote is a boolean type, where true means upvote and false means downvote.
+
 ## Comment
     - Feature list:
         - Create comment

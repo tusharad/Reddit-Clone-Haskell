@@ -19,7 +19,8 @@ module Platform.DB.Marshaller
     threadIDField,
     threadVoteMarshaller,
     commentMarshaller,
-    commentIDField
+    commentIDField,
+    commentVoteMarshaller
   )
 where
 
@@ -198,7 +199,7 @@ threadVoteMarshaller =
   ThreadVote
     <$> marshallField (\ThreadVote{..} -> threadVoteUserID) userIDField
     <*> marshallField (\ThreadVote{..} -> threadVoteThreadID) threadIDField
-    <*> marshallField (\ThreadVote{..} -> vote) voteField
+    <*> marshallField (\ThreadVote{..} -> threadVote) voteField
     <*> marshallReadOnly (marshallField (\ThreadVote{..} -> threadVoteCreatedAt) createdAtField)
     <*> marshallReadOnly (marshallField (\ThreadVote{..} -> threadVoteUpdatedAt) updatedAtField)
 
@@ -219,3 +220,16 @@ commentMarshaller =
     <*> marshallField (\Comment {..} -> parentCommentID) (nullableField parentCommentIDFiled)
     <*> marshallReadOnly (marshallField (\Comment {..} -> createdAtForComment) createdAtField)
     <*> marshallReadOnly (marshallField (\Comment {..} -> updatedAtForComment) updatedAtField)
+
+-- -- CommentVote Model
+commentVoteMarshaller ::
+  SqlMarshaller
+    CommentVoteWrite
+    CommentVoteRead
+commentVoteMarshaller =
+  CommentVote
+    <$> marshallField (\CommentVote{..} -> userIDForCommentVote) userIDField
+    <*> marshallField (\CommentVote{..} -> commentIDForCommentVote) commentIDField
+    <*> marshallField (\CommentVote{..} -> commentVote) voteField
+    <*> marshallReadOnly (marshallField (\CommentVote{..} -> createdAtForCommentVote) createdAtField)
+    <*> marshallReadOnly (marshallField (\CommentVote{..} -> updatedAtForCommentVote) updatedAtField)

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module TestApp.Comment (commentAPITests) where
+module TestApp.Comment (commentAPITests,voteCommentAPITests) where
 
 import qualified Data.ByteString.Lazy as BSL
 import Network.HTTP.Types
@@ -8,6 +8,26 @@ import Test.Tasty
 import Test.Tasty.Wai
 import TestApp.SampleData
 import Control.Monad.IO.Class (liftIO)
+
+voteCommentAPITests :: Application -> [BSL.ByteString] -> TestTree
+voteCommentAPITests app userToken =
+  testGroup
+    "vote comment APIs"
+    [ testVoteCommentAPI app (Prelude.head userToken)]
+
+testVoteCommentAPI :: Application -> BSL.ByteString -> TestTree
+testVoteCommentAPI app token =
+  testWai app "/vote comment - 200" $ do
+    res <-
+        srequest
+            (buildRequestWithHeaders
+                PUT
+                "/api/v1/user/comment/vote/3/true"
+                ""
+                [ ("Content-Type", "application/json"),
+                 (hAuthorization, "Bearer " <> BSL.toStrict token)
+                ])
+    assertStatus' status200 res
 
 commentAPITests :: Application -> [BSL.ByteString] -> TestTree
 commentAPITests app userToken =
@@ -39,7 +59,7 @@ testUpdateCommentAPI app token =
         srequest
             (buildRequestWithHeaders
                 PUT
-                "/api/v1/user/comment/update/1"
+                "/api/v1/user/comment/update/2"
                 commentUpdateReqBody
                 [ ("Content-Type", "application/json"),
                  (hAuthorization, "Bearer " <> BSL.toStrict token)
@@ -53,7 +73,7 @@ testDeleteCommentAPI app token =
         srequest
             (buildRequestWithHeaders
                 DELETE
-                "/api/v1/user/comment/delete/2"
+                "/api/v1/user/comment/delete/1"
                 ""
                 [ ("Content-Type", "application/json"),
                  (hAuthorization, "Bearer " <> BSL.toStrict token)
