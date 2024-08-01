@@ -34,7 +34,7 @@ getTestAppCfg :: IO (Application, ConnectionPool, JWTSettings)
 getTestAppCfg = do
   pool <- createConnectionPool connectionOptionsForTest
   jwtSecretKey <- generateKey
-  loggerSet_ <- newFileLoggerSet defaultBufSize "/home/user/haskell/imdb-logs.txt"
+  loggerSet_ <- newFileLoggerSet defaultBufSize "./logs.txt"
 
   let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
       appST = MyAppState (AppConfig "uploads" loggerSet_ LevelDebug) orvilleState

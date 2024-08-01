@@ -13,20 +13,19 @@ import Test.Tasty
 import Test.Tasty.Wai
 import TestApp.Admin
 import TestApp.Auth
-import TestApp.Thread
-import TestApp.Community
 import TestApp.Comment
+import TestApp.Community
 import TestApp.SampleData
+import TestApp.Thread
 import TestApp.Users
 import TestAppConfig
 
 tests ::
   Application ->
-  O.ConnectionPool ->
   [BSL.ByteString] ->
   [BSL.ByteString] ->
   TestTree
-tests app pool userTokens adminTokens =
+tests app userTokens adminTokens =
   testGroup "Tests" [apiTests app userTokens adminTokens]
 
 apiTests :: Application -> [BSL.ByteString] -> [BSL.ByteString] -> TestTree
@@ -64,7 +63,7 @@ main = do
             let userTokens = fmap (\(Right t) -> t) eUserTokens
                 adminTokens = fmap (\(Right t) -> t) eAdminTokens
             createDB pool
-            defaultMain (tests myApp pool userTokens adminTokens)
+            defaultMain (tests myApp userTokens adminTokens)
               `catch` ( \(e :: SomeException) -> do
                           destroyDB pool
                           throwIO e

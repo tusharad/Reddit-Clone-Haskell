@@ -12,6 +12,7 @@ where
 
 import Control.Monad (unless, when)
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import qualified Data.Text as T
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Utils
@@ -20,7 +21,6 @@ import Platform.User.DB
 import Platform.User.Types
 import Servant.Auth.Server
 import UnliftIO
-import qualified Data.Text as T
 
 fetchUserByID ::
   (MonadUnliftIO m) =>
@@ -125,11 +125,11 @@ createServerFilePath tempFP fName = do
     Left e -> throw400Err $ BSL.pack $ show e
     Right content -> do
       checkImageSize content
-      let serverFilePath = "/home/user/Documents/github/Reddit-Clone-Haskell/haskread-platform-be/file-upload/" <> T.unpack fName
-      liftIO $ BSL.writeFile serverFilePath content 
+      let serverFilePath = "./file-upload/" <> T.unpack fName
+      liftIO $ BSL.writeFile serverFilePath content
       pure serverFilePath
   where
-     checkImageSize imageContent = do
+    checkImageSize imageContent = do
       unless (BSL.length imageContent < 1000000) $ throw400Err "Image to large :("
 
 userUpdateProfileImageH ::
@@ -138,21 +138,22 @@ userUpdateProfileImageH ::
   UpdateUserImageBody ->
   AppM m UpdateUserImageResponse
 userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} = do
-  let (tempFP,fType,fName) = userImageInfo
+  let (tempFP, fType, fName) = userImageInfo
   checkValidImageType fType
   mUserProfile <- fetchUserProfileImage userIDForUserInfo
   serverFilePath <- createServerFilePath tempFP fName
-  let userProfileImage = UserProfileImage {
-    userIDForProfileImage = userIDForUserInfo,
-    userImage = T.pack serverFilePath,
-    createdAtForProfileImage = (),
-    updatedAtForProfileImage = ()
-  }
+  let userProfileImage =
+        UserProfileImage
+          { userIDForProfileImage = userIDForUserInfo,
+            userImage = T.pack serverFilePath,
+            createdAtForProfileImage = (),
+            updatedAtForProfileImage = ()
+          }
   case mUserProfile of
     Nothing -> do
       addUserProfileImageQ userProfileImage
       pure $ UpdateUserImageResponse "Profile image added successfully!"
-    Just _  -> do
+    Just _ -> do
       updateUserProfileImageQ userIDForUserInfo userProfileImage
       pure $ UpdateUserImageResponse "Profile image added successfully!"
   where

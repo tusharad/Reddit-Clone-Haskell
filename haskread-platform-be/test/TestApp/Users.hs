@@ -1,18 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module TestApp.Users where
+module TestApp.Users (userAPITests) where
 
-import qualified Data.ByteString.Lazy as BSL
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as BSL
+import Data.List (intersperse)
 import Network.HTTP.Types
 import Servant
 import Test.Tasty
 import Test.Tasty.Wai
 import TestApp.SampleData
-import Data.List                 (intersperse)
 
 userAPITests :: Application -> [BSL.ByteString] -> TestTree
-userAPITests app [tokenBatman, tokenSpiderman, tokenSuperman,tokenWonderwoman,_] =
+userAPITests app [tokenBatman, tokenSpiderman, tokenSuperman, tokenWonderwoman, _] =
   testGroup
     "User APIs"
     [ testUserDashboard app tokenBatman,
@@ -74,18 +74,21 @@ testUpdateUserProfileImage app token = do
           "/api/v1/user/profile/update-image"
           correctBody
           (multipartHeaders <> [(hAuthorization, "Bearer " <> BSL.toStrict token)])
-    assertStatus' status200 res 
+    assertStatus' status200 res
 
-multipartHeaders :: [(HeaderName,ByteString)]
+multipartHeaders :: [(HeaderName, ByteString)]
 multipartHeaders = [(hContentType, "multipart/form-data; boundary=XX")]
 
 correctBody :: BSL.ByteString
-correctBody = mconcat $ intersperse "\n"
-  [ "--XX"
-  , "Content-Disposition: form-data; name=\"pic\"; filename=\"body.png\""
-  , "Content-Type: image/png"
-  , ""
-  , "Foo body"
-  , ""
-  , "--XX--"
-  ]
+correctBody =
+  mconcat $
+    intersperse
+      "\n"
+      [ "--XX",
+        "Content-Disposition: form-data; name=\"pic\"; filename=\"body.png\"",
+        "Content-Type: image/png",
+        "",
+        "Foo body",
+        "",
+        "--XX--"
+      ]

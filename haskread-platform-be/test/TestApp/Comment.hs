@@ -68,7 +68,6 @@ testUpdateCommentAPI app token =
               (hAuthorization, "Bearer " <> BSL.toStrict token)
             ]
         )
-    liftIO $ print ("update comment", res)
     assertStatus' status200 res
 
 testDeleteCommentAPI :: Application -> BSL.ByteString -> TestTree
@@ -84,5 +83,4 @@ testDeleteCommentAPI app token =
               (hAuthorization, "Bearer " <> BSL.toStrict token)
             ]
         )
-    liftIO $ print ("delete comment", res)
     assertStatus' status200 res

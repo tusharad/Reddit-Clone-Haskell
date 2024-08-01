@@ -1,0 +1,37 @@
+name: Haskell CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./haskread-platform-be/
+
+    steps:
+    
+    - name: Copy repo into actions 
+      uses: actions/checkout@v3
+    
+    - name: Start test database
+      run: make startTestDB
+    
+    - name: install dependancies, build and test stack project.
+      uses: freckle/stack-action@v5
+      with:
+        working-directory: ./haskread-platform-be/
+        stack-build-arguments: --ghc-options="-fno-warn-unused-imports -fno-warn-unused-matches -fno-warn-type-defaults -fno-warn-missing-export-lists"
+        stack-build-arguments-test: --ghc-options="-fno-warn-unused-imports -fno-warn-unused-matches -fno-warn-type-defaults -fno-warn-missing-export-lists"
+
+    - name: stop test database
+      run: make stopTestDB
