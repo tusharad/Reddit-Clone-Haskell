@@ -10,12 +10,13 @@ import Test.Tasty.Wai
 import TestApp.SampleData
 
 adminAPITests :: Application -> [BSL.ByteString] -> TestTree
-adminAPITests app [token] =
+adminAPITests app [tokenBatman,tokenSuperman] =
   testGroup
     "Admin API tests"
-    [ testUpdateAdminPassword app token,
-      testCreateAdmin app token
+    [ testUpdateAdminPassword app tokenSuperman,
+      testCreateAdmin app tokenBatman
     ]
+adminAPITests _ _ = error "adminAPITests: admin tokens not found"
 
 testUpdateAdminPassword :: Application -> BSL.ByteString -> TestTree
 testUpdateAdminPassword app token = do

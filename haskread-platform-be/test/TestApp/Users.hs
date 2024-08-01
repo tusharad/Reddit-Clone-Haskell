@@ -12,13 +12,13 @@ import TestApp.SampleData
 import Data.List                 (intersperse)
 
 userAPITests :: Application -> [BSL.ByteString] -> TestTree
-userAPITests app [token1, token2, token3] =
+userAPITests app [tokenBatman, tokenSpiderman, tokenSuperman,tokenWonderwoman,_] =
   testGroup
     "User APIs"
-    [ testUserDashboard app token2,
-      testUserChangePassword app token1,
-      testUserDeleteAccount app token3,
-      testUpdateUserProfileImage app token2
+    [ testUserDashboard app tokenBatman,
+      testUserChangePassword app tokenSpiderman,
+      testUserDeleteAccount app tokenSuperman,
+      testUpdateUserProfileImage app tokenWonderwoman
     ]
 userAPITests _ _ = testGroup "Servant HaskRead" []
 

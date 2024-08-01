@@ -10,12 +10,12 @@ import TestApp.SampleData
 import Control.Monad.IO.Class (liftIO)
 
 communityAPITests :: Application -> [BSL.ByteString] -> TestTree
-communityAPITests app [adminToken] =
+communityAPITests app [adminBatmanToken,adminSuperMan] =
   testGroup
     "community APIs"
-    [ testCreateCommunityAPI app adminToken,
-      testUpdateCommunityAPI app adminToken,
-      testDeleteCommunityAPI app adminToken
+    [ testCreateCommunityAPI app adminBatmanToken,
+      testUpdateCommunityAPI app adminBatmanToken,
+      testDeleteCommunityAPI app adminBatmanToken
     ]
 communityAPITests _ _ = error "Invalid number of arguments" -- This is a compile-time error
 
@@ -54,7 +54,7 @@ testDeleteCommunityAPI app token =
       srequest
         (buildRequestWithHeaders
           DELETE
-          "/api/v1/admin/community/delete/2"
+          "/api/v1/admin/community/delete/4"
           ""
           [ ("Content-Type", "application/json"),
             (hAuthorization, "Bearer " <> BSL.toStrict token)

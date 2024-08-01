@@ -5,25 +5,25 @@ module TestAppConfig where
 import Orville.PostgreSQL
 import qualified Orville.PostgreSQL as O
 import Orville.PostgreSQL.AutoMigration
+import Platform.Admin.Community.DB
 import Platform.Admin.DB
+import Platform.Comment.DB
 import Platform.Common.Types
 import Platform.Core (app)
 import Platform.DB.Model
 import Platform.DB.Table
 import Platform.User.DB
-import Platform.Admin.Community.DB
 import Platform.User.Thread.DB
-import Platform.Comment.DB
 import Servant
 import Servant.Auth.Server
-import TestApp.SampleData
 import System.Log.FastLogger
+import TestApp.SampleData
 
 connectionOptionsForTest :: ConnectionOptions
 connectionOptionsForTest =
   ConnectionOptions
     { connectionString =
-        "dbname=haskread_test_db host=localhost user=tushar password=1234 port=5432",
+        "dbname=haskread_test_db host=localhost user=tushar password=1234 port=5434",
       connectionNoticeReporting = DisableNoticeReporting,
       connectionPoolStripes = OneStripePerCapability,
       connectionPoolMaxConnections = MaxConnectionsPerStripe 1,
@@ -35,7 +35,7 @@ getTestAppCfg = do
   pool <- createConnectionPool connectionOptionsForTest
   jwtSecretKey <- generateKey
   loggerSet_ <- newFileLoggerSet defaultBufSize "/home/user/haskell/imdb-logs.txt"
-  
+
   let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
       appST = MyAppState (AppConfig "uploads" loggerSet_ LevelDebug) orvilleState
       jwtSett = defaultJWTSettings jwtSecretKey
@@ -56,8 +56,7 @@ schemaList =
 
 schemaDropList :: [SchemaItem]
 schemaDropList =
-  [ 
-    SchemaDropTable $ tableIdentifier userProfileImageTable,
+  [ SchemaDropTable $ tableIdentifier userProfileImageTable,
     SchemaDropTable $ tableIdentifier threadVoteTable,
     SchemaDropTable $ tableIdentifier commentVoteTable,
     SchemaDropTable $ tableIdentifier commentTable,
@@ -79,7 +78,7 @@ insertCommunitySampleData = mapM_ addCommunityQ
 insertThreadSampleData :: (MonadOrville m) => [ThreadWrite] -> m ()
 insertThreadSampleData = mapM_ addThreadQ
 
-insertCommentSampleData :: MonadOrville m => [CommentWrite] -> m ()
+insertCommentSampleData :: (MonadOrville m) => [CommentWrite] -> m ()
 insertCommentSampleData = mapM_ addCommentQ
 
 createDB :: ConnectionPool -> IO ()

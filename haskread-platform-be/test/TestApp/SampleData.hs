@@ -33,16 +33,26 @@ sampleAdmins =
   [ Admin
       { adminName = "batman",
         adminEmail = "bruce@abc.com",
-        adminPassword = "1234",
+        adminPassword = "Bruce123",
         createdAtForAdmin = (),
         updatedAtForAdmin = (),
         adminID = ()
-      }
+      },
+    Admin {
+      adminName = "superman",
+      adminEmail = "clark@abc.com",
+      adminPassword = "Clark123",
+      createdAtForAdmin = (),
+      updatedAtForAdmin = (),
+      adminID = ()
+    }
   ]
 
 sampleAdminInfoList :: [AdminInfo]
 sampleAdminInfoList =
-  [AdminInfo (AdminID 1) "batman"]
+  [ AdminInfo (AdminID 1) "batman",
+    AdminInfo (AdminID 2) "superman"
+  ]
 
 sampleUsers :: [UserWrite]
 sampleUsers =
@@ -69,6 +79,22 @@ sampleUsers =
         userID = (),
         createdAt = (),
         updatedAt = ()
+      },
+    User
+      { userName = "wonderwoman",
+        email = "diana@abc.com",
+        password = "Diana123",
+        userID = (),
+        createdAt = (),
+        updatedAt = ()
+      },
+    User
+      { userName = "ironman",
+        email = "tony@abc.com",
+        password = "Tony123",
+        userID = (),
+        createdAt = (),
+        updatedAt = ()
       }
   ]
 
@@ -85,6 +111,14 @@ sampleUserInfoList =
     UserInfo
       { userIDForUserInfo = UserID 3,
         userNameForUserInfo = "superman"
+      },
+    UserInfo
+      { userIDForUserInfo = UserID 4,
+        userNameForUserInfo = "wonderwoman"
+      },
+    UserInfo
+      { userIDForUserInfo = UserID 5,
+        userNameForUserInfo = "ironman"
       }
   ]
 
@@ -103,6 +137,30 @@ sampleCommunities = [
     communityName = "python",
     communityDescription = "general purpose programming language",
     communityLabelList = "[\"django\",\"flask\"]",
+    communityCreatedAt = (),
+    communityUpdatedAt = ()
+  },
+  Community {
+    communityID = (),
+    communityName = "java",
+    communityDescription = "general purpose programming language",
+    communityLabelList = "[\"spring\",\"hibernate\"]",
+    communityCreatedAt = (),
+    communityUpdatedAt = ()
+  },
+  Community {
+    communityID = (),
+    communityName = "javascript",
+    communityDescription = "general purpose programming language",
+    communityLabelList = "[\"react\",\"angular\"]",
+    communityCreatedAt = (),
+    communityUpdatedAt = ()
+  },
+  Community {
+    communityID = (),
+    communityName = "ruby",
+    communityDescription = "general purpose programming language",
+    communityLabelList = "[\"rails\",\"sinatra\"]",
     communityCreatedAt = (),
     communityUpdatedAt = ()
   }
@@ -127,6 +185,24 @@ sampleThreads = [
     threadUserID = UserID 1,
     threadCreatedAt = (),
     threadUpdatedAt = ()
+  },
+  Thread {
+    threadID = (),
+    threadTitle = "HaskRead 3",
+    threadDescription = Just "A Reddit Clone in Haskell updated again.",
+    threadCommunityID = CommunityID 2,
+    threadUserID = UserID 1,
+    threadCreatedAt = (),
+    threadUpdatedAt = ()
+  },
+  Thread {
+    threadID = (),
+    threadTitle = "HaskRead 4",
+    threadDescription = Just "A Reddit Clone in Haskell updated again.",
+    threadCommunityID = CommunityID 2,
+    threadUserID = UserID 1,
+    threadCreatedAt = (),
+    threadUpdatedAt = ()
   }
  ]
 
@@ -135,7 +211,7 @@ sampleComments = [
   Comment {
     commentID = (),
     commentContent = "Great work!",
-    threadIDForComment = ThreadID 1,
+    threadIDForComment = ThreadID 3,
     userIDForComment = UserID 1,
     createdAtForComment = (),
     updatedAtForComment = (),
@@ -144,7 +220,7 @@ sampleComments = [
   Comment {
     commentID = (),
     commentContent = "Great work! Updated.",
-    threadIDForComment = ThreadID 1,
+    threadIDForComment = ThreadID 3,
     userIDForComment = UserID 1,
     createdAtForComment = (),
     updatedAtForComment = (),
@@ -191,8 +267,8 @@ correctLoginUserBody :: ByteString
 correctLoginUserBody =
   let l =
         LoginUserBody
-          { emailForLogin = "peter@abc.com",
-            passwordForLogin = "Peter123"
+          { emailForLogin = "tony@abc.com",
+            passwordForLogin = "Tony123"
           }
    in encode l
 
@@ -200,9 +276,9 @@ sampleChangePasswordBody :: ByteString
 sampleChangePasswordBody =
   encode
     ChangePasswordBody
-      { oldPasswordForChangePass = "Bruce123",
-        newPasswordForChangePass = "Bruce1235",
-        confirmPasswordForChangePass = "Bruce1235"
+      { oldPasswordForChangePass = "Peter123",
+        newPasswordForChangePass = "Peter1234",
+        confirmPasswordForChangePass = "Peter1234"
       }
 
 sampleDeleteUserBody :: ByteString
@@ -218,23 +294,23 @@ loginAdminBody =
   encode
     AdminLoginBodyReq
       { adminEmailForLogin = "bruce@abc.com",
-        adminPasswordForLogin = "1234"
+        adminPasswordForLogin = "Bruce123"
       }
 
 adminChangePasswordBody :: ByteString
 adminChangePasswordBody =
   encode
     AdminChangePasswordBody
-      { oldPassword = "1234",
-        newPassword = "1235",
-        confirmNewPassword = "1235"
+      { oldPassword = "Clark123",
+        newPassword = "Clark1234",
+        confirmNewPassword = "Clark1234"
       }
 
 adminCreateAdminReqBody :: ByteString
 adminCreateAdminReqBody =
   encode
     AdminCreateAdminReqBody
-      { adminNameForCreate = "wade",
+      { adminNameForCreate = "deadpool",
         adminEmailForCreate = "wade@abc.com",
         adminPasswordForCreate = "Wade1234",
         adminConfirmPasswordForCreate = "Wade1234"
