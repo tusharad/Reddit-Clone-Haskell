@@ -25,6 +25,8 @@ create table admin (
   , updated_at timestamptz default now()
 );
 
+insert into admin (admin_name,email,password) values ('batman','bruce@abc.com','foobar1');
+
 create table community (
 	community_id serial primary key
   , community_name varchar(255) not null unique

@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Platform.Core (startApp, app) where
 
@@ -7,14 +8,13 @@ module Platform.Core (startApp, app) where
 
 import Control.Monad.Reader
 import Network.Wai.Handler.Warp
-import qualified Orville.PostgreSQL as O
-import Orville.PostgreSQL.Raw.Connection
 import Platform.API
 import Platform.Common.AppM
 import Platform.Common.Types
+import Platform.Common.Utils
 import Servant
 import Servant.Auth.Server
-import System.Log.FastLogger
+import System.Exit
 
 runAppM :: MyAppState -> AppM IO a -> Handler a
 runAppM myAppState appM = Handler $ runMyExceptT $ runReaderT (getApp appM) myAppState
@@ -30,28 +30,14 @@ allServer cookieSett jwtSett myAppState =
         jwtSett
     )
 
-connectionOptions :: ConnectionOptions
-connectionOptions =
-  ConnectionOptions
-    { connectionString =
-        "dbname=haskread_dev_db host=localhost user=tushar password=1234",
-      connectionNoticeReporting = DisableNoticeReporting,
-      connectionPoolStripes = OneStripePerCapability,
-      connectionPoolMaxConnections = MaxConnectionsPerStripe 1,
-      connectionPoolLingerTime = 10
-    }
-
 startApp :: IO ()
 startApp = do
-  putStrLn "Application running at port 8085"
-  pool <- createConnectionPool connectionOptions
-  jwtSecretKey <- generateKey
-  loggerSet_ <- newFileLoggerSet defaultBufSize "/home/user/haskell/imdb-logs.txt"
-  let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
-      appST = MyAppState (AppConfig "uploads" loggerSet_ LevelDebug) orvilleState
-      jwtSett = defaultJWTSettings jwtSecretKey
-  let ctx = defaultCookieSettings :. jwtSett :. EmptyContext
-  run 8085 (app appST jwtSett ctx)
+  eEnv <- readEnv "./env.dhall"
+  case eEnv of
+    Left e -> (putStrLn $ show e) >> exitFailure
+    Right (appST, jwtSett, ctx, appPort, _) -> do
+      putStrLn $ "Application running at port " <> show appPort
+      run appPort (app appST jwtSett ctx)
 
 app :: MyAppState -> JWTSettings -> Context [CookieSettings, JWTSettings] -> Application
 app appST jwtSett ctx =

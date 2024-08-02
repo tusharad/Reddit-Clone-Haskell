@@ -46,6 +46,7 @@ dependencies:
 - servant-multipart
 - http-api-data
 - fast-logger
+- dhall
 
 ghc-options:
 - -Wall

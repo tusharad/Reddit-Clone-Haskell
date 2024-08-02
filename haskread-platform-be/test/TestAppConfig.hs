@@ -9,6 +9,7 @@ import Platform.Admin.Community.DB
 import Platform.Admin.DB
 import Platform.Comment.DB
 import Platform.Common.Types
+import Platform.Common.Utils
 import Platform.Core (app)
 import Platform.DB.Model
 import Platform.DB.Table
@@ -16,31 +17,17 @@ import Platform.User.DB
 import Platform.User.Thread.DB
 import Servant
 import Servant.Auth.Server
+import System.Exit
 import System.Log.FastLogger
 import TestApp.SampleData
 
-connectionOptionsForTest :: ConnectionOptions
-connectionOptionsForTest =
-  ConnectionOptions
-    { connectionString =
-        "dbname=haskread_test_db host=localhost user=tushar password=1234 port=5434",
-      connectionNoticeReporting = DisableNoticeReporting,
-      connectionPoolStripes = OneStripePerCapability,
-      connectionPoolMaxConnections = MaxConnectionsPerStripe 1,
-      connectionPoolLingerTime = 10
-    }
-
 getTestAppCfg :: IO (Application, ConnectionPool, JWTSettings)
 getTestAppCfg = do
-  pool <- createConnectionPool connectionOptionsForTest
-  jwtSecretKey <- generateKey
-  loggerSet_ <- newFileLoggerSet defaultBufSize "./logs.txt"
-
-  let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
-      appST = MyAppState (AppConfig "uploads" loggerSet_ LevelDebug) orvilleState
-      jwtSett = defaultJWTSettings jwtSecretKey
-  let ctx = defaultCookieSettings :. jwtSett :. EmptyContext
-  return (app appST jwtSett ctx, pool, jwtSett)
+  eEnv <- readEnv "./testEnv.dhall"
+  case eEnv of
+    Left e -> (putStrLn $ show e) >> exitFailure
+    Right (appST, jwtSett, ctx, _, pool) -> do
+      return (app appST jwtSett ctx, pool, jwtSett)
 
 schemaList :: [SchemaItem]
 schemaList =

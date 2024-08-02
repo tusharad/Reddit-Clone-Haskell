@@ -66,6 +66,7 @@ library
       aeson
     , base >=4.7 && <5
     , bytestring
+    , dhall
     , fast-logger
     , filepath
     , haxl
@@ -99,6 +100,7 @@ executable haskread-platform-be-exe
       aeson
     , base >=4.7 && <5
     , bytestring
+    , dhall
     , fast-logger
     , filepath
     , haskread-platform-be
@@ -142,6 +144,7 @@ test-suite haskread-platform-be-test
       aeson
     , base >=4.7 && <5
     , bytestring
+    , dhall
     , fast-logger
     , filepath
     , haskread-platform-be

@@ -23,11 +23,11 @@ startTest:
 
 startDB:
 	docker run \
-	--name haskread_dev_pg_db \
+	--name haskread_local_pg_db \
     -e POSTGRES_PASSWORD=1234 \
     -e POSTGRES_USER=tushar \
-    -e POSTGRES_DB=haskread_dev_db \
-    -v /home/user/haskell/Reddit-Clone-Haskell/haskread-platform-be/.dockermnt/pgDB:/var/lib/postgresql/data \
+    -e POSTGRES_DB=haskread_local_db \
+    -v /home/user/haskell/Reddit-Clone-Haskell/haskread-platform-be/.dockermnt/pg_db:/var/lib/postgresql/data \
 	-p 5433:5432 \
-	--rm -d \
+	-d \
     postgres:16.3-alpine3.20

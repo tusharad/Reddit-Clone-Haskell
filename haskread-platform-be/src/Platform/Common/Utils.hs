@@ -1,5 +1,7 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Platform.Common.Utils
   ( toUserInfo,
@@ -9,20 +11,27 @@ module Platform.Common.Utils
     validatePassword,
     passwordConstraintMessage,
     toAdminInfo,
-    toJsonbArray
+    toJsonbArray,
+    readEnv,
   )
 where
 
+import Control.Exception
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy as BSL
+import Data.Char
+import Data.String.Interpolate
+import qualified Data.Text as T
+import Dhall
+import qualified Orville.PostgreSQL as O
+import Orville.PostgreSQL.Raw.Connection
 import Platform.Auth.Types
 import Platform.Common.AppM
+import Platform.Common.Types
 import Platform.DB.Model
-import Data.Text (Text)
-import Servant (err400, err401, errBody, throwError)
-import Data.Char
-import qualified Data.Text as T
-import Data.String.Interpolate
+import Servant
+import Servant.Auth.Server
+import System.Log.FastLogger
 
 toUserInfo :: UserRead -> UserInfo
 toUserInfo User {..} = UserInfo userID userName
@@ -37,18 +46,20 @@ throw401Err :: (MonadIO m) => BSL.ByteString -> AppM m a
 throw401Err err = throwError $ err401 {errBody = err}
 
 passwordUpdatedUser :: UserRead -> Text -> UserWrite
-passwordUpdatedUser u password0 = u {
-  password = password0
-  , createdAt = ()
-  , updatedAt = ()
-  , userID = ()
-}
+passwordUpdatedUser u password0 =
+  u
+    { password = password0,
+      createdAt = (),
+      updatedAt = (),
+      userID = ()
+    }
 
 -- Constraints:
 -- at least 1 uppercase, 1 lowercase, 1 digit
 -- length at lease 8 chars
 passwordConstraintMessage :: BSL.ByteString
-passwordConstraintMessage = [i|
+passwordConstraintMessage =
+  [i|
   Password must be at least 8 characters long and contain at least one uppercase letter, 
   one lowercase letter, one number
   |]
@@ -61,3 +72,64 @@ validatePassword password0 = do
 
 toJsonbArray :: [Text] -> Text
 toJsonbArray = T.pack . show
+
+mkConnection :: DBConfig -> ConnectionOptions
+mkConnection DBConfig {..} =
+  let connString =
+        unwords
+          [ "dbname=" <> T.unpack dbName,
+            "host=" <> T.unpack host,
+            "user=" <> T.unpack dbUserName,
+            "password=" <> T.unpack dbPassword,
+            "port=" <> show port
+          ]
+   in ConnectionOptions
+        { connectionString = connString,
+          connectionNoticeReporting = DisableNoticeReporting,
+          connectionPoolStripes = OneStripePerCapability,
+          connectionPoolMaxConnections = MaxConnectionsPerStripe 1,
+          connectionPoolLingerTime = 10
+        }
+
+toLogLevel :: Text -> MinLogLevel
+toLogLevel "LevelDebug" = LevelDebug
+toLogLevel "LevelInfo" = LevelInfo
+toLogLevel "LevelWarn" = LevelWarn
+toLogLevel "LevelError" = LevelError
+toLogLevel _ = LevelInfo -- Default if wrong value is mentioned
+
+readEnv ::
+  Text ->
+  IO
+    ( Either
+        SomeException
+        ( MyAppState,
+          JWTSettings,
+          Context [CookieSettings, JWTSettings],
+          Int,
+          ConnectionPool
+        )
+    )
+readEnv fp = do
+  eEnv <-
+    try $ input auto fp ::
+      IO (Either SomeException Env)
+  case eEnv of
+    Left e -> pure $ Left e
+    Right Env {..} -> do
+      ePool <-
+        try (createConnectionPool $ mkConnection dbConfig) ::
+          IO (Either SqlExecutionError ConnectionPool)
+      case ePool of
+        Left e -> pure $ Left $ toException e
+        Right pool -> do
+          jwtSecretKey <- generateKey
+          loggerSet_ <- newFileLoggerSet defaultBufSize logFilePath
+          let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
+              appST =
+                MyAppState
+                  (AppConfig fileUploadPath loggerSet_ (toLogLevel logLevel))
+                  orvilleState
+              jwtSett = defaultJWTSettings jwtSecretKey
+              ctx = defaultCookieSettings :. jwtSett :. EmptyContext
+          pure $ Right (appST, jwtSett, ctx, fromIntegral applicationPort, pool)
