@@ -24,9 +24,9 @@ let dbConfig : DBConfig = {
 
 let env : Env = {
     dbConfig = dbConfig,
-    logFilePath = "/home/user/haskell/Reddit-Clone-Haskell/haskread-platform-be/.logs/dev_logs.txt",
+    logFilePath = "./.logs/dev_logs.txt",
     logLevel = "LevelDebug",
-    fileUploadPath = "/home/user/haskell/Reddit-Clone-Haskell/haskread-platform-be/file-upload",
+    fileUploadPath = "./file-upload",
     applicationPort = 8085
 }
 
