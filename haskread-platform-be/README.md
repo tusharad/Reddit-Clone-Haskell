@@ -1,36 +1,63 @@
 # haskread-platform-be
 
-## How to run
+Platform backend of haskread.
+
+## Instructions to setup local development environment
 
 ### Prerequisites
-- [GHCup](https://www.haskell.org/ghcup/)
-- [PostgreSQL](https://www.postgresql.org/download/)
+- [Docker](https://www.docker.com/)
+- [Docker-compose](https://docs.docker.com/compose/)
 
-### Setup
+### Clone the repository
 
-1. Clone the repository
 ```bash
-git clone 
+$ git clone git@github.com:tusharad/Reddit-Clone-Haskell.git
 ```
 
-2. Install dependencies
+### Switch to platform-be directory
+
 ```bash
-cd haskread-platform-be
-stack build
+$ cd haskread-platform-be
 ```
 
-3. Create the database
+### Up the docker compose
+
 ```bash
-psql -U <username> -c "CREATE DATABASE haskread_dev_db"
+$ docker compose up
 ```
 
-5. Install the database schema
+This command will:
+ - Start a postgresql database with all schema created.
+ - Start the container which includes haskell compiler tool (stack)
+ - The project source code will be mounted to container and postgresql database 
+   will be mounted at .dockermnt/pg_db/
+
+Note:
+    - Docker-compose command be either `docker-compose up` or `docker compose up` 
+      depending upon your installation.
+
+### Build the project using make command 
+
 ```bash
-psql -U <username> -d haskread_dev_db -f Scripts/DB/Schema.sql
+$ make build-be-platform
 ```
 
-6. Run the server
+### Run the project
+
 ```bash
-stack run
+$ make run-be-platform
 ```
 
+Note:
+ - Make sure the environment variables in `env.dhall` are correct for 
+   `docker-compose.yml's` postgresql env.
+ - Feel free to change them as per your needs.
+
+### Run tests
+
+```
+$ make startTest
+```
+
+Note:
+ - For running tests, the application uses `testEnv.dhall`.

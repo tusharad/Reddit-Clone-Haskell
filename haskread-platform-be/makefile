@@ -34,3 +34,9 @@ startDB:
 
 be-haskread-platform-run:
 	stack run haskread-platform-be-exe -- "./env.dhall"
+
+build-be-platform:
+	docker compose exec -it stack build haskread-platform-be-exe -- "./env.dhall"
+
+run-be-platform:
+	docker compose exec -it stack build haskread-platform-be-exe -- "./env.dhall"

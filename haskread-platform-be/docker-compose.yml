@@ -1,0 +1,31 @@
+services:
+  haskread_backend:
+    image: haskell:9.6-buster
+    container_name: haskread_platform_be
+    volumes:
+      - .:/app
+      - .stack-work:/app/.stack-work
+    working_dir: /app
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16.3-alpine3.20
+    container_name: haskread_local_pg_db
+    environment:
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_USER=tushar
+      - POSTGRES_DB=haskread_local_db
+    ports:
+      - 5433:5432
+    volumes:
+      - ./.dockermnt/pg_db:/var/lib/postgresql/data 
+      - ./Scripts/DB/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tushar -d haskread_local_db"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
+volumes:
+  pg_data: {}
