@@ -29,5 +29,8 @@ startDB:
     -e POSTGRES_DB=haskread_local_db \
     -v /home/user/haskell/Reddit-Clone-Haskell/haskread-platform-be/.dockermnt/pg_db:/var/lib/postgresql/data \
 	-p 5433:5432 \
-	-d \
+	--rm -d  \
     postgres:16.3-alpine3.20
+
+be-haskread-platform-run:
+	stack run haskread-platform-be-exe -- "./env.dhall"

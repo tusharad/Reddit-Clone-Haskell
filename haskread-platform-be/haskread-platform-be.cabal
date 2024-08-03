@@ -67,6 +67,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , dhall
+    , directory
     , fast-logger
     , filepath
     , haxl
@@ -101,6 +102,7 @@ executable haskread-platform-be-exe
     , base >=4.7 && <5
     , bytestring
     , dhall
+    , directory
     , fast-logger
     , filepath
     , haskread-platform-be
@@ -145,6 +147,7 @@ test-suite haskread-platform-be-test
     , base >=4.7 && <5
     , bytestring
     , dhall
+    , directory
     , fast-logger
     , filepath
     , haskread-platform-be

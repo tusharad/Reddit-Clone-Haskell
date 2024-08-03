@@ -14,6 +14,8 @@ import Platform.Common.Types
 import Platform.Common.Utils
 import Servant
 import Servant.Auth.Server
+import System.Directory
+import System.Environment
 import System.Exit
 
 runAppM :: MyAppState -> AppM IO a -> Handler a
@@ -32,12 +34,21 @@ allServer cookieSett jwtSett myAppState =
 
 startApp :: IO ()
 startApp = do
-  eEnv <- readEnv "./env.dhall"
-  case eEnv of
-    Left e -> (putStrLn $ show e) >> exitFailure
-    Right (appST, jwtSett, ctx, appPort, _) -> do
-      putStrLn $ "Application running at port " <> show appPort
-      run appPort (app appST jwtSett ctx)
+  argList <- getArgs
+  if (null argList)
+    then (putStrLn "please provide argument") >> exitFailure
+    else do
+      let envFilePath = head argList
+      fileExists <- doesFileExist envFilePath
+      if not fileExists
+        then (putStrLn "please provide argument") >> exitFailure
+        else do
+          eEnv <- readEnv envFilePath
+          case eEnv of
+            Left e -> (putStrLn $ show e) >> exitFailure
+            Right (appST, jwtSett, ctx, appPort, _) -> do
+              putStrLn $ "Application running at pot " <> show appPort
+              run appPort (app appST jwtSett ctx)
 
 app :: MyAppState -> JWTSettings -> Context [CookieSettings, JWTSettings] -> Application
 app appST jwtSett ctx =

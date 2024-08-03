@@ -98,8 +98,13 @@ toLogLevel "LevelWarn" = LevelWarn
 toLogLevel "LevelError" = LevelError
 toLogLevel _ = LevelInfo -- Default if wrong value is mentioned
 
+data MissingEnvArgumentException = MissingEnvArgumentException Text
+  deriving (Show)
+
+instance Exception MissingEnvArgumentException
+
 readEnv ::
-  Text ->
+  String ->
   IO
     ( Either
         SomeException
@@ -110,13 +115,14 @@ readEnv ::
           ConnectionPool
         )
     )
-readEnv fp = do
+readEnv envFilePath = do
   eEnv <-
-    try $ input auto fp ::
+    try $ input auto (T.pack $ envFilePath) ::
       IO (Either SomeException Env)
   case eEnv of
     Left e -> pure $ Left e
     Right Env {..} -> do
+      putStrLn $ "Environment loaded successfully: " <> envFilePath
       ePool <-
         try (createConnectionPool $ mkConnection dbConfig) ::
           IO (Either SqlExecutionError ConnectionPool)

@@ -47,6 +47,7 @@ dependencies:
 - http-api-data
 - fast-logger
 - dhall
+- directory
 
 ghc-options:
 - -Wall
