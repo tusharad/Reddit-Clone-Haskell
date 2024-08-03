@@ -48,6 +48,7 @@ dependencies:
 - fast-logger
 - dhall
 - directory
+- password
 
 ghc-options:
 - -Wall

@@ -16,26 +16,26 @@ module Platform.DB.Model
     AdminRead,
     AdminWrite,
     AdminID (..),
-    Community(..),
+    Community (..),
     CommunityRead,
     CommunityWrite,
-    CommunityID(..),
-    Thread(..),
+    CommunityID (..),
+    Thread (..),
     ThreadRead,
     ThreadWrite,
-    ThreadID(..),
-    ThreadVote(..),
+    ThreadID (..),
+    ThreadVote (..),
     ThreadVoteRead,
     ThreadVoteWrite,
-    ThreadVoteID(..),
-    Comment(..),
+    ThreadVoteID (..),
+    Comment (..),
     CommentRead,
     CommentWrite,
-    CommentID(..),
-    CommentVoteID(..),
-    CommentVote(..),
+    CommentID (..),
+    CommentVoteID (..),
+    CommentVote (..),
     CommentVoteRead,
-    CommentVoteWrite
+    CommentVoteWrite,
   )
 where
 
@@ -44,6 +44,7 @@ import Data.Text (Text)
 import Data.Time (UTCTime)
 import GHC.Generics
 import GHC.Int (Int32)
+import Platform.Common.Types (MyPassword)
 import Web.HttpApiData
 
 -- User Model
@@ -54,16 +55,15 @@ data User a b = User
   { userID :: a,
     userName :: Text,
     email :: Text,
-    password :: Text,
+    userPassword :: MyPassword,
     createdAt :: b,
     updatedAt :: b
   }
-  deriving (Show, Eq, Generic, ToJSON)
+  deriving (Show, Generic, ToJSON)
 
 type UserRead = User UserID UTCTime
 
 type UserWrite = User () ()
-
 
 -- User Profile Model
 data UserProfileImage a = UserProfileImage
@@ -86,7 +86,7 @@ data Admin a b = Admin
   { adminID :: a,
     adminName :: Text,
     adminEmail :: Text,
-    adminPassword :: Text,
+    adminPassword :: MyPassword,
     createdAtForAdmin :: b,
     updatedAtForAdmin :: b
   }
@@ -98,8 +98,8 @@ type AdminWrite = Admin () ()
 
 -- Community Model
 newtype CommunityID = CommunityID Int32
-  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON,FromHttpApiData)
-  
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData)
+
 data Community a b = Community
   { communityID :: a,
     communityName :: Text,
@@ -111,78 +111,87 @@ data Community a b = Community
   deriving (Show, Eq, Generic, ToJSON)
 
 type CommunityRead = Community CommunityID UTCTime
+
 type CommunityWrite = Community () ()
 
 -- Thread
 
 newtype ThreadID = ThreadID Int32
-  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON,FromHttpApiData)
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData)
 
-data Thread a b = Thread {
-    threadID :: a
-  , threadTitle :: Text
-  , threadDescription :: Maybe Text
-  , threadUserID :: UserID
-  , threadCommunityID :: CommunityID
-  , threadCreatedAt :: b
-  , threadUpdatedAt :: b
-} deriving (Show, Eq, Generic, ToJSON)
+data Thread a b = Thread
+  { threadID :: a,
+    threadTitle :: Text,
+    threadDescription :: Maybe Text,
+    threadUserID :: UserID,
+    threadCommunityID :: CommunityID,
+    threadCreatedAt :: b,
+    threadUpdatedAt :: b
+  }
+  deriving (Show, Eq, Generic, ToJSON)
 
 type ThreadRead = Thread ThreadID UTCTime
+
 type ThreadWrite = Thread () ()
 
 -- ThreadVote Model
 
-data ThreadVoteID = ThreadVoteID {
-    threadVoteIDUserID :: UserID 
-  , threadVoteIDThreadID :: ThreadID
-}
+data ThreadVoteID = ThreadVoteID
+  { threadVoteIDUserID :: UserID,
+    threadVoteIDThreadID :: ThreadID
+  }
   deriving (Show, Eq, Ord)
 
-data ThreadVote a = ThreadVote {
-    threadVoteUserID :: UserID
-  , threadVoteThreadID :: ThreadID
-  , threadVote :: Bool
-  , threadVoteCreatedAt :: a
-  , threadVoteUpdatedAt :: a
-} deriving (Show, Eq, Generic, ToJSON)
+data ThreadVote a = ThreadVote
+  { threadVoteUserID :: UserID,
+    threadVoteThreadID :: ThreadID,
+    threadVote :: Bool,
+    threadVoteCreatedAt :: a,
+    threadVoteUpdatedAt :: a
+  }
+  deriving (Show, Eq, Generic, ToJSON)
 
 type ThreadVoteRead = ThreadVote UTCTime
+
 type ThreadVoteWrite = ThreadVote ()
 
 -- Comment Model
 
 newtype CommentID = CommentID Int32
-  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON,FromHttpApiData)
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData)
 
-data Comment a b = Comment {
-    commentID :: a,
+data Comment a b = Comment
+  { commentID :: a,
     userIDForComment :: UserID,
     threadIDForComment :: ThreadID,
     commentContent :: Text,
     parentCommentID :: Maybe CommentID,
     createdAtForComment :: b,
     updatedAtForComment :: b
-} deriving (Show, Eq, Generic, ToJSON)
+  }
+  deriving (Show, Eq, Generic, ToJSON)
 
 type CommentRead = Comment CommentID UTCTime
+
 type CommentWrite = Comment () ()
 
 -- CommentVote Model
 
-data CommentVoteID = CommentVoteID {
-    commentVoteIDUserID :: UserID
-  , commentVoteIDCommentID :: CommentID
-}
+data CommentVoteID = CommentVoteID
+  { commentVoteIDUserID :: UserID,
+    commentVoteIDCommentID :: CommentID
+  }
   deriving (Show, Eq, Ord)
 
-data CommentVote a = CommentVote {
-    userIDForCommentVote :: UserID
-  , commentIDForCommentVote :: CommentID
-  , commentVote :: Bool
-  , createdAtForCommentVote :: a
-  , updatedAtForCommentVote :: a
-} deriving (Show, Eq, Generic, ToJSON)
+data CommentVote a = CommentVote
+  { userIDForCommentVote :: UserID,
+    commentIDForCommentVote :: CommentID,
+    commentVote :: Bool,
+    createdAtForCommentVote :: a,
+    updatedAtForCommentVote :: a
+  }
+  deriving (Show, Eq, Generic, ToJSON)
 
 type CommentVoteRead = CommentVote UTCTime
+
 type CommentVoteWrite = CommentVote ()

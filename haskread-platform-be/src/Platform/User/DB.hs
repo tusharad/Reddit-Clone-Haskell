@@ -2,7 +2,6 @@ module Platform.User.DB
   ( fetchUserByEmailQ,
     fetchUserByUserNameQ,
     addUserQ,
-    findUserByMailPasswordQ,
     fetchUserByIDQ,
     changePasswordQ,
     deleteUserQ,
@@ -33,12 +32,6 @@ fetchUserByUserNameQ userName0 =
 
 addUserQ :: (MonadOrville m) => UserWrite -> m UserRead
 addUserQ = insertAndReturnEntity userTable
-
-findUserByMailPasswordQ :: (MonadUnliftIO m) => Text -> Text -> AppM m (Maybe UserRead)
-findUserByMailPasswordQ email0 password0 =
-  findFirstEntityBy userTable whereEmailPasswordIs
-  where
-    whereEmailPasswordIs = where_ $ emailField .== email0 .&& passwordField .== password0
 
 fetchUserByIDQ :: (MonadUnliftIO m) => UserID -> AppM m (Maybe UserRead)
 fetchUserByIDQ = findEntity userTable

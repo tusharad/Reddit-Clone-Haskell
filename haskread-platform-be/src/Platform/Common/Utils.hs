@@ -13,6 +13,7 @@ module Platform.Common.Utils
     toAdminInfo,
     toJsonbArray,
     readEnv,
+    matchPasswords,
   )
 where
 
@@ -20,6 +21,7 @@ import Control.Exception
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy as BSL
 import Data.Char
+import Data.Password.Bcrypt
 import Data.String.Interpolate
 import qualified Data.Text as T
 import Dhall
@@ -45,10 +47,10 @@ throw400Err err = throwError $ err400 {errBody = err}
 throw401Err :: (MonadIO m) => BSL.ByteString -> AppM m a
 throw401Err err = throwError $ err401 {errBody = err}
 
-passwordUpdatedUser :: UserRead -> Text -> UserWrite
+passwordUpdatedUser :: UserRead -> PasswordHash Bcrypt -> UserWrite
 passwordUpdatedUser u password0 =
   u
-    { password = password0,
+    { userPassword = MyPassword password0,
       createdAt = (),
       updatedAt = (),
       userID = ()
@@ -102,6 +104,12 @@ data MissingEnvArgumentException = MissingEnvArgumentException Text
   deriving (Show)
 
 instance Exception MissingEnvArgumentException
+
+matchPasswords :: MyPassword -> Text -> Bool
+matchPasswords myPassword p =
+  case checkPassword (mkPassword p) (getPassword myPassword) of
+    PasswordCheckSuccess -> True
+    _ -> False
 
 readEnv ::
   String ->

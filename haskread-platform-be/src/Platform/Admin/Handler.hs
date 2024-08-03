@@ -11,12 +11,14 @@ where
 
 import Control.Monad (void, when)
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import Data.Password.Bcrypt
 import qualified Data.Text as T
 import Data.Time
 import Platform.Admin.DB
 import Platform.Admin.Types
 import Platform.Auth.Types
 import Platform.Common.AppM
+import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.DB.Model
 import Servant.Auth.Server
@@ -45,7 +47,7 @@ adminDashboardH (Authenticated AdminInfo {..}) = do
             }
   where
     aRole = "Admin"
-    fetchAdminByID :: MonadUnliftIO m => AdminID -> AppM m (Maybe AdminRead)
+    fetchAdminByID :: (MonadUnliftIO m) => AdminID -> AppM m (Maybe AdminRead)
     fetchAdminByID adminID0 = do
       (eRes :: Either SomeException (Maybe AdminRead)) <- try $ fetchAdminByIDQ adminID0
       case eRes of
@@ -68,19 +70,26 @@ adminChangePasswordH (Authenticated AdminInfo {..}) AdminChangePasswordBody {..}
       validateNewPassword
       updateAdminPassword oldAdminData
   where
-    checkOldPassword :: MonadUnliftIO m => T.Text -> AppM m ()
+    checkOldPassword :: (MonadUnliftIO m) => MyPassword -> AppM m ()
     checkOldPassword aPassword =
-      when (aPassword /= oldPassword) $ throw400Err "Old password is incorrect!"
+      when
+        ( not $
+            matchPasswords
+              aPassword
+              oldPassword
+        )
+        $ throw400Err "Old password is incorrect!"
     checkNewAndConfirmPassword =
       when (newPassword /= confirmNewPassword) $ throw400Err "New password and confirm password do not match!"
     validateNewPassword =
       when (newPassword == oldPassword) $ throw400Err "New password should be different from old password!"
-    
-    updateAdminPassword :: MonadUnliftIO m => AdminRead -> AppM m AdminChangePasswordResponse
+
+    updateAdminPassword :: (MonadUnliftIO m) => AdminRead -> AppM m AdminChangePasswordResponse
     updateAdminPassword oldPassword0 = do
+      hashedPass <- MyPassword <$> hashPassword (mkPassword (newPassword))
       let newAdmin =
             oldPassword0
-              { adminPassword = newPassword,
+              { adminPassword = hashedPass,
                 adminID = (),
                 createdAtForAdmin = (),
                 updatedAtForAdmin = ()
@@ -94,7 +103,7 @@ adminChangePasswordH (Authenticated AdminInfo {..}) AdminChangePasswordBody {..}
               { adminChangePasswordRespMsg = "Password updated successfully!"
               }
 
-    fetchAdminByID :: MonadUnliftIO m => AdminID -> AppM m (Maybe AdminRead)
+    fetchAdminByID :: (MonadUnliftIO m) => AdminID -> AppM m (Maybe AdminRead)
     fetchAdminByID adminID0 = do
       (eRes :: Either SomeException (Maybe AdminRead)) <- try $ fetchAdminByIDQ adminID0
       case eRes of
@@ -122,15 +131,16 @@ adminCreateAdminH (Authenticated _) AdminCreateAdminReqBody {..} = do
       when (adminPasswordForCreate /= adminConfirmPasswordForCreate) $
         throw400Err "password and confirm password don't match!"
 
-    addAdmin :: MonadUnliftIO m => AppM m AdminCreateAdminResponse
+    addAdmin :: (MonadUnliftIO m) => AppM m AdminCreateAdminResponse
     addAdmin = do
+      hashedPass <- MyPassword <$> hashPassword (mkPassword adminPasswordForCreate)
       eRes :: Either SomeException () <-
         try $
           addAdminQ $
             Admin
               { adminName = adminNameForCreate,
                 adminEmail = adminEmailForCreate,
-                adminPassword = adminPasswordForCreate,
+                adminPassword = hashedPass,
                 adminID = (),
                 createdAtForAdmin = (),
                 updatedAtForAdmin = ()

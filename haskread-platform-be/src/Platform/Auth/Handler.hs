@@ -14,10 +14,13 @@ import Control.Monad (unless, when)
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Maybe (isJust)
+import Data.Password.Bcrypt
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
+import Platform.Admin.DB
 import Platform.Admin.Types
 import Platform.Common.AppM
+import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.DB.Model
 import Platform.User.DB
@@ -25,18 +28,19 @@ import Platform.User.Types
 import Servant
 import Servant.Auth.Server
 import UnliftIO
-import Platform.Admin.DB
 
-toUserWrite :: RegisterUserBody -> UserWrite
-toUserWrite RegisterUserBody {..} =
-  User
-    { userID = (),
-      userName = userNameForRegister,
-      email = emailForRegister,
-      password = passwordForRegister,
-      createdAt = (),
-      updatedAt = ()
-    }
+toUserWrite :: RegisterUserBody -> IO UserWrite
+toUserWrite RegisterUserBody {..} = do
+  hashedPass <- MyPassword <$> hashPassword (mkPassword passwordForRegister)
+  pure $
+    User
+      { userID = (),
+        userName = userNameForRegister,
+        email = emailForRegister,
+        userPassword = hashedPass,
+        createdAt = (),
+        updatedAt = ()
+      }
 
 doesEmailExists :: (MonadUnliftIO m) => Text -> AppM m Bool
 doesEmailExists email0 = do
@@ -70,7 +74,8 @@ registerUserH userBody@RegisterUserBody {..} = do
     throw400Err "Password and confirm Password do not match"
   unless (validatePassword passwordForRegister) $
     throw400Err "Password must have upper,lower chars"
-  userRead0 <- addUser (toUserWrite userBody)
+  userWrite0 <- liftIO $ toUserWrite userBody
+  userRead0 <- addUser userWrite0
   return
     RegisterUserResponse
       { registerUserResponseMessage = "User registered successfully",
@@ -97,30 +102,33 @@ loginUserH ::
         LoginUserResponse
     )
 loginUserH cookieSett jwtSett LoginUserBody {..} = do
-  mRes <- findUserByMailAndPassword
+  mRes <- findUserByMail
   case mRes of
     Nothing -> throw400Err "Email/Password is incorrect"
     Just userRead0 -> do
-      -- do login
-      let userInfo = toUserInfo userRead0
-      mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett userInfo
-      case mLoginAccepted of
-        Nothing -> throwError err401
-        Just x -> do
-          etoken <- liftIO $ makeJWT userInfo jwtSett Nothing
-          case etoken of
-            Left _ -> throwError err401 {errBody = "JWT token creation failed"}
-            Right v ->
-              return $
-                x
-                  ( LoginUserResponse
-                      (T.decodeUtf8 $ BSL.toStrict v)
-                      "User loggedIn successfully"
-                  )
+      if (not $ matchPasswords (userPassword userRead0) passwordForLogin)
+        then throw400Err "Email/Password is incorrect"
+        else do
+          -- do login
+          let userInfo = toUserInfo userRead0
+          mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett userInfo
+          case mLoginAccepted of
+            Nothing -> throwError err401
+            Just x -> do
+              etoken <- liftIO $ makeJWT userInfo jwtSett Nothing
+              case etoken of
+                Left _ -> throwError err401 {errBody = "JWT token creation failed"}
+                Right v ->
+                  return $
+                    x
+                      ( LoginUserResponse
+                          (T.decodeUtf8 $ BSL.toStrict v)
+                          "User loggedIn successfully"
+                      )
   where
-    findUserByMailAndPassword = do
+    findUserByMail = do
       (eMUser :: Either SomeException (Maybe UserRead)) <-
-        try $ findUserByMailPasswordQ emailForLogin passwordForLogin
+        try $ fetchUserByEmailQ emailForLogin
       case eMUser of
         Left e -> throw400Err $ BSL.pack $ show e
         Right r -> pure r
@@ -139,29 +147,32 @@ adminLoginH ::
         AdminLoginResponse
     )
 adminLoginH cookieSett jwtSett AdminLoginBodyReq {..} = do
-  mRes <- findAdminByMailAndPassword
+  mRes <- findAdminByEmail
   case mRes of
     Nothing -> throw400Err "Email/Password is incorrect"
     Just adminRead0 -> do
-      let adminInfo = toAdminInfo adminRead0
-      mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett adminInfo
-      case mLoginAccepted of
-        Nothing -> throw401Err "Login failed"
-        Just loginAcceptedResp -> do
-          etoken <- liftIO $ makeJWT adminInfo jwtSett Nothing
-          case etoken of
-            Left _ -> throw401Err "JWT token creation failed"
-            Right v ->
-              return $
-                loginAcceptedResp
-                  ( AdminLoginResponse
-                      (T.decodeUtf8 $ BSL.toStrict v)
-                      "Admin loggedIn successfully"
-                  )
+      if (not $ matchPasswords (adminPassword adminRead0) adminPasswordForLogin)
+        then throw400Err "Email/Password is incorrect"
+        else do
+          let adminInfo = toAdminInfo adminRead0
+          mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett adminInfo
+          case mLoginAccepted of
+            Nothing -> throw401Err "Login failed"
+            Just loginAcceptedResp -> do
+              etoken <- liftIO $ makeJWT adminInfo jwtSett Nothing
+              case etoken of
+                Left _ -> throw401Err "JWT token creation failed"
+                Right v ->
+                  return $
+                    loginAcceptedResp
+                      ( AdminLoginResponse
+                          (T.decodeUtf8 $ BSL.toStrict v)
+                          "Admin loggedIn successfully"
+                      )
   where
-    findAdminByMailAndPassword = do
+    findAdminByEmail = do
       (eMAdmin :: Either SomeException (Maybe AdminRead)) <-
-        try $ findAdminByMailPasswordQ adminEmailForLogin adminPasswordForLogin
+        try $ fetchAdminByEmailQ adminEmailForLogin
       case eMAdmin of
         Left e -> throw400Err $ BSL.pack $ show e
         Right r -> pure r

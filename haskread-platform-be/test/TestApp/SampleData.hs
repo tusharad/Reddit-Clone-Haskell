@@ -28,13 +28,16 @@ where
 import Data.Aeson (encode)
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BSL
+import Data.Password.Bcrypt
 import Platform.Admin.Community.Types
 import Platform.Admin.Types hiding (AdminDashboardResponse (..))
 import Platform.Auth.Types
 import Platform.Comment.Types
+import Platform.Common.Types (MyPassword (..))
 import Platform.DB.Model
 import Platform.User.Thread.Types
 import Platform.User.Types
+import System.IO.Unsafe
 
 {-
 import           Hedgehog
@@ -51,12 +54,18 @@ genAdmin =
     <*> pure ()
 -}
 
+samplePassword :: MyPassword
+samplePassword =
+  unsafePerformIO $
+    MyPassword
+      <$> (hashPassword $ mkPassword "Foobar123")
+
 sampleAdmins :: [AdminWrite]
 sampleAdmins =
   [ Admin
       { adminName = "batman",
         adminEmail = "bruce@abc.com",
-        adminPassword = "Bruce123",
+        adminPassword = samplePassword,
         createdAtForAdmin = (),
         updatedAtForAdmin = (),
         adminID = ()
@@ -64,7 +73,7 @@ sampleAdmins =
     Admin
       { adminName = "superman",
         adminEmail = "clark@abc.com",
-        adminPassword = "Clark123",
+        adminPassword = samplePassword,
         createdAtForAdmin = (),
         updatedAtForAdmin = (),
         adminID = ()
@@ -82,7 +91,7 @@ sampleUsers =
   [ User
       { userName = "batman",
         email = "bruce@abc.com",
-        password = "Bruce123",
+        userPassword = samplePassword,
         userID = (),
         createdAt = (),
         updatedAt = ()
@@ -90,7 +99,7 @@ sampleUsers =
     User
       { userName = "spiderman",
         email = "peter@abc.com",
-        password = "Peter123",
+        userPassword = samplePassword,
         userID = (),
         createdAt = (),
         updatedAt = ()
@@ -98,7 +107,7 @@ sampleUsers =
     User
       { userName = "superman",
         email = "clark@abc.com",
-        password = "Clark123",
+        userPassword = samplePassword,
         userID = (),
         createdAt = (),
         updatedAt = ()
@@ -106,7 +115,7 @@ sampleUsers =
     User
       { userName = "wonderwoman",
         email = "diana@abc.com",
-        password = "Diana123",
+        userPassword = samplePassword,
         userID = (),
         createdAt = (),
         updatedAt = ()
@@ -114,7 +123,7 @@ sampleUsers =
     User
       { userName = "ironman",
         email = "tony@abc.com",
-        password = "Tony123",
+        userPassword = samplePassword,
         userID = (),
         createdAt = (),
         updatedAt = ()
@@ -291,7 +300,7 @@ correctLoginUserBody =
   let l =
         LoginUserBody
           { emailForLogin = "tony@abc.com",
-            passwordForLogin = "Tony123"
+            passwordForLogin = "Foobar123"
           }
    in encode l
 
@@ -299,16 +308,16 @@ sampleChangePasswordBody :: ByteString
 sampleChangePasswordBody =
   encode
     ChangePasswordBody
-      { oldPasswordForChangePass = "Peter123",
-        newPasswordForChangePass = "Peter1234",
-        confirmPasswordForChangePass = "Peter1234"
+      { oldPasswordForChangePass = "Foobar123",
+        newPasswordForChangePass = "Foobar1234",
+        confirmPasswordForChangePass = "Foobar1234"
       }
 
 sampleDeleteUserBody :: ByteString
 sampleDeleteUserBody =
   encode
     DeleteUserBody
-      { passwordForDeleteUser = "Clark123",
+      { passwordForDeleteUser = "Foobar123",
         areUSure = True
       }
 
@@ -317,16 +326,16 @@ loginAdminBody =
   encode
     AdminLoginBodyReq
       { adminEmailForLogin = "bruce@abc.com",
-        adminPasswordForLogin = "Bruce123"
+        adminPasswordForLogin = "Foobar123"
       }
 
 adminChangePasswordBody :: ByteString
 adminChangePasswordBody =
   encode
     AdminChangePasswordBody
-      { oldPassword = "Clark123",
-        newPassword = "Clark1234",
-        confirmNewPassword = "Clark1234"
+      { oldPassword = "Foobar123",
+        newPassword = "Foobar1234",
+        confirmNewPassword = "Foobar1234"
       }
 
 adminCreateAdminReqBody :: ByteString
@@ -335,8 +344,8 @@ adminCreateAdminReqBody =
     AdminCreateAdminReqBody
       { adminNameForCreate = "deadpool",
         adminEmailForCreate = "wade@abc.com",
-        adminPasswordForCreate = "Wade1234",
-        adminConfirmPasswordForCreate = "Wade1234"
+        adminPasswordForCreate = "Foobar123",
+        adminConfirmPasswordForCreate = "Foobar123"
       }
 
 communityCreateReqBody :: ByteString
@@ -360,7 +369,7 @@ communityUpdateReqBody =
 
 sampleUpdateUserProfileImageBody :: IO ByteString
 sampleUpdateUserProfileImageBody =
-  BSL.readFile "/home/user/haskell/Reddit-Clone-Haskell/haskread-platform-be/test/_sampleData/random_image.png"
+  BSL.readFile "./test/_sampleData/random_image.png"
 
 threadCreateReqBody :: ByteString
 threadCreateReqBody =

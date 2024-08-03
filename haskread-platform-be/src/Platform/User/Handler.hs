@@ -12,6 +12,7 @@ where
 
 import Control.Monad (unless, when)
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import Data.Password.Bcrypt
 import qualified Data.Text as T
 import Platform.Auth.Types
 import Platform.Common.AppM
@@ -68,7 +69,7 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
   mUser <- fetchUserByID userIDForUserInfo
   case mUser of
     Nothing -> throw400Err "User is invalid!"
-    Just u@User {password = uPassword} -> do
+    Just u@User {userPassword = uPassword} -> do
       checkOldPasswordMatch uPassword
       checkOldNewPasswordNotMatch
       checkIfPasswordsConfirmPasswordMatch
@@ -76,18 +77,38 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
       changePassword u
   where
     checkOldPasswordMatch uPassword =
-      when (uPassword /= oldPasswordForChangePass) $ throw400Err "Old password is incorrect!"
+      when
+        ( not $
+            matchPasswords
+              uPassword
+              oldPasswordForChangePass
+        )
+        $ throw400Err "Old password is incorrect!"
     checkOldNewPasswordNotMatch =
-      when (oldPasswordForChangePass == newPasswordForChangePass) $ throw400Err "Old password and new password cannot be the same!"
+      when (oldPasswordForChangePass == newPasswordForChangePass) $
+        throw400Err
+          "Old password and new password cannot be the same!"
     checkIfPasswordsConfirmPasswordMatch =
-      when (newPasswordForChangePass /= confirmPasswordForChangePass) $ throw400Err "New password and confirm password do not match!"
+      when (newPasswordForChangePass /= confirmPasswordForChangePass) $
+        throw400Err
+          "New password and confirm password do not match!"
     validateNewPassword =
-      unless (validatePassword newPasswordForChangePass) $ throw400Err passwordConstraintMessage
+      unless (validatePassword newPasswordForChangePass) $
+        throw400Err passwordConstraintMessage
     changePassword u = do
-      eRes :: Either SomeException () <- try $ changePasswordQ userIDForUserInfo (passwordUpdatedUser u newPasswordForChangePass)
+      hashedPass <- hashPassword (mkPassword newPasswordForChangePass)
+      eRes :: Either SomeException () <-
+        try $
+          changePasswordQ
+            userIDForUserInfo
+            (passwordUpdatedUser u hashedPass)
       case eRes of
         Left e -> throw400Err $ BSL.pack $ show e
-        Right _ -> return ChangePasswordResponse {changePasswordResponseMsg = "Password changed successfully!"}
+        Right _ ->
+          return
+            ChangePasswordResponse
+              { changePasswordResponseMsg = "Password changed successfully!"
+              }
 userChangePasswordH _ _ = throw401Err "Please login first"
 
 userDeleteAccountH ::
@@ -99,14 +120,20 @@ userDeleteAccountH (Authenticated UserInfo {..}) DeleteUserBody {..} = do
   mUser <- fetchUserByID userIDForUserInfo
   case mUser of
     Nothing -> throw400Err "User is invalid!"
-    Just User {password = uPassword} -> do
+    Just User {userPassword = uPassword} -> do
       checkIfPasswordMatch uPassword
       if not areUSure
         then pure $ DeleteUserResponse "User is not sure, not deleting :)"
         else deleteUserByID
   where
     checkIfPasswordMatch uPassword =
-      when (uPassword /= passwordForDeleteUser) $ throw400Err "Password is incorrect!"
+      when
+        ( not $
+            matchPasswords
+              uPassword
+              passwordForDeleteUser
+        )
+        $ throw400Err "Password is incorrect!"
     deleteUserByID = do
       eRes :: Either SomeException () <- try $ deleteUserQ userIDForUserInfo
       case eRes of

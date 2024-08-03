@@ -20,13 +20,15 @@ module Platform.DB.Marshaller
     threadVoteMarshaller,
     commentMarshaller,
     commentIDField,
-    commentVoteMarshaller
+    commentVoteMarshaller,
   )
 where
 
+import Data.Password.Bcrypt
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Orville.PostgreSQL
+import Platform.Common.Types (MyPassword (..))
 import Platform.DB.Model
 
 threadIDField :: FieldDefinition NotNull ThreadID
@@ -47,8 +49,8 @@ userNameField = boundedTextField "user_name" 255
 emailField :: FieldDefinition NotNull Text
 emailField = boundedTextField "email" 255
 
-passwordField :: FieldDefinition NotNull Text
-passwordField = unboundedTextField "password"
+passwordField :: FieldDefinition NotNull MyPassword
+passwordField = coerceField (unboundedTextField "password")
 
 communityIDField :: FieldDefinition NotNull CommunityID
 communityIDField = coerceField $ serialField "community_id"
@@ -105,7 +107,7 @@ userMarshaller =
       )
     <*> marshallField (\User {..} -> userName) userNameField
     <*> marshallField (\User {..} -> email) emailField
-    <*> marshallField (\User {..} -> password) passwordField
+    <*> marshallField (\User {..} -> userPassword) passwordField
     <*> marshallReadOnly
       ( marshallField
           (\User {..} -> createdAt)
@@ -171,7 +173,6 @@ communityMarshaller =
     <*> marshallField (\Community {..} -> communityLabelList) communityLabelListField
     <*> marshallReadOnly (marshallField (\Community {..} -> communityCreatedAt) createdAtField)
     <*> marshallReadOnly (marshallField (\Community {..} -> communityUpdatedAt) updatedAtField)
-  
 
 threadMarshaller ::
   SqlMarshaller
@@ -179,11 +180,11 @@ threadMarshaller ::
     ThreadRead
 threadMarshaller =
   Thread
-    <$> marshallReadOnly (
-      marshallField
-        (\Thread {..} -> threadID)
-        threadIDField
-    )
+    <$> marshallReadOnly
+      ( marshallField
+          (\Thread {..} -> threadID)
+          threadIDField
+      )
     <*> marshallField (\Thread {..} -> threadTitle) threadTitleField
     <*> marshallField (\Thread {..} -> threadDescription) (nullableField threadDescriptionField)
     <*> marshallField (\Thread {..} -> threadUserID) userIDField
@@ -197,11 +198,11 @@ threadVoteMarshaller ::
     ThreadVoteRead
 threadVoteMarshaller =
   ThreadVote
-    <$> marshallField (\ThreadVote{..} -> threadVoteUserID) userIDField
-    <*> marshallField (\ThreadVote{..} -> threadVoteThreadID) threadIDField
-    <*> marshallField (\ThreadVote{..} -> threadVote) voteField
-    <*> marshallReadOnly (marshallField (\ThreadVote{..} -> threadVoteCreatedAt) createdAtField)
-    <*> marshallReadOnly (marshallField (\ThreadVote{..} -> threadVoteUpdatedAt) updatedAtField)
+    <$> marshallField (\ThreadVote {..} -> threadVoteUserID) userIDField
+    <*> marshallField (\ThreadVote {..} -> threadVoteThreadID) threadIDField
+    <*> marshallField (\ThreadVote {..} -> threadVote) voteField
+    <*> marshallReadOnly (marshallField (\ThreadVote {..} -> threadVoteCreatedAt) createdAtField)
+    <*> marshallReadOnly (marshallField (\ThreadVote {..} -> threadVoteUpdatedAt) updatedAtField)
 
 commentMarshaller ::
   SqlMarshaller
@@ -228,8 +229,8 @@ commentVoteMarshaller ::
     CommentVoteRead
 commentVoteMarshaller =
   CommentVote
-    <$> marshallField (\CommentVote{..} -> userIDForCommentVote) userIDField
-    <*> marshallField (\CommentVote{..} -> commentIDForCommentVote) commentIDField
-    <*> marshallField (\CommentVote{..} -> commentVote) voteField
-    <*> marshallReadOnly (marshallField (\CommentVote{..} -> createdAtForCommentVote) createdAtField)
-    <*> marshallReadOnly (marshallField (\CommentVote{..} -> updatedAtForCommentVote) updatedAtField)
+    <$> marshallField (\CommentVote {..} -> userIDForCommentVote) userIDField
+    <*> marshallField (\CommentVote {..} -> commentIDForCommentVote) commentIDField
+    <*> marshallField (\CommentVote {..} -> commentVote) voteField
+    <*> marshallReadOnly (marshallField (\CommentVote {..} -> createdAtForCommentVote) createdAtField)
+    <*> marshallReadOnly (marshallField (\CommentVote {..} -> updatedAtForCommentVote) updatedAtField)

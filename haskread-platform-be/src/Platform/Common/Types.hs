@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Platform.Common.Types
   ( MyAppState (..),
@@ -8,9 +10,12 @@ module Platform.Common.Types
     MinLogLevel,
     Env (..),
     DBConfig (..),
+    MyPassword (..),
   )
 where
 
+import Data.Aeson (ToJSON, toJSON)
+import Data.Password.Bcrypt
 import Dhall
 import qualified Orville.PostgreSQL as O
 import System.Log.FastLogger
@@ -61,3 +66,10 @@ instance Show LogLevel where
 type MinLogLevel = LogLevel
 
 -- End of log types
+
+newtype MyPassword = MyPassword
+  {getPassword :: (PasswordHash Bcrypt)}
+  deriving newtype (Show, Eq)
+
+instance ToJSON MyPassword where
+  toJSON myPassword = toJSON (unPasswordHash (getPassword myPassword))
