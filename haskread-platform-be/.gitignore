@@ -1,3 +1,4 @@
 .stack-work/
 *~
 /file-upload
+.dockermnt/

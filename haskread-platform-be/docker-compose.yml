@@ -1,10 +1,10 @@
 services:
   haskread_backend:
-    image: haskell:9.6-buster
+    build: .
     container_name: haskread_platform_be
     volumes:
       - .:/app
-      - .stack-work:/app/.stack-work
+      - ./.dockermnt/stack-work:/app/.stack-work
     working_dir: /app
     depends_on:
       db:

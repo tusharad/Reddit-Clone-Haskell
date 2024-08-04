@@ -27,7 +27,7 @@ startDB:
     -e POSTGRES_PASSWORD=1234 \
     -e POSTGRES_USER=tushar \
     -e POSTGRES_DB=haskread_local_db \
-    -v /home/user/haskell/Reddit-Clone-Haskell/haskread-platform-be/.dockermnt/pg_db:/var/lib/postgresql/data \
+    -v ./.dockermnt/pg_db:/var/lib/postgresql/data \
 	-p 5433:5432 \
 	--rm -d  \
     postgres:16.3-alpine3.20
@@ -36,7 +36,7 @@ be-haskread-platform-run:
 	stack run haskread-platform-be-exe -- "./env.dhall"
 
 build-be-platform:
-	docker compose exec -it stack build haskread-platform-be-exe -- "./env.dhall"
+	docker exec -it haskread_platform_be /bin/bash -c "stack build"
 
 run-be-platform:
-	docker compose exec -it stack build haskread-platform-be-exe -- "./env.dhall"
+	docker compose exec -it stack run -- "/app/env.dhall"
