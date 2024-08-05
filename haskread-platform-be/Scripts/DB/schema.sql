@@ -25,7 +25,7 @@ create table admin (
   , updated_at timestamptz default now()
 );
 
-insert into admin (admin_name,email,password) values ('batman','bruce@abc.com','foobar1');
+insert into admin (admin_name,email,password) values ('batman','bruce@abc.com','$2b$10$csql5X9xPxuvH.DYMFNQS.arK2KEMTKOmuZcLKFjicgIDwOZ0tV5a');
 
 create table community (
 	community_id serial primary key

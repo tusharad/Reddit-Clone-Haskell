@@ -64,12 +64,14 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson
+    , async
     , base >=4.7 && <5
     , bytestring
     , dhall
     , directory
     , fast-logger
     , filepath
+    , hashable
     , haxl
     , hedgehog
     , http-api-data
@@ -100,12 +102,14 @@ executable haskread-platform-be-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
+    , async
     , base >=4.7 && <5
     , bytestring
     , dhall
     , directory
     , fast-logger
     , filepath
+    , hashable
     , haskread-platform-be
     , haxl
     , hedgehog
@@ -146,12 +150,14 @@ test-suite haskread-platform-be-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
+    , async
     , base >=4.7 && <5
     , bytestring
     , dhall
     , directory
     , fast-logger
     , filepath
+    , hashable
     , haskread-platform-be
     , haxl
     , hedgehog

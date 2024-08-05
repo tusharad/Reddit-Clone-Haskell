@@ -13,11 +13,9 @@ where
 import Control.Monad (unless, when)
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy.Char8 as BSL
-import Data.Maybe (isJust)
 import Data.Password.Bcrypt
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
-import Platform.Admin.DB
 import Platform.Admin.Types
 import Platform.Common.AppM
 import Platform.Common.Types
@@ -28,6 +26,8 @@ import Platform.User.Types
 import Servant
 import Servant.Auth.Server
 import UnliftIO
+import Data.Maybe (isJust)
+import Platform.Admin.DB (fetchAdminByEmailQ)
 
 toUserWrite :: RegisterUserBody -> IO UserWrite
 toUserWrite RegisterUserBody {..} = do
@@ -106,7 +106,7 @@ loginUserH cookieSett jwtSett LoginUserBody {..} = do
   case mRes of
     Nothing -> throw400Err "Email/Password is incorrect"
     Just userRead0 -> do
-      if (not $ matchPasswords (userPassword userRead0) passwordForLogin)
+      if not $ matchPasswords (userPassword userRead0) passwordForLogin
         then throw400Err "Email/Password is incorrect"
         else do
           -- do login
@@ -151,7 +151,7 @@ adminLoginH cookieSett jwtSett AdminLoginBodyReq {..} = do
   case mRes of
     Nothing -> throw400Err "Email/Password is incorrect"
     Just adminRead0 -> do
-      if (not $ matchPasswords (adminPassword adminRead0) adminPasswordForLogin)
+      if not $ matchPasswords (adminPassword adminRead0) adminPasswordForLogin
         then throw400Err "Email/Password is incorrect"
         else do
           let adminInfo = toAdminInfo adminRead0

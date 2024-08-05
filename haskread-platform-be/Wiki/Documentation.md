@@ -497,3 +497,16 @@ Features list:
                 - parent_comment_id : foreign key to comment table on delete cascade
                 - createdAt : timestamptz
                 - updatedAt : timestamptz
+
+Important Note:
+ - After adding Haxl datafetch on most of fetching functions.
+   The test cases are getting stuck in between running.
+ - Another revelation was found. After Updating the password of user.
+   When we again hit the same API with older password. The API runs perfectly. Since the API is
+   fetching the cached user record which contains old password. The solution to this is to fire
+   `uncachedRequest` during updating user.
+ - The same needs to be done whenever we are performing any data modification/deletion operation.
+ - I have removed the Haxl datafetch from the codebase for now. Since it was causing the test cases to stuck.
+ - The Haxl datafetch can be added later on, when we have a better understanding of it.
+ - Some places where datafetch was added, but the test cases are not getting stuck, are still there.
+   Instead of datafetch, I have added the `uncachedRequest` to fetch the latest data from the database. To avoid any inconsistency.

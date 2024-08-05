@@ -11,6 +11,7 @@ module Platform.User.Handler
 where
 
 import Control.Monad (unless, when)
+import Control.Monad.Reader
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Password.Bcrypt
 import qualified Data.Text as T
@@ -18,6 +19,7 @@ import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Utils
 import Platform.DB.Model
+import Platform.Log
 import Platform.User.DB
 import Platform.User.Types
 import Servant.Auth.Server
@@ -70,6 +72,7 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
   case mUser of
     Nothing -> throw400Err "User is invalid!"
     Just u@User {userPassword = uPassword} -> do
+      logDebug $ "changing user password of " <> (T.pack $ show u)
       checkOldPasswordMatch uPassword
       checkOldNewPasswordNotMatch
       checkIfPasswordsConfirmPasswordMatch
@@ -97,11 +100,13 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
         throw400Err passwordConstraintMessage
     changePassword u = do
       hashedPass <- hashPassword (mkPassword newPasswordForChangePass)
+      let newPassUsr = (passwordUpdatedUser u hashedPass)
+      logDebug $ "new password user : " <> (T.pack $ show newPassUsr)
       eRes :: Either SomeException () <-
         try $
           changePasswordQ
             userIDForUserInfo
-            (passwordUpdatedUser u hashedPass)
+            newPassUsr
       case eRes of
         Left e -> throw400Err $ BSL.pack $ show e
         Right _ ->

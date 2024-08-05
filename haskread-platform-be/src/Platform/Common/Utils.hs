@@ -17,6 +17,7 @@ module Platform.Common.Utils
   )
 where
 
+import Control.Concurrent.QSem
 import Control.Exception
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy as BSL
@@ -25,12 +26,14 @@ import Data.Password.Bcrypt
 import Data.String.Interpolate
 import qualified Data.Text as T
 import Dhall
+import Haxl.Core (initEnv, stateEmpty, stateSet)
 import qualified Orville.PostgreSQL as O
 import Orville.PostgreSQL.Raw.Connection
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Types
 import Platform.DB.Model
+import Platform.Haxl.DataSource
 import Servant
 import Servant.Auth.Server
 import System.Log.FastLogger
@@ -139,11 +142,14 @@ readEnv envFilePath = do
         Right pool -> do
           jwtSecretKey <- generateKey
           loggerSet_ <- newFileLoggerSet defaultBufSize logFilePath
+          sem <- newQSem 10 -- 10 threads
+          haxlEnv0 <- initEnv (stateSet (HaskReadState pool sem) stateEmpty) ()
           let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
               appST =
                 MyAppState
                   (AppConfig fileUploadPath loggerSet_ (toLogLevel logLevel))
                   orvilleState
+                  haxlEnv0
               jwtSett = defaultJWTSettings jwtSecretKey
               ctx = defaultCookieSettings :. jwtSett :. EmptyContext
           pure $ Right (appST, jwtSett, ctx, fromIntegral applicationPort, pool)

@@ -85,10 +85,10 @@ adminChangePasswordH (Authenticated AdminInfo {..}) AdminChangePasswordBody {..}
       when (newPassword == oldPassword) $ throw400Err "New password should be different from old password!"
 
     updateAdminPassword :: (MonadUnliftIO m) => AdminRead -> AppM m AdminChangePasswordResponse
-    updateAdminPassword oldPassword0 = do
+    updateAdminPassword oldPasswordAdmin = do
       hashedPass <- MyPassword <$> hashPassword (mkPassword (newPassword))
       let newAdmin =
-            oldPassword0
+            oldPasswordAdmin
               { adminPassword = hashedPass,
                 adminID = (),
                 createdAtForAdmin = (),

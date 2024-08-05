@@ -49,6 +49,8 @@ dependencies:
 - dhall
 - directory
 - password
+- hashable
+- async
 
 ghc-options:
 - -Wall

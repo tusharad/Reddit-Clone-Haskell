@@ -40,6 +40,7 @@ module Platform.DB.Model
 where
 
 import Data.Aeson
+import Data.Hashable
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import GHC.Generics
@@ -49,7 +50,7 @@ import Web.HttpApiData
 
 -- User Model
 newtype UserID = UserID Int32
-  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON)
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, Hashable)
 
 data User a b = User
   { userID :: a,
@@ -80,7 +81,7 @@ type UserProfileImageRead = UserProfileImage UTCTime
 
 -- Admin Model
 newtype AdminID = AdminID Int32
-  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON)
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, Hashable)
 
 data Admin a b = Admin
   { adminID :: a,
@@ -98,7 +99,7 @@ type AdminWrite = Admin () ()
 
 -- Community Model
 newtype CommunityID = CommunityID Int32
-  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData)
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData, Hashable)
 
 data Community a b = Community
   { communityID :: a,
@@ -117,7 +118,7 @@ type CommunityWrite = Community () ()
 -- Thread
 
 newtype ThreadID = ThreadID Int32
-  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData)
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData, Hashable)
 
 data Thread a b = Thread
   { threadID :: a,
@@ -158,7 +159,7 @@ type ThreadVoteWrite = ThreadVote ()
 -- Comment Model
 
 newtype CommentID = CommentID Int32
-  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData)
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData, Hashable)
 
 data Comment a b = Comment
   { commentID :: a,

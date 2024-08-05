@@ -19,12 +19,12 @@ import Platform.DB.Model
 import Platform.DB.Table
 import UnliftIO
 
-fetchUserByEmailQ :: (MonadUnliftIO m) => Text -> AppM m (Maybe UserRead)
+fetchUserByEmailQ :: (MonadOrville m) => Text -> m (Maybe UserRead)
 fetchUserByEmailQ email0 = findFirstEntityBy userTable whereEmailIs
   where
     whereEmailIs = where_ $ emailField .== email0
 
-fetchUserByUserNameQ :: (MonadUnliftIO m) => Text -> AppM m (Maybe UserRead)
+fetchUserByUserNameQ :: (MonadOrville m) => Text -> m (Maybe UserRead)
 fetchUserByUserNameQ userName0 =
   findFirstEntityBy userTable whereUserNameIs
   where
@@ -33,7 +33,7 @@ fetchUserByUserNameQ userName0 =
 addUserQ :: (MonadOrville m) => UserWrite -> m UserRead
 addUserQ = insertAndReturnEntity userTable
 
-fetchUserByIDQ :: (MonadUnliftIO m) => UserID -> AppM m (Maybe UserRead)
+fetchUserByIDQ :: (MonadOrville m) => UserID -> m (Maybe UserRead)
 fetchUserByIDQ = findEntity userTable
 
 changePasswordQ :: (MonadUnliftIO m) => UserID -> UserWrite -> AppM m ()
@@ -45,7 +45,7 @@ deleteUserQ = deleteEntity userTable
 updateUserProfileImageQ :: (MonadUnliftIO m) => UserID -> UserProfileImageWrite -> AppM m ()
 updateUserProfileImageQ = updateEntity userProfileImageTable
 
-fetchUserProfileQ :: (MonadUnliftIO m) => UserID -> AppM m (Maybe UserProfileImageRead)
+fetchUserProfileQ :: (MonadOrville m) => UserID -> m (Maybe UserProfileImageRead)
 fetchUserProfileQ = findEntity userProfileImageTable
 
 addUserProfileImageQ :: (MonadUnliftIO m) => UserProfileImageWrite -> AppM m ()
