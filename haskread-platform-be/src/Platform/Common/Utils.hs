@@ -26,7 +26,7 @@ import Data.Password.Bcrypt
 import Data.String.Interpolate
 import qualified Data.Text as T
 import Dhall
-import Haxl.Core (initEnv, stateEmpty, stateSet)
+import Haxl.Core (stateEmpty, stateSet)
 import qualified Orville.PostgreSQL as O
 import Orville.PostgreSQL.Raw.Connection
 import Platform.Auth.Types
@@ -143,13 +143,13 @@ readEnv envFilePath = do
           jwtSecretKey <- generateKey
           loggerSet_ <- newFileLoggerSet defaultBufSize logFilePath
           sem <- newQSem 10 -- 10 threads
-          haxlEnv0 <- initEnv (stateSet (HaskReadState pool sem) stateEmpty) ()
-          let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
+          let haxlState = stateSet (HaskReadState pool sem) stateEmpty
+              orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
               appST =
                 MyAppState
                   (AppConfig fileUploadPath loggerSet_ (toLogLevel logLevel))
                   orvilleState
-                  haxlEnv0
+                  haxlState
               jwtSett = defaultJWTSettings jwtSecretKey
               ctx = defaultCookieSettings :. jwtSett :. EmptyContext
           pure $ Right (appST, jwtSett, ctx, fromIntegral applicationPort, pool)

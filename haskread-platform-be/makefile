@@ -32,6 +32,9 @@ startDB:
 	--rm -d  \
     postgres:16.3-alpine3.20
 
+be-ghcid:
+	ghcid --command="stack repl"
+
 be-haskread-platform-run:
 	stack run haskread-platform-be-exe -- "./env.dhall"
 

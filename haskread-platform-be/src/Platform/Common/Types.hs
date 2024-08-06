@@ -17,7 +17,7 @@ where
 import Data.Aeson (ToJSON, toJSON)
 import Data.Password.Bcrypt
 import Dhall
-import qualified Haxl.Core as Haxl (Env (..))
+import qualified Haxl.Core as Haxl
 import qualified Orville.PostgreSQL as O
 import System.Log.FastLogger
 
@@ -48,7 +48,7 @@ data AppConfig = AppConfig
 data MyAppState = MyAppState
   { appConfig :: AppConfig,
     appOrvilleState :: O.OrvilleState,
-    haxlEnv :: Haxl.Env () [Int]
+    haxlState :: Haxl.StateStore
   }
 
 -- Log types
