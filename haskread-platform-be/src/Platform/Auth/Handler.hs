@@ -12,22 +12,26 @@ where
 
 import Control.Monad (unless, when)
 import Control.Monad.IO.Class
+import Control.Monad.Reader
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import Data.Maybe (isJust)
 import Data.Password.Bcrypt
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
+import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
+import qualified Haxl.Core as Haxl
+-- import Platform.Admin.DB (fetchAdminByEmailQ)
 import Platform.Admin.Types
 import Platform.Common.AppM
 import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.DB.Model
+import Platform.Haxl.DataSource
 import Platform.User.DB
 import Platform.User.Types
 import Servant
 import Servant.Auth.Server
 import UnliftIO
-import Data.Maybe (isJust)
-import Platform.Admin.DB (fetchAdminByEmailQ)
 
 toUserWrite :: RegisterUserBody -> IO UserWrite
 toUserWrite RegisterUserBody {..} = do
@@ -170,9 +174,24 @@ adminLoginH cookieSett jwtSett AdminLoginBodyReq {..} = do
                           "Admin loggedIn successfully"
                       )
   where
+    findAdminByEmail :: (MonadUnliftIO m) => AppM m (Maybe AdminRead)
     findAdminByEmail = do
-      (eMAdmin :: Either SomeException (Maybe AdminRead)) <-
-        try $ fetchAdminByEmailQ adminEmailForLogin
+      MyAppState {pgConnectionPool = pool, numOfThreads = sem} <- ask
+      let st = HaskReadState pool sem
+      eMAdmin :: Either SomeException (Maybe AdminRead) <-
+        liftIO $ do
+          env0 <- initEnv (stateSet st stateEmpty) () :: IO (Haxl.Env () [Int])
+          try $
+            runHaxl env0 (dataFetch (GetAdminByEmail adminEmailForLogin))
       case eMAdmin of
         Left e -> throw400Err $ BSL.pack $ show e
         Right r -> pure r
+
+{-
+ findAdminByEmail = do
+   (eMAdmin :: Either SomeException (Maybe AdminRead)) <-
+     try $ fetchAdminByEmailQ adminEmailForLogin
+   case eMAdmin of
+     Left e -> throw400Err $ BSL.pack $ show e
+     Right r -> pure r
+ -}

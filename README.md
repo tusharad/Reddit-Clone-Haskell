@@ -32,7 +32,7 @@ Will try to follow best practices and idiomatic Haskell and PureScript as much a
 - [x] Create new admin using admin
 - [x] Add/Remove Community by Admin
 - [x] Log system
-- [ ] Take configuration from environment variables
+- [x] Take configuration from environment variables
 - [x] Create Thread
 - [x] Update Thread
 - [x] Delete Thread
@@ -43,6 +43,10 @@ Will try to follow best practices and idiomatic Haskell and PureScript as much a
 - [x] Downvote Thread
 - [x] Upvote Comment
 - [x] Downvote Comment
+- [ ] Send Email verification mail
+- [ ] OAuth
+- [ ] Adding Indices
+- [ ] Adding Haxl
 - [ ] Search Thread
 - [ ] Search Comment
 - [ ] Search User

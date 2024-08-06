@@ -15,10 +15,14 @@ import Control.Monad.Reader
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Password.Bcrypt
 import qualified Data.Text as T
+import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
+import qualified Haxl.Core as Haxl
 import Platform.Auth.Types
 import Platform.Common.AppM
+import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.DB.Model
+import Platform.Haxl.DataSource
 import Platform.Log
 import Platform.User.DB
 import Platform.User.Types
@@ -30,10 +34,24 @@ fetchUserByID ::
   UserID ->
   AppM m (Maybe UserRead)
 fetchUserByID uID0 = do
-  eRes :: Either SomeException (Maybe UserRead) <- try $ fetchUserByIDQ uID0
+  MyAppState {pgConnectionPool = pool, numOfThreads = sem} <- ask
+  let st = HaskReadState pool sem
+  eRes :: Either SomeException (Maybe UserRead) <- liftIO $ do
+    env0 <- initEnv (stateSet st stateEmpty) () :: IO (Haxl.Env () [Int])
+    try $
+      runHaxl
+        env0
+        (dataFetch (GetUserByID uID0))
   case eRes of
     Left e -> throw400Err $ BSL.pack $ show e
-    Right mUser -> pure mUser
+    Right r -> pure r
+
+{-
+ eRes :: Either SomeException (Maybe UserRead) <- try $ fetchUserByIDQ uID0
+ case eRes of
+   Left e -> throw400Err $ BSL.pack $ show e
+   Right mUser -> pure mUser
+-}
 
 fetchUserProfileImage ::
   (MonadUnliftIO m) =>

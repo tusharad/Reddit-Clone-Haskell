@@ -14,10 +14,11 @@ module Platform.Common.Types
   )
 where
 
+import Control.Concurrent.QSem
 import Data.Aeson (ToJSON, toJSON)
 import Data.Password.Bcrypt
 import Dhall
-import qualified Haxl.Core as Haxl
+-- import qualified Haxl.Core as Haxl
 import qualified Orville.PostgreSQL as O
 import System.Log.FastLogger
 
@@ -48,7 +49,8 @@ data AppConfig = AppConfig
 data MyAppState = MyAppState
   { appConfig :: AppConfig,
     appOrvilleState :: O.OrvilleState,
-    haxlState :: Haxl.StateStore
+    pgConnectionPool :: O.ConnectionPool,
+    numOfThreads :: QSem
   }
 
 -- Log types
