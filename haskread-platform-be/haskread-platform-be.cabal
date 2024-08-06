@@ -42,6 +42,7 @@ library
       Platform.Common.Types
       Platform.Common.Utils
       Platform.Core
+      Platform.DB.Functions
       Platform.DB.Marshaller
       Platform.DB.Model
       Platform.DB.Table

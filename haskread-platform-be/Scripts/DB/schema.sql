@@ -77,4 +77,58 @@ create table vote_comment (
 	updated_at timestamptz default now()
 );
 
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW."updated_at" = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+create or replace TRIGGER set_updated_at_users
+BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+create or replace TRIGGER set_updated_at_user_profile_image
+BEFORE UPDATE ON user_profile_image
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+
+create or replace TRIGGER set_updated_at_admin
+BEFORE UPDATE ON admin
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+
+create or replace TRIGGER set_updated_at_community
+BEFORE UPDATE ON community
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+
+create or replace TRIGGER set_updated_at_thread
+BEFORE UPDATE ON thread
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+
+create or replace TRIGGER set_updated_at_vote_thread
+BEFORE UPDATE ON vote_thread
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+
+create or replace TRIGGER set_updated_at_comment
+BEFORE UPDATE ON comment
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+create or replace TRIGGER set_updated_at_vote_comment
+BEFORE UPDATE ON vote_comment
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
 commit;

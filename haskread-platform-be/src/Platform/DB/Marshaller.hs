@@ -151,8 +151,8 @@ adminMarshaller =
           (\Admin {..} -> adminID)
           adminIDField
       )
-    <*> marshallField (\Admin {..} -> adminEmail) emailField
     <*> marshallField (\Admin {..} -> adminName) adminNameField
+    <*> marshallField (\Admin {..} -> adminEmail) emailField
     <*> marshallField (\Admin {..} -> adminPassword) passwordField
     <*> marshallReadOnly (marshallField (\Admin {..} -> createdAtForAdmin) createdAtField)
     <*> marshallReadOnly (marshallField (\Admin {..} -> updatedAtForAdmin) updatedAtField)

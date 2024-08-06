@@ -11,6 +11,7 @@ import Platform.Comment.DB
 import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.Core (app)
+import Platform.DB.Functions
 import Platform.DB.Model
 import Platform.DB.Table
 import Platform.User.DB
@@ -71,6 +72,8 @@ insertCommentSampleData = mapM_ addCommentQ
 createDB :: ConnectionPool -> IO ()
 createDB pool = runOrville pool $ do
   autoMigrateSchema defaultOptions schemaList
+  updateUpdatedAtColumnFunctionQ
+  setUpdatedAtUsersTrigger
   insertUserSampleData sampleUsers
   insertAdminSampleData sampleAdmins
   insertCommunitySampleData sampleCommunities
