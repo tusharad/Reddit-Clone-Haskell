@@ -36,6 +36,9 @@ module Platform.DB.Model
     CommentVote (..),
     CommentVoteRead,
     CommentVoteWrite,
+    UserEmailVerifyOTP (..),
+    UserEmailVerifyOTPRead,
+    UserEmailVerifyOTPWrite,
   )
 where
 
@@ -50,13 +53,14 @@ import Web.HttpApiData
 
 -- User Model
 newtype UserID = UserID Int32
-  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, Hashable)
+  deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, Hashable, FromHttpApiData)
 
 data User a b = User
   { userID :: a,
     userName :: Text,
     email :: Text,
     userPassword :: MyPassword,
+    isUserVerified :: Bool,
     createdAt :: b,
     updatedAt :: b
   }
@@ -196,3 +200,15 @@ data CommentVote a = CommentVote
 type CommentVoteRead = CommentVote UTCTime
 
 type CommentVoteWrite = CommentVote ()
+
+-- userEmailVerifyOTP
+
+data UserEmailVerifyOTP a = UserEmailVerifyOTP
+  { userIDForUEVO :: UserID,
+    otpForUEVO :: Int32,
+    createdAtForUEVO :: a
+  }
+
+type UserEmailVerifyOTPRead = UserEmailVerifyOTP UTCTime
+
+type UserEmailVerifyOTPWrite = UserEmailVerifyOTP ()

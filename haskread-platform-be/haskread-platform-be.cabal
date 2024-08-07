@@ -46,6 +46,7 @@ library
       Platform.DB.Marshaller
       Platform.DB.Model
       Platform.DB.Table
+      Platform.Email
       Platform.Handler
       Platform.Haxl.DataSource
       Platform.Log
@@ -80,6 +81,8 @@ library
     , mtl
     , orville-postgresql
     , password
+    , random
+    , req
     , servant-auth-server
     , servant-multipart
     , servant-server
@@ -119,6 +122,8 @@ executable haskread-platform-be-exe
     , mtl
     , orville-postgresql
     , password
+    , random
+    , req
     , servant-auth-server
     , servant-multipart
     , servant-server
@@ -167,6 +172,8 @@ test-suite haskread-platform-be-test
     , mtl
     , orville-postgresql
     , password
+    , random
+    , req
     , servant-auth-server
     , servant-multipart
     , servant-server

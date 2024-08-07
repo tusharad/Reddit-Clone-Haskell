@@ -21,15 +21,20 @@ module Platform.DB.Marshaller
     commentMarshaller,
     commentIDField,
     commentVoteMarshaller,
+    userEmailVerifyOTPMarshaller,
   )
 where
 
 import Data.Password.Bcrypt
 import Data.Text (Text)
 import Data.Time (UTCTime)
+import GHC.Int (Int32)
 import Orville.PostgreSQL
 import Platform.Common.Types (MyPassword (..))
 import Platform.DB.Model
+
+otpField :: FieldDefinition NotNull Int32
+otpField = integerField "otp"
 
 threadIDField :: FieldDefinition NotNull ThreadID
 threadIDField = coerceField $ serialField "thread_id"
@@ -97,6 +102,9 @@ commentContentField = boundedTextField "comment_content" 255
 parentCommentIDFiled :: FieldDefinition NotNull CommentID
 parentCommentIDFiled = coerceField $ integerField "parent_comment_id"
 
+isVerifiedField :: FieldDefinition NotNull Bool
+isVerifiedField = setDefaultValue (booleanDefault False) $ booleanField "is_verified"
+
 userMarshaller :: SqlMarshaller UserWrite UserRead
 userMarshaller =
   User
@@ -108,6 +116,7 @@ userMarshaller =
     <*> marshallField (\User {..} -> userName) userNameField
     <*> marshallField (\User {..} -> email) emailField
     <*> marshallField (\User {..} -> userPassword) passwordField
+    <*> marshallField (\User {..} -> isUserVerified) isVerifiedField
     <*> marshallReadOnly
       ( marshallField
           (\User {..} -> createdAt)
@@ -232,5 +241,29 @@ commentVoteMarshaller =
     <$> marshallField (\CommentVote {..} -> userIDForCommentVote) userIDField
     <*> marshallField (\CommentVote {..} -> commentIDForCommentVote) commentIDField
     <*> marshallField (\CommentVote {..} -> commentVote) voteField
-    <*> marshallReadOnly (marshallField (\CommentVote {..} -> createdAtForCommentVote) createdAtField)
-    <*> marshallReadOnly (marshallField (\CommentVote {..} -> updatedAtForCommentVote) updatedAtField)
+    <*> marshallReadOnly
+      ( marshallField
+          (\CommentVote {..} -> createdAtForCommentVote)
+          createdAtField
+      )
+    <*> marshallReadOnly
+      ( marshallField
+          (\CommentVote {..} -> updatedAtForCommentVote)
+          updatedAtField
+      )
+
+-- UserEmailVerifyOTP Model
+
+userEmailVerifyOTPMarshaller ::
+  SqlMarshaller
+    UserEmailVerifyOTPWrite
+    UserEmailVerifyOTPRead
+userEmailVerifyOTPMarshaller =
+  UserEmailVerifyOTP
+    <$> marshallField (\UserEmailVerifyOTP {..} -> userIDForUEVO) userIDField
+    <*> marshallField (\UserEmailVerifyOTP {..} -> otpForUEVO) otpField
+    <*> marshallReadOnly
+      ( marshallField
+          (\UserEmailVerifyOTP {..} -> createdAtForUEVO)
+          createdAtField
+      )

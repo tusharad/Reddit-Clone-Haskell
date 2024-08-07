@@ -11,6 +11,7 @@ module Platform.Common.Types
     Env (..),
     DBConfig (..),
     MyPassword (..),
+    HaxlConfig (..),
   )
 where
 
@@ -31,26 +32,37 @@ data DBConfig = DBConfig
   }
   deriving (Generic, FromDhall, Show)
 
+data Environment = Production | Development | Sandbox | Test | Local
+  deriving (Generic, Eq, Ord, Show, ToJSON, FromDhall)
+
 data Env = Env
   { dbConfig :: DBConfig,
     logFilePath :: FilePath,
     logLevel :: Text,
     fileUploadPath :: FilePath,
-    applicationPort :: Natural
+    applicationPort :: Natural,
+    mailAPIToken :: Text,
+    mailFromEmail :: Text
   }
   deriving (Generic, FromDhall, Show)
 
 data AppConfig = AppConfig
   { fileUploadDir :: FilePath,
     loggerSet :: LoggerSet,
-    minLogLevel :: MinLogLevel
+    minLogLevel :: MinLogLevel,
+    emailAPIToken :: Text,
+    emailFromEmail :: Text
+  }
+
+data HaxlConfig = HaxlConfig
+  { pgConnectionPool :: O.ConnectionPool,
+    numOfThreads :: QSem
   }
 
 data MyAppState = MyAppState
   { appConfig :: AppConfig,
     appOrvilleState :: O.OrvilleState,
-    pgConnectionPool :: O.ConnectionPool,
-    numOfThreads :: QSem
+    haxlConfig :: HaxlConfig
   }
 
 -- Log types

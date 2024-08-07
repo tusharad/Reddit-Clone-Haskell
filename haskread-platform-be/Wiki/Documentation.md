@@ -31,8 +31,23 @@ Features list:
     - userName should be unique (userName in the database shall not exist).
   - On any of the above checks fail, the API shall return an error message with status code 400.
 
-- Future Features
-    - Verify email using send mail API.
+- ### User verify email
+    ##### PUT /api/v1/user/auth/verify/:userID/:token
+    - After successful registration, the user will be prompted with user verify screen.
+      Where the user is supposed to submit the OTP he/she has received on the mail.
+      After hitting submit, this API should be hit.
+    - Flow:
+        - API will check if the UserID exists in UVEO table. If not, throw error.
+        - If exists, try to match the OTP, if not, throw error.
+        - Upon successful match:
+            - The entry in UVEO table shall be deleted.
+            - The User entry shall be updated.
+
+- ### User Resend verify email
+    ##### PUT /api/v1/user/auth/verify/resend/:userID
+    - Flow:
+        - Check if record with given userID exists in the UEVO table.
+        - If yes, delete the record and call sendEmailVerify Function.
 
 - ### User Login
     ###### POST /api/v1/user/auth/login

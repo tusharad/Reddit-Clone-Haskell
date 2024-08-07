@@ -4,6 +4,8 @@
 module Platform.Auth.Types
   ( UserInfo (..),
     AdminInfo (..),
+    VerifyEmailResponse (..),
+    ResendVerifyEmailResponse (..),
   )
 where
 
@@ -24,3 +26,9 @@ data AdminInfo = AdminInfo
     adminNameForAdminInfo :: Text
   }
   deriving (Show, Eq, Generic, ToJWT, ToJSON, FromJSON, FromJWT)
+
+newtype VerifyEmailResponse = VerifyEmailResponse Text
+  deriving (Show, Eq, Generic, ToJSON)
+
+newtype ResendVerifyEmailResponse = ResendVerifyEmailResponse Text
+  deriving (Show, Eq, Generic, ToJSON)

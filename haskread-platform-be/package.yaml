@@ -51,6 +51,9 @@ dependencies:
 - password
 - hashable
 - async
+- req
+- string-interpolate
+- random
 
 ghc-options:
 - -Wall

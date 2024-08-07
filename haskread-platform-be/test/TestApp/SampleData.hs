@@ -22,6 +22,7 @@ module TestApp.SampleData
     sampleUpdateUserProfileImageBody,
     threadCreateReqBody,
     threadUpdateReqBody,
+    sampleUEVO,
   )
 where
 
@@ -29,11 +30,11 @@ import Data.Aeson (encode)
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BSL
 import Data.Password.Bcrypt
-import Platform.Community.Types
 import Platform.Admin.Types hiding (AdminDashboardResponse (..))
 import Platform.Auth.Types
 import Platform.Comment.Types
 import Platform.Common.Types (MyPassword (..))
+import Platform.Community.Types
 import Platform.DB.Model
 import Platform.User.Thread.Types
 import Platform.User.Types
@@ -80,6 +81,20 @@ sampleAdmins =
       }
   ]
 
+sampleUEVO :: [UserEmailVerifyOTPWrite]
+sampleUEVO =
+  [ UserEmailVerifyOTP
+      { userIDForUEVO = UserID 2,
+        otpForUEVO = 1234,
+        createdAtForUEVO = ()
+      },
+    UserEmailVerifyOTP
+      { userIDForUEVO = UserID 1,
+        otpForUEVO = 1234,
+        createdAtForUEVO = ()
+      }
+  ]
+
 sampleAdminInfoList :: [AdminInfo]
 sampleAdminInfoList =
   [ AdminInfo (AdminID 1) "batman",
@@ -92,6 +107,7 @@ sampleUsers =
       { userName = "batman",
         email = "bruce@abc.com",
         userPassword = samplePassword,
+        isUserVerified = False,
         userID = (),
         createdAt = (),
         updatedAt = ()
@@ -100,6 +116,7 @@ sampleUsers =
       { userName = "spiderman",
         email = "peter@abc.com",
         userPassword = samplePassword,
+        isUserVerified = False,
         userID = (),
         createdAt = (),
         updatedAt = ()
@@ -108,6 +125,7 @@ sampleUsers =
       { userName = "superman",
         email = "clark@abc.com",
         userPassword = samplePassword,
+        isUserVerified = False,
         userID = (),
         createdAt = (),
         updatedAt = ()
@@ -116,6 +134,7 @@ sampleUsers =
       { userName = "wonderwoman",
         email = "diana@abc.com",
         userPassword = samplePassword,
+        isUserVerified = False,
         userID = (),
         createdAt = (),
         updatedAt = ()
@@ -124,6 +143,7 @@ sampleUsers =
       { userName = "ironman",
         email = "tony@abc.com",
         userPassword = samplePassword,
+        isUserVerified = True, -- For login test
         userID = (),
         createdAt = (),
         updatedAt = ()
@@ -289,7 +309,7 @@ registerUserBody =
   let r =
         RegisterUserBody
           { userNameForRegister = "tushar",
-            emailForRegister = "tushar@abc",
+            emailForRegister = "ratushar46@gmail.com",
             passwordForRegister = "Tushar123",
             confirmPasswordForRegister = "Tushar123"
           }

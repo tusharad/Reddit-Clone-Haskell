@@ -14,8 +14,34 @@ authAPITests app =
     "auth apis"
     [ testUserRegister app,
       testUserLogin app,
-      testAdminLogin app
+      testAdminLogin app,
+      testVerifyEmail app,
+      testResendVerifyEmail app
     ]
+
+testResendVerifyEmail :: Application -> TestTree
+testResendVerifyEmail app =
+  testWai app "PUT /user/auth/verify - 200" $ do
+    res <-
+      srequest $
+        buildRequestWithHeaders
+          PUT
+          "api/v1/user/auth/verify/resend/1"
+          ""
+          []
+    assertStatus' status200 res
+
+testVerifyEmail :: Application -> TestTree
+testVerifyEmail app =
+  testWai app "PUT /user/auth/verify - 200" $ do
+    res <-
+      srequest $
+        buildRequestWithHeaders
+          PUT
+          "api/v1/user/auth/verify/2/1234"
+          ""
+          []
+    assertStatus' status200 res
 
 testUserRegister :: Application -> TestTree
 testUserRegister app =

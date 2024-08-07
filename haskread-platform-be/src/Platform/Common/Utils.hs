@@ -14,13 +14,14 @@ module Platform.Common.Utils
     toJsonbArray,
     readEnv,
     matchPasswords,
+    queryWrapper,
   )
 where
 
-import Control.Concurrent.QSem
-import Control.Exception
+-- import Control.Concurrent.QSem
+-- import Control.Exception
 import Control.Monad.IO.Class
-import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Char
 import Data.Password.Bcrypt
 import Data.String.Interpolate
@@ -37,6 +38,7 @@ import Platform.DB.Model
 import Servant
 import Servant.Auth.Server
 import System.Log.FastLogger
+import UnliftIO
 
 toUserInfo :: UserRead -> UserInfo
 toUserInfo User {..} = UserInfo userID userName
@@ -103,6 +105,15 @@ toLogLevel "LevelWarn" = LevelWarn
 toLogLevel "LevelError" = LevelError
 toLogLevel _ = LevelInfo -- Default if wrong value is mentioned
 
+-- This function wraps query function in try and throws
+-- 400 Error on exception
+queryWrapper :: (MonadUnliftIO m) => AppM m a -> AppM m a
+queryWrapper queryFunc = do
+  eRes <- try queryFunc
+  case eRes of
+    Left e -> throw400Err $ BSL.pack (show (e :: SomeException))
+    Right r -> pure r
+
 data MissingEnvArgumentException = MissingEnvArgumentException Text
   deriving (Show)
 
@@ -144,12 +155,19 @@ readEnv envFilePath = do
           loggerSet_ <- newFileLoggerSet defaultBufSize logFilePath
           sem <- newQSem 10 -- 10 threads
           let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
+              appCfg =
+                AppConfig
+                  { fileUploadDir = fileUploadPath,
+                    loggerSet = loggerSet_,
+                    minLogLevel = (toLogLevel logLevel),
+                    emailAPIToken = mailAPIToken,
+                    emailFromEmail = mailFromEmail
+                  }
               appST =
                 MyAppState
-                  (AppConfig fileUploadPath loggerSet_ (toLogLevel logLevel))
+                  appCfg
                   orvilleState
-                  pool
-                  sem
+                  (HaxlConfig pool sem)
               jwtSett = defaultJWTSettings jwtSecretKey
               ctx = defaultCookieSettings :. jwtSett :. EmptyContext
           pure $ Right (appST, jwtSett, ctx, fromIntegral applicationPort, pool)

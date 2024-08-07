@@ -11,7 +11,9 @@ let Env = {
     logFilePath : Text,
     logLevel : Text,
     fileUploadPath : Text,
-    applicationPort : Natural
+    applicationPort : Natural,
+    mailAPIToken : Text,
+    mailFromEmail : Text
 }
 
 let dbConfig : DBConfig = {
@@ -27,7 +29,9 @@ let env : Env = {
     logFilePath = "./.logs/dev_logs.txt",
     logLevel = "LevelDebug",
     fileUploadPath = "./file-upload",
-    applicationPort = 8085
+    applicationPort = 8085,
+    mailAPIToken = env:MailAPIToken as Text,
+    mailFromEmail = env:MailFromEmail as Text,
 }
 
 in env

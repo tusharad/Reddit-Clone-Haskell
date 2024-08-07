@@ -29,12 +29,19 @@ import Platform.User.Types
 import Servant.Auth.Server
 import UnliftIO
 
-fetchUserByID ::
+fetchUserByIDHaxl ::
   (MonadUnliftIO m) =>
   UserID ->
   AppM m (Maybe UserRead)
-fetchUserByID uID0 = do
-  MyAppState {pgConnectionPool = pool, numOfThreads = sem} <- ask
+fetchUserByIDHaxl uID0 = do
+  MyAppState
+    { haxlConfig =
+        HaxlConfig
+          { pgConnectionPool = pool,
+            numOfThreads = sem
+          }
+    } <-
+    ask
   let st = HaskReadState pool sem
   eRes :: Either SomeException (Maybe UserRead) <- liftIO $ do
     env0 <- initEnv (stateSet st stateEmpty) () :: IO (Haxl.Env () [Int])
@@ -86,7 +93,7 @@ userChangePasswordH ::
   ChangePasswordBody ->
   AppM m ChangePasswordResponse
 userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
-  mUser <- fetchUserByID userIDForUserInfo
+  mUser <- fetchUserByIDHaxl userIDForUserInfo
   case mUser of
     Nothing -> throw400Err "User is invalid!"
     Just u@User {userPassword = uPassword} -> do
@@ -122,7 +129,7 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
       logDebug $ "new password user : " <> (T.pack $ show newPassUsr)
       eRes :: Either SomeException () <-
         try $
-          changePasswordQ
+          updateUser
             userIDForUserInfo
             newPassUsr
       case eRes of
@@ -140,7 +147,7 @@ userDeleteAccountH ::
   DeleteUserBody ->
   AppM m DeleteUserResponse
 userDeleteAccountH (Authenticated UserInfo {..}) DeleteUserBody {..} = do
-  mUser <- fetchUserByID userIDForUserInfo
+  mUser <- fetchUserByIDHaxl userIDForUserInfo
   case mUser of
     Nothing -> throw400Err "User is invalid!"
     Just User {userPassword = uPassword} -> do

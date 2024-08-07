@@ -7,30 +7,35 @@ module Platform.Auth.Handler
   ( registerUserH,
     loginUserH,
     adminLoginH,
+    verifyEmailH,
+    resendVerifyEmailH,
   )
 where
 
-import Control.Monad (unless, when)
+import Control.Monad (unless, void, when)
 import Control.Monad.IO.Class
 import Control.Monad.Reader
 import qualified Data.ByteString.Lazy.Char8 as BSL
-import Data.Maybe (isJust)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Password.Bcrypt
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
+import GHC.Int (Int32)
 import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
 import qualified Haxl.Core as Haxl
--- import Platform.Admin.DB (fetchAdminByEmailQ)
 import Platform.Admin.Types
+import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.DB.Model
+import Platform.Email
 import Platform.Haxl.DataSource
 import Platform.User.DB
 import Platform.User.Types
 import Servant
 import Servant.Auth.Server
+import System.Random
 import UnliftIO
 
 toUserWrite :: RegisterUserBody -> IO UserWrite
@@ -42,6 +47,7 @@ toUserWrite RegisterUserBody {..} = do
         userName = userNameForRegister,
         email = emailForRegister,
         userPassword = hashedPass,
+        isUserVerified = False,
         createdAt = (),
         updatedAt = ()
       }
@@ -65,6 +71,51 @@ doesUserNameExists userName0 = do
 getUserID :: UserRead -> UserID
 getUserID User {..} = userID
 
+addUEVO :: (MonadUnliftIO m) => UserEmailVerifyOTPWrite -> AppM m ()
+addUEVO uevo@UserEmailVerifyOTP {userIDForUEVO = uID} = do
+  eRes0 :: (Either SomeException (Maybe UserEmailVerifyOTPRead)) <-
+    try $
+      fetchUEVOByIDQ uID
+  case eRes0 of
+    Left e -> throw400Err $ BSL.pack $ show e
+    Right Nothing -> do
+      eRes1 :: Either SomeException () <- try $ addUEVOQ uevo
+      case eRes1 of
+        Left e -> throw400Err $ BSL.pack $ show e
+        Right _ -> pure ()
+    Right (Just _) -> do
+      eRes2 :: Either SomeException () <- try $ deleteUEVOQ uID
+      case eRes2 of
+        Left e -> throw400Err $ BSL.pack $ show e
+        Right _ -> do
+          eRes3 :: Either SomeException () <- try $ addUEVOQ uevo
+          case eRes3 of
+            Left e -> throw400Err $ BSL.pack $ show e
+            Right _ -> pure ()
+
+sendOTPForEmailVerify :: (MonadUnliftIO m) => UserID -> Text -> AppM m ()
+sendOTPForEmailVerify userID0 userEmail0 = do
+  -- generate 4 digit OTP
+  otp <- liftIO $ randomRIO (1000, 9999)
+  addUEVO
+    UserEmailVerifyOTP
+      { userIDForUEVO = userID0,
+        otpForUEVO = otp,
+        createdAtForUEVO = ()
+      }
+  AppConfig {emailAPIToken = apiToken, emailFromEmail = fromEmail} <-
+    asks appConfig
+  eRes <- liftIO $ sendVerificationEmail userEmail0 otp apiToken fromEmail
+  case eRes of
+    Left e -> do
+      -- upon sending verify email failure, the user record shall be
+      -- deleted from the database
+      eRes1 :: Either SomeException () <- try $ deleteUserQ userID0
+      case eRes1 of
+        Left err -> throw400Err $ e <> (BSL.pack $ show err)
+        Right _ -> throw400Err e
+    Right _ -> pure ()
+
 registerUserH ::
   (MonadUnliftIO m) =>
   RegisterUserBody ->
@@ -80,6 +131,7 @@ registerUserH userBody@RegisterUserBody {..} = do
     throw400Err "Password must have upper,lower chars"
   userWrite0 <- liftIO $ toUserWrite userBody
   userRead0 <- addUser userWrite0
+  void $ sendOTPForEmailVerify (getUserID userRead0) (email userRead0)
   return
     RegisterUserResponse
       { registerUserResponseMessage = "User registered successfully",
@@ -113,6 +165,8 @@ loginUserH cookieSett jwtSett LoginUserBody {..} = do
       if not $ matchPasswords (userPassword userRead0) passwordForLogin
         then throw400Err "Email/Password is incorrect"
         else do
+          -- If the user is not verified, throw error
+          when (not $ isUserVerified userRead0) (throw400Err "User is not verified")
           -- do login
           let userInfo = toUserInfo userRead0
           mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett userInfo
@@ -176,7 +230,14 @@ adminLoginH cookieSett jwtSett AdminLoginBodyReq {..} = do
   where
     findAdminByEmail :: (MonadUnliftIO m) => AppM m (Maybe AdminRead)
     findAdminByEmail = do
-      MyAppState {pgConnectionPool = pool, numOfThreads = sem} <- ask
+      MyAppState
+        { haxlConfig =
+            HaxlConfig
+              { pgConnectionPool = pool,
+                numOfThreads = sem
+              }
+        } <-
+        ask
       let st = HaskReadState pool sem
       eMAdmin :: Either SomeException (Maybe AdminRead) <-
         liftIO $ do
@@ -187,11 +248,36 @@ adminLoginH cookieSett jwtSett AdminLoginBodyReq {..} = do
         Left e -> throw400Err $ BSL.pack $ show e
         Right r -> pure r
 
-{-
- findAdminByEmail = do
-   (eMAdmin :: Either SomeException (Maybe AdminRead)) <-
-     try $ fetchAdminByEmailQ adminEmailForLogin
-   case eMAdmin of
-     Left e -> throw400Err $ BSL.pack $ show e
-     Right r -> pure r
- -}
+verifyEmailH :: (MonadUnliftIO m) => UserID -> Int32 -> AppM m VerifyEmailResponse
+verifyEmailH userID0 otp0 = do
+  mUserOTP <- fetchUEVOByID userID0
+  case mUserOTP of
+    Nothing -> throw400Err "OTP record not found. Please resend verify request"
+    Just UserEmailVerifyOTP {..} -> do
+      when (otpForUEVO /= otp0) (throw400Err "Incorrect OTP!")
+      deleteUEVO userID0
+      mkUserVerified
+      pure $ VerifyEmailResponse "User has been successfully verified!"
+  where
+    mkUserVerified = do
+      mUser <- fetchUserByID userID0
+      case mUser of
+        Nothing -> throw400Err "Something went wrong!"
+        Just u -> do
+          let userWrite0 =
+                u
+                  { isUserVerified = True, -- Main login
+                    userID = (),
+                    createdAt = (),
+                    updatedAt = ()
+                  }
+          updateUser userID0 userWrite0
+
+resendVerifyEmailH :: (MonadUnliftIO m) => UserID -> AppM m ResendVerifyEmailResponse
+resendVerifyEmailH userID0 = do
+  mUserOTP <- fetchUEVOByID userID0
+  when (isNothing mUserOTP) $ deleteUEVO userID0
+  mUser <- fetchUserByID userID0
+  when (isNothing mUser) $ throw400Err "User does not exists!" -- impossible case
+  void $ sendOTPForEmailVerify userID0 (fromMaybe "" (email <$> mUser))
+  pure $ ResendVerifyEmailResponse "Verification mail has been sent!"

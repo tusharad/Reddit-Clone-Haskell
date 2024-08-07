@@ -7,30 +7,28 @@ module Platform.API
   )
 where
 
-import Platform.Handler
+import GHC.Int (Int32)
 import Platform.Admin.Handler
-import Platform.Community.Handler
-import Platform.User.Handler
-import Platform.Auth.Handler
-import Platform.User.Thread.Handler
-import Platform.User.Thread.VoteThread.Handler
-import Platform.Comment.Handler
-
 import Platform.Admin.Types
+import Platform.Auth.Handler
 import Platform.Auth.Types
-import Platform.User.Types
-import Platform.Community.Types
-import Platform.User.Thread.Types
-import Platform.User.Thread.VoteThread.Types
+import Platform.Comment.Handler
 import Platform.Comment.Types
-
 import Platform.Common.AppM
-
+import Platform.Community.Handler
+import Platform.Community.Types
+import Platform.DB.Model
+import Platform.Handler
+import Platform.User.Handler
+import Platform.User.Thread.Handler
+import Platform.User.Thread.Types
+import Platform.User.Thread.VoteThread.Handler
+import Platform.User.Thread.VoteThread.Types
+import Platform.User.Types
 import Servant
 import Servant.Auth.Server
 import Servant.Multipart
 import UnliftIO
-import Platform.DB.Model
 
 mainServer :: (MonadUnliftIO m) => CookieSettings -> JWTSettings -> ServerT (MainAPI auths) (AppM m)
 mainServer cookieSett jwtSett =
@@ -38,6 +36,8 @@ mainServer cookieSett jwtSett =
     :<|> registerUserH
     :<|> loginUserH cookieSett jwtSett
     :<|> adminLoginH cookieSett jwtSett
+    :<|> verifyEmailH
+    :<|> resendVerifyEmailH
     :<|> userDashboardH
     :<|> userChangePasswordH
     :<|> userDeleteAccountH
@@ -63,6 +63,8 @@ type MainAPI auths =
     :<|> RegisterUserAPI
     :<|> LoginUserAPI
     :<|> AdminLoginAPI
+    :<|> VerifyEmailAPI
+    :<|> ResendVerifyEmailAPI
     :<|> Auth auths UserInfo :> UserDashboard
     :<|> Auth auths UserInfo :> UserChangePasswordAPI
     :<|> Auth auths UserInfo :> DeleteUserAPI
@@ -206,7 +208,7 @@ type CommunityUpdateAPI =
     :> "update"
     :> ReqBody '[JSON] CommunityUpdateReqBody
     :> Put '[JSON] CommunityUpdateResponse
-    
+
 type DeleteCommunityAPI =
   "api"
     :> "v1"
@@ -256,7 +258,7 @@ type UpvoteThreadAPI =
     :> Capture "threadID" ThreadID
     :> Post '[JSON] VoteThreadResponse
 
-type DownvoteThreadAPI = 
+type DownvoteThreadAPI =
   "api"
     :> "v1"
     :> "user"
@@ -294,13 +296,33 @@ type UpdateCommentAPI =
     :> Capture "commentID" CommentID
     :> ReqBody '[JSON] UpdateCommentReqBody
     :> Put '[JSON] UpdateCommentResponse
-  
+
 type CommentVoteAPI =
-    "api"
-      :> "v1"
-      :> "user"
-      :> "comment"
-      :> "vote"
-      :> Capture "commentID" CommentID
-      :> Capture "vote" Bool
-      :> Put '[JSON] VoteCommentResponse
+  "api"
+    :> "v1"
+    :> "user"
+    :> "comment"
+    :> "vote"
+    :> Capture "commentID" CommentID
+    :> Capture "vote" Bool
+    :> Put '[JSON] VoteCommentResponse
+
+type VerifyEmailAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "auth"
+    :> "verify"
+    :> Capture "UserID" UserID
+    :> Capture "Token" Int32
+    :> Put '[JSON] VerifyEmailResponse
+
+type ResendVerifyEmailAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "auth"
+    :> "verify"
+    :> "resend"
+    :> Capture "UserID" UserID
+    :> Put '[JSON] ResendVerifyEmailResponse

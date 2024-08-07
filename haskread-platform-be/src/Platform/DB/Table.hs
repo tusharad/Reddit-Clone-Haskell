@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+
 module Platform.DB.Table
   ( userTable,
     userProfileImageTable,
@@ -7,7 +8,8 @@ module Platform.DB.Table
     threadTable,
     threadVoteTable,
     commentTable,
-    commentVoteTable
+    commentVoteTable,
+    userEmailVerifyOTPTable,
   )
 where
 
@@ -40,11 +42,11 @@ userProfileImageTable =
     [ foreignKeyConstraintWithOptions
         (tableIdentifier userTable)
         ( foreignReference
-              (fieldName userIDField)
-              (fieldName userIDField)
+            (fieldName userIDField)
+            (fieldName userIDField)
             :| []
         )
-      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+        (defaultForeignKeyOptions {foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
     ]
     ( mkTableDefinition
         "user_profile_image"
@@ -54,17 +56,17 @@ userProfileImageTable =
 
 adminTable ::
   TableDefinition
-  (HasKey AdminID)
-  AdminWrite
-  AdminRead
+    (HasKey AdminID)
+    AdminWrite
+    AdminRead
 adminTable =
   addTableConstraints
     [ uniqueConstraint
         ( fieldName emailField
             :| []
-    )]
-    (
-      mkTableDefinition
+        )
+    ]
+    ( mkTableDefinition
         "admin"
         (primaryKey adminIDField)
         adminMarshaller
@@ -72,17 +74,17 @@ adminTable =
 
 communityTable ::
   TableDefinition
-  (HasKey CommunityID)
-  CommunityWrite
-  CommunityRead
+    (HasKey CommunityID)
+    CommunityWrite
+    CommunityRead
 communityTable =
   addTableConstraints
     [ uniqueConstraint
         ( fieldName communityNameField
             :| []
-    )]
-    (
-      mkTableDefinition
+        )
+    ]
+    ( mkTableDefinition
         "community"
         (primaryKey communityIDField)
         communityMarshaller
@@ -90,128 +92,184 @@ communityTable =
 
 threadTable ::
   TableDefinition
-  (HasKey ThreadID)
-  ThreadWrite
-  ThreadRead
+    (HasKey ThreadID)
+    ThreadWrite
+    ThreadRead
 threadTable =
   addTableConstraints
-    [ threadToUserForeignKeyConstraint,threadToCommunityForeignKeyConstraint ]
-    (
-      mkTableDefinition
+    [threadToUserForeignKeyConstraint, threadToCommunityForeignKeyConstraint]
+    ( mkTableDefinition
         "thread"
         (primaryKey threadIDField)
         threadMarshaller
     )
   where
-    threadToUserForeignKeyConstraint = 
+    threadToUserForeignKeyConstraint =
       foreignKeyConstraintWithOptions
-      (tableIdentifier userTable) 
-      (foreignReference 
-        (fieldName userIDField) (fieldName userIDField) :| [])
-      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
-      
+        (tableIdentifier userTable)
+        ( foreignReference
+            (fieldName userIDField)
+            (fieldName userIDField)
+            :| []
+        )
+        (defaultForeignKeyOptions {foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+
     threadToCommunityForeignKeyConstraint =
       foreignKeyConstraintWithOptions
-      (tableIdentifier communityTable)
-      (foreignReference
-        (fieldName communityIDField) (fieldName communityIDField) :| [])
-      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
-    
+        (tableIdentifier communityTable)
+        ( foreignReference
+            (fieldName communityIDField)
+            (fieldName communityIDField)
+            :| []
+        )
+        (defaultForeignKeyOptions {foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+
 userThreadCompositeKey :: PrimaryKey ThreadVoteID
-userThreadCompositeKey = 
+userThreadCompositeKey =
   compositePrimaryKey
     (primaryKeyPart (\ThreadVoteID {..} -> threadVoteIDUserID) userIDField)
-    [primaryKeyPart (\ThreadVoteID {..} -> threadVoteIDThreadID) threadIDField]    
+    [primaryKeyPart (\ThreadVoteID {..} -> threadVoteIDThreadID) threadIDField]
 
 threadVoteTable ::
   TableDefinition
-  (HasKey ThreadVoteID)
-  ThreadVoteWrite
-  ThreadVoteRead
+    (HasKey ThreadVoteID)
+    ThreadVoteWrite
+    ThreadVoteRead
 threadVoteTable =
   addTableConstraints
-    [ threadVoteToUserForeignKeyConstraint,threadVoteToThreadForeignKeyConstraint ]
-    (
-      mkTableDefinition
+    [threadVoteToUserForeignKeyConstraint, threadVoteToThreadForeignKeyConstraint]
+    ( mkTableDefinition
         "vote_thread"
         userThreadCompositeKey
         threadVoteMarshaller
     )
   where
-    threadVoteToUserForeignKeyConstraint = 
+    threadVoteToUserForeignKeyConstraint =
       foreignKeyConstraintWithOptions
-      (tableIdentifier userTable) 
-      (foreignReference 
-        (fieldName userIDField) (fieldName userIDField) :| [])
-      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
-      
+        (tableIdentifier userTable)
+        ( foreignReference
+            (fieldName userIDField)
+            (fieldName userIDField)
+            :| []
+        )
+        (defaultForeignKeyOptions {foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+
     threadVoteToThreadForeignKeyConstraint =
       foreignKeyConstraintWithOptions
-      (tableIdentifier threadTable)
-      (foreignReference
-        (fieldName threadIDField) (fieldName threadIDField) :| [])
-      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+        (tableIdentifier threadTable)
+        ( foreignReference
+            (fieldName threadIDField)
+            (fieldName threadIDField)
+            :| []
+        )
+        (defaultForeignKeyOptions {foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
 
 commentTable ::
   TableDefinition
-  (HasKey CommentID)
-  CommentWrite
-  CommentRead
+    (HasKey CommentID)
+    CommentWrite
+    CommentRead
 commentTable =
   addTableConstraints
-    [ commentToUserForeignKeyConstraint,commentToThreadForeignKeyConstraint ]
-    (
-      mkTableDefinition
+    [commentToUserForeignKeyConstraint, commentToThreadForeignKeyConstraint]
+    ( mkTableDefinition
         "comment"
         (primaryKey commentIDField)
         commentMarshaller
     )
   where
-    commentToUserForeignKeyConstraint = 
+    commentToUserForeignKeyConstraint =
       foreignKeyConstraintWithOptions
-      (tableIdentifier userTable) 
-      (foreignReference 
-        (fieldName userIDField) (fieldName userIDField) :| [])
-      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
-      
+        (tableIdentifier userTable)
+        ( foreignReference
+            (fieldName userIDField)
+            (fieldName userIDField)
+            :| []
+        )
+        (defaultForeignKeyOptions {foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+
     commentToThreadForeignKeyConstraint =
       foreignKeyConstraintWithOptions
-      (tableIdentifier threadTable)
-      (foreignReference
-        (fieldName threadIDField) (fieldName threadIDField) :| [])
-      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
+        (tableIdentifier threadTable)
+        ( foreignReference
+            (fieldName threadIDField)
+            (fieldName threadIDField)
+            :| []
+        )
+        (defaultForeignKeyOptions {foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
 
 userCommentCompositeKey :: PrimaryKey CommentVoteID
-userCommentCompositeKey = 
+userCommentCompositeKey =
   compositePrimaryKey
     (primaryKeyPart (\CommentVoteID {..} -> commentVoteIDUserID) userIDField)
     [primaryKeyPart (\CommentVoteID {..} -> commentVoteIDCommentID) commentIDField]
 
 commentVoteTable ::
   TableDefinition
-  (HasKey CommentVoteID)
-  CommentVoteWrite
-  CommentVoteRead
+    (HasKey CommentVoteID)
+    CommentVoteWrite
+    CommentVoteRead
 commentVoteTable =
   addTableConstraints
-    [ commentVoteToUserForeignKeyConstraint,commentVoteToCommentForeignKeyConstraint ]
-    (
-      mkTableDefinition
+    [commentVoteToUserForeignKeyConstraint, commentVoteToCommentForeignKeyConstraint]
+    ( mkTableDefinition
         "vote_comment"
         userCommentCompositeKey
         commentVoteMarshaller
     )
   where
-    commentVoteToUserForeignKeyConstraint = 
+    commentVoteToUserForeignKeyConstraint =
       foreignKeyConstraintWithOptions
-      (tableIdentifier userTable) 
-      (foreignReference 
-        (fieldName userIDField) (fieldName userIDField) :| [])
-      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade})
-      
+        (tableIdentifier userTable)
+        ( foreignReference
+            (fieldName userIDField)
+            (fieldName userIDField)
+            :| []
+        )
+        ( defaultForeignKeyOptions
+            { foreignKeyOptionsOnUpdate = Cascade,
+              foreignKeyOptionsOnDelete = Cascade
+            }
+        )
+
     commentVoteToCommentForeignKeyConstraint =
       foreignKeyConstraintWithOptions
-      (tableIdentifier commentTable)
-      (foreignReference
-        (fieldName commentIDField) (fieldName commentIDField) :| [])
-      (defaultForeignKeyOptions { foreignKeyOptionsOnUpdate = Cascade, foreignKeyOptionsOnDelete = Cascade}) 
+        (tableIdentifier commentTable)
+        ( foreignReference
+            (fieldName commentIDField)
+            (fieldName commentIDField)
+            :| []
+        )
+        ( defaultForeignKeyOptions
+            { foreignKeyOptionsOnUpdate = Cascade,
+              foreignKeyOptionsOnDelete = Cascade
+            }
+        )
+
+userEmailVerifyOTPTable ::
+  TableDefinition
+    (HasKey UserID)
+    UserEmailVerifyOTPWrite
+    UserEmailVerifyOTPRead
+userEmailVerifyOTPTable =
+  addTableConstraints
+    [uevoToUserForeignKeyConstraint]
+    ( mkTableDefinition
+        "user_email_verify_otp"
+        (primaryKey userIDField)
+        userEmailVerifyOTPMarshaller
+    )
+  where
+    uevoToUserForeignKeyConstraint =
+      foreignKeyConstraintWithOptions
+        (tableIdentifier userTable)
+        ( foreignReference
+            (fieldName userIDField)
+            (fieldName userIDField)
+            :| []
+        )
+        ( defaultForeignKeyOptions
+            { foreignKeyOptionsOnUpdate = Cascade,
+              foreignKeyOptionsOnDelete = Cascade
+            }
+        )
