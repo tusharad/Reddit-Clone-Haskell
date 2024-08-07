@@ -9,9 +9,13 @@ on:
 permissions:
   contents: read
 
+env:
+  MailFromEmail : ${{ vars.MailFromEmail }}
+  MailAPIToken : ${{ secrets.MailAPIToken }}
+
 jobs:
   build:
-
+    environment: Test Env
     runs-on: ubuntu-22.04
     defaults:
       run:
