@@ -3,3 +3,4 @@
 /file-upload
 .dockermnt/
 .logs/
+dev_logs.txt

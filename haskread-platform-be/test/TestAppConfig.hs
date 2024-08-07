@@ -5,7 +5,7 @@ module TestAppConfig where
 import Orville.PostgreSQL
 import qualified Orville.PostgreSQL as O
 import Orville.PostgreSQL.AutoMigration
-import Platform.Admin.Community.DB
+import Platform.Community.DB
 import Platform.Admin.DB
 import Platform.Comment.DB
 import Platform.Common.Types

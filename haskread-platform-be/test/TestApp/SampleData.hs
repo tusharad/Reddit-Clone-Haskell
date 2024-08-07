@@ -29,7 +29,7 @@ import Data.Aeson (encode)
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BSL
 import Data.Password.Bcrypt
-import Platform.Admin.Community.Types
+import Platform.Community.Types
 import Platform.Admin.Types hiding (AdminDashboardResponse (..))
 import Platform.Auth.Types
 import Platform.Comment.Types

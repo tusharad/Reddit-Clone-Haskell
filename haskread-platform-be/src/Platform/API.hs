@@ -9,7 +9,7 @@ where
 
 import Platform.Handler
 import Platform.Admin.Handler
-import Platform.Admin.Community.Handler
+import Platform.Community.Handler
 import Platform.User.Handler
 import Platform.Auth.Handler
 import Platform.User.Thread.Handler
@@ -19,7 +19,7 @@ import Platform.Comment.Handler
 import Platform.Admin.Types
 import Platform.Auth.Types
 import Platform.User.Types
-import Platform.Admin.Community.Types
+import Platform.Community.Types
 import Platform.User.Thread.Types
 import Platform.User.Thread.VoteThread.Types
 import Platform.Comment.Types

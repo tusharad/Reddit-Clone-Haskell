@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Platform.Admin.Community.Handler
+module Platform.Community.Handler
   ( communityCreateH,
     communityUpdateH,
     communityDeleteH,
@@ -14,8 +14,8 @@ import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.List (nub)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
-import Platform.Admin.Community.DB
-import Platform.Admin.Community.Types
+import Platform.Community.DB
+import Platform.Community.Types
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Utils

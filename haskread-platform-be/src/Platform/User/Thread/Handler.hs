@@ -13,7 +13,7 @@ import Control.Monad (void, when)
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Maybe (isNothing)
 import qualified Data.Text as T
-import Platform.Admin.Community.DB
+import Platform.Community.DB
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Utils

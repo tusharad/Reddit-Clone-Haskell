@@ -20,7 +20,7 @@ import Data.Hashable
 import Data.Text (Text)
 import Haxl.Core
 import Orville.PostgreSQL (ConnectionPool, runOrville)
-import Platform.Admin.Community.DB
+import Platform.Community.DB
 import Platform.Admin.DB
 import Platform.Comment.DB
 import Platform.DB.Model

@@ -1,4 +1,4 @@
-module Platform.Admin.Community.DB (
+module Platform.Community.DB (
     fetchCommunityByNameQ
   , addCommunityQ
   , fetchCommunityByIDQ

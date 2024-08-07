@@ -10,6 +10,7 @@ Features list:
 - Change password
 - Delete account
 - Update user info
+- User email verification
 
 - ### User Registration
   ###### POST /api/v1/user/auth/register
@@ -97,6 +98,25 @@ Features list:
     - On failure, the API shall return an error message with status code 400.
     - At application level, the user record shall be delete from the primary table and all the related records shall be deleted from the related tables. And the user shall be logged out. The user info shall be added in some kind of archive table for future reference.
 
+- ### Verify email
+    Once the user registration is successful, the email verification process shall be initiated.
+    After registration part is done:
+        - random 4 digit otp (1000 to 9999) shall be generated.
+        - this otp along with newly created userID shall be added in the user_email_verify_otp table.
+        - Once value is inserted, User register API can response with success and tell user to verify email.
+        - User shall receive the otp on the provided email.
+        - the verify otp API shall be used to verify the token.
+        - If the otp is correct, then user record shall be updated with is_verified = true.
+        - A polling function should run in the background to delete the entries in the otp table after a certain interval say 1 hour.
+        - In login API, a validation should be added, to check if logged in user is verified or not. If not verified, we should throw error with 400.
+        - Another polling, say after every 7 days, to delete unverified users can be added can be added in the future.
+
+    ###### POST /api/v1/user/verify/:userID:token
+    - UserID and token shall be verified in the table.
+    - On successful request, the shall return a success messgae.
+    - On database level, user record with given userID should updated to is_verified = true.
+    - User with userID shall not be verified.
+
 
 - ### Update Profile image
     ###### PUT /api/v1/user/update-profile-image
@@ -124,12 +144,18 @@ Features list:
         - password : hashed
         - createdAt : timestamptz
         - updatedAt : timestamptz
+        - isVerified :: Bool default false
 
     - User Profile Image Table
         - userID : foreign key to user table on delete cascade
         - image : text
         - createdAt : timestamptz
         - updatedAt : timestamptz
+
+    - User Email Verify OTP Table
+        - userID : fKey to userTable on delete cascade
+        - otp : smallInt not null
+        - createdAt :: timestamptz
 
     - Constraints
         - (email,password) should be indexed.

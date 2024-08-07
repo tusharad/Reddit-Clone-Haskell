@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Platform.Admin.Community.Types
+module Platform.Community.Types
   ( CommunityCreateReqBody (..),
     CommunityCreateResponse (..),
     CommunityUpdateReqBody (..),

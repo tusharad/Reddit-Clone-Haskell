@@ -25,9 +25,6 @@ source-repository head
 library
   exposed-modules:
       Lib
-      Platform.Admin.Community.DB
-      Platform.Admin.Community.Handler
-      Platform.Admin.Community.Types
       Platform.Admin.DB
       Platform.Admin.Handler
       Platform.Admin.Types
@@ -41,6 +38,9 @@ library
       Platform.Common.AppM
       Platform.Common.Types
       Platform.Common.Utils
+      Platform.Community.DB
+      Platform.Community.Handler
+      Platform.Community.Types
       Platform.Core
       Platform.DB.Functions
       Platform.DB.Marshaller
