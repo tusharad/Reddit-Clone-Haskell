@@ -7,6 +7,7 @@ module Platform.API
   )
 where
 
+import Data.Text (Text)
 import GHC.Int (Int32)
 import Platform.Admin.Handler
 import Platform.Admin.Types
@@ -30,12 +31,12 @@ import Servant.Auth.Server
 import Servant.Multipart
 import UnliftIO
 
-mainServer :: (MonadUnliftIO m) => CookieSettings -> JWTSettings -> ServerT (MainAPI auths) (AppM m)
-mainServer cookieSett jwtSett =
+mainServer :: (MonadUnliftIO m) => ServerT (MainAPI auths) (AppM m)
+mainServer =
   checkHealthH
     :<|> registerUserH
-    :<|> loginUserH cookieSett jwtSett
-    :<|> adminLoginH cookieSett jwtSett
+    :<|> loginUserH
+    :<|> adminLoginH
     :<|> verifyEmailH
     :<|> resendVerifyEmailH
     :<|> userDashboardH
@@ -57,6 +58,8 @@ mainServer cookieSett jwtSett =
     :<|> deleteCommentH
     :<|> updateCommentH
     :<|> voteCommentH
+    :<|> oauth2LoginH
+    :<|> oauth2CallbackH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -84,6 +87,8 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> DeleteCommentAPI
     :<|> Auth auths UserInfo :> UpdateCommentAPI
     :<|> Auth auths UserInfo :> CommentVoteAPI
+    :<|> Auth auths UserInfo :> OAuth2LoginAPI
+    :<|> Auth auths UserInfo :> OAuth2CallBackAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -326,3 +331,24 @@ type ResendVerifyEmailAPI =
     :> "resend"
     :> Capture "UserID" UserID
     :> Put '[JSON] ResendVerifyEmailResponse
+
+type OAuth2LoginAPI =
+  "api"
+    :> "v1"
+    :> "user"
+    :> "oauth2"
+    :> "login"
+    :> Get '[JSON] NoContent
+
+type OAuth2CallBackAPI =
+  "callback"
+    :> QueryParam "state" Text
+    :> QueryParam "code" Text
+    :> Get
+         '[JSON]
+         ( Headers
+             '[ Header "Set-Cookie" SetCookie,
+                Header "Set-Cookie" SetCookie
+              ]
+             LoginUserResponse
+         )

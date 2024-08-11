@@ -28,7 +28,7 @@ getTestAppCfg = do
   case eEnv of
     Left e -> (putStrLn $ show e) >> exitFailure
     Right (appST, jwtSett, ctx, _, pool) -> do
-      return (app appST jwtSett ctx, pool, jwtSett)
+      return (app appST ctx, pool, jwtSett)
 
 schemaList :: [SchemaItem]
 schemaList =

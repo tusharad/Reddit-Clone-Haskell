@@ -6,6 +6,11 @@ let DBConfig = {
         dbPassword : Text
     }
 
+let OAuth2Config = {
+    clientID : Text,
+    clientSecret : Text,
+}
+
 let Env = {
     dbConfig : DBConfig,
     logFilePath : Text,
@@ -13,7 +18,8 @@ let Env = {
     fileUploadPath : Text,
     applicationPort : Natural,
     mailAPIToken : Text,
-    mailFromEmail : Text
+    mailFromEmail : Text,
+    oauth2Config : OAuth2Config
 }
 
 let dbConfig : DBConfig = {
@@ -24,6 +30,11 @@ let dbConfig : DBConfig = {
     dbPassword = "1234"
 }
 
+let oauth2Config : OAuth2Config = {
+    clientID  =  env:GoogleOAuth2ClientID as Text
+  , clientSecret = env:GoogleOAuth2ClientSecret as Text
+}
+
 let env : Env = {
     dbConfig = dbConfig,
     logFilePath = "/home/user/haskell/Reddit-Clone-Haskell/haskread-platform-be/.logs/dev_logs.txt",
@@ -32,6 +43,7 @@ let env : Env = {
     applicationPort = 8085,
     mailAPIToken = env:MailAPIToken as Text,
     mailFromEmail = env:MailFromEmail as Text,
+    oauth2Config = oauth2Config
 }
 
 in env

@@ -15,6 +15,8 @@ module Platform.User.DB
     addUEVOQ,
     fetchUserByID,
     updateUser,
+    fetchUserByEmail,
+    addUser,
   )
 where
 
@@ -28,6 +30,13 @@ import Platform.DB.Model
 import Platform.DB.Table
 import UnliftIO
 
+fetchUserByEmail :: (MonadUnliftIO m) => Text -> AppM m (Maybe UserRead)
+fetchUserByEmail email0 = do
+  eRes <- try $ fetchUserByEmailQ email0
+  case eRes of
+    Left err -> throw400Err $ BSL.pack (show (err :: SomeException))
+    Right mUser -> pure mUser
+
 fetchUserByEmailQ :: (MonadOrville m) => Text -> m (Maybe UserRead)
 fetchUserByEmailQ email0 = findFirstEntityBy userTable whereEmailIs
   where
@@ -38,6 +47,13 @@ fetchUserByUserNameQ userName0 =
   findFirstEntityBy userTable whereUserNameIs
   where
     whereUserNameIs = where_ $ userNameField .== userName0
+
+addUser :: (MonadUnliftIO m) => UserWrite -> AppM m UserRead
+addUser uWrite = do
+  eRes <- try $ addUserQ uWrite
+  case eRes of
+    Left err -> throw400Err $ BSL.pack (show (err :: SomeException))
+    Right mUser -> pure mUser
 
 addUserQ :: (MonadOrville m) => UserWrite -> m UserRead
 addUserQ = insertAndReturnEntity userTable

@@ -76,7 +76,6 @@ create table vote_comment (
 	created_at timestamptz default now(),
 	updated_at timestamptz default now()
 );
-
 CREATE TABLE user_email_verify_otp (
 	user_id int REFERENCES users ON DELETE CASCADE ON UPDATE CASCADE PRIMARY key,
 	otp SMALLINT NOT NULL,
@@ -84,7 +83,7 @@ CREATE TABLE user_email_verify_otp (
 );
 
 alter table users add column is_verified bool default false;
-alter table users alter column password set not null;
+ALTER TABLE public.users ALTER COLUMN 'password' DROP NOT NULL;
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

@@ -579,3 +579,5 @@ such as github and facebook will be added.
         - Shall return the result status 200.
         - Not with OAuth2, we need to change login of deleteUser API as well.
           If password is null, then a different delete user API shall be used.
+    Note:
+        In OAuth2Config, redirectURI is not added because of confusion with `URI` type.

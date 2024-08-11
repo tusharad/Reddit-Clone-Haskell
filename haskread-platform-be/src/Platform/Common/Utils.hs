@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -15,12 +16,16 @@ module Platform.Common.Utils
     readEnv,
     matchPasswords,
     queryWrapper,
+    redirects,
+    genRandomUserName,
   )
 where
 
 -- import Control.Concurrent.QSem
 -- import Control.Exception
+import Control.Monad.Error.Class
 import Control.Monad.IO.Class
+import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Char
 import Data.Password.Bcrypt
@@ -28,14 +33,17 @@ import Data.String.Interpolate
 import qualified Data.Text as T
 import Dhall
 -- import Haxl.Core (stateEmpty, stateSet)
+
+-- import Platform.Haxl.DataSource
+
+import Network.HTTP.Req as Req
 import qualified Orville.PostgreSQL as O
 import Orville.PostgreSQL.Raw.Connection
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Types
 import Platform.DB.Model
--- import Platform.Haxl.DataSource
-import Servant
+import Servant as S
 import Servant.Auth.Server
 import System.Log.FastLogger
 import UnliftIO
@@ -155,19 +163,48 @@ readEnv envFilePath = do
           loggerSet_ <- newFileLoggerSet defaultBufSize logFilePath
           sem <- newQSem 10 -- 10 threads
           let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
+              jwtSett = defaultJWTSettings jwtSecretKey
               appCfg =
                 AppConfig
                   { fileUploadDir = fileUploadPath,
                     loggerSet = loggerSet_,
-                    minLogLevel = (toLogLevel logLevel),
+                    minLogLevel = toLogLevel logLevel,
                     emailAPIToken = mailAPIToken,
-                    emailFromEmail = mailFromEmail
+                    emailFromEmail = mailFromEmail,
+                    googleOauth2Config = oauth2Config,
+                    jwtSett = jwtSett,
+                    cookieSett = defaultCookieSettings
                   }
               appST =
                 MyAppState
                   appCfg
                   orvilleState
                   (HaxlConfig pool sem)
-              jwtSett = defaultJWTSettings jwtSecretKey
               ctx = defaultCookieSettings :. jwtSett :. EmptyContext
           pure $ Right (appST, jwtSett, ctx, fromIntegral applicationPort, pool)
+
+-- | gen a 302 redirect helper
+redirects :: (MonadError ServerError m) => BS.ByteString -> m a
+redirects url = throwError err302 {errHeaders = [("Location", url)]}
+
+-- TODO: A better way to extract userName from json response, probably using lens
+genRandomUserName :: IO (Either BSL.ByteString Text)
+genRandomUserName = do
+  runReq defaultHttpConfig $ do
+    jsonRes <-
+      req
+        Req.GET
+        (https "randomuser.me" /: "api")
+        NoReqBody
+        jsonResponse
+        mempty
+    if responseStatusCode jsonRes /= 200
+      then do
+        liftIO $ print (BSL.pack (show (responseBody jsonRes)))
+        pure $ Left (BSL.pack (show (responseBody jsonRes)))
+      else do
+        let res0 =
+              randomUsername $
+                head $
+                  results (responseBody jsonRes :: RandomUserNameApiResponse)
+        pure $ Right (T.pack res0)

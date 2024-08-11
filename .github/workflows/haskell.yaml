@@ -12,6 +12,8 @@ permissions:
 env:
   MailFromEmail : ${{ vars.MailFromEmail }}
   MailAPIToken : ${{ secrets.MailAPIToken }}
+  GoogleOAuth2ClientID : ${{ secrets.GoogleOAuth2ClientID }}
+  GoogleOAuth2ClientSecret : ${{ secrets.GoogleOAuth2ClientSecret }}
 
 jobs:
   build:

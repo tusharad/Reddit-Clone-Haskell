@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -9,20 +10,37 @@ module Platform.Auth.Handler
     adminLoginH,
     verifyEmailH,
     resendVerifyEmailH,
+    oauth2LoginH,
+    oauth2CallbackH,
   )
 where
 
 import Control.Monad (unless, void, when)
 import Control.Monad.IO.Class
 import Control.Monad.Reader
+import Control.Monad.Trans.Except
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import Data.Either (fromRight)
+import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Password.Bcrypt
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy as TL
 import GHC.Int (Int32)
 import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
 import qualified Haxl.Core as Haxl
+import Network.HTTP.Conduit (newManager, tlsManagerSettings)
+-- import Network.OAuth2.Provider.Google (GoogleUser (..))
+
+import Network.OAuth.OAuth2
+  ( ExchangeToken (ExchangeToken),
+    OAuth2Token (accessToken),
+  )
+import Network.OAuth2.Experiment
+import Network.OAuth2.Provider (IdpName (Google))
+import qualified Network.OAuth2.Provider.Google as Google
 import Platform.Admin.Types
 import Platform.Auth.Types
 import Platform.Common.AppM
@@ -36,6 +54,7 @@ import Platform.User.Types
 import Servant
 import Servant.Auth.Server
 import System.Random
+import URI.ByteString.QQ (uri)
 import UnliftIO
 
 toUserWrite :: RegisterUserBody -> IO UserWrite
@@ -138,16 +157,9 @@ registerUserH userBody@RegisterUserBody {..} = do
         userIDForRUR = getUserID userRead0
       }
   where
-    addUser userWrite0 = do
-      (eRes :: Either SomeException UserRead) <- try $ addUserQ userWrite0
-      case eRes of
-        Left e -> throw400Err $ BSL.pack $ show e
-        Right r -> pure r
 
 loginUserH ::
   (MonadUnliftIO m) =>
-  CookieSettings ->
-  JWTSettings ->
   LoginUserBody ->
   AppM
     m
@@ -157,7 +169,7 @@ loginUserH ::
          ]
         LoginUserResponse
     )
-loginUserH cookieSett jwtSett LoginUserBody {..} = do
+loginUserH LoginUserBody {..} = do
   mRes <- findUserByMail
   case mRes of
     Nothing -> throw400Err "Email/Password is incorrect"
@@ -173,21 +185,7 @@ loginUserH cookieSett jwtSett LoginUserBody {..} = do
               -- If the user is not verified, throw error
               unless (isUserVerified userRead0) (throw400Err "User is not verified")
               -- do login
-              let userInfo = toUserInfo userRead0
-              mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett userInfo
-              case mLoginAccepted of
-                Nothing -> throwError err401
-                Just x -> do
-                  etoken <- liftIO $ makeJWT userInfo jwtSett Nothing
-                  case etoken of
-                    Left _ -> throwError err401 {errBody = "JWT token creation failed"}
-                    Right v ->
-                      return $
-                        x
-                          ( LoginUserResponse
-                              (T.decodeUtf8 $ BSL.toStrict v)
-                              "User loggedIn successfully"
-                          )
+              loginUser userRead0
   where
     findUserByMail = do
       (eMUser :: Either SomeException (Maybe UserRead)) <-
@@ -198,8 +196,6 @@ loginUserH cookieSett jwtSett LoginUserBody {..} = do
 
 adminLoginH ::
   (MonadUnliftIO m) =>
-  CookieSettings ->
-  JWTSettings ->
   AdminLoginBodyReq ->
   AppM
     m
@@ -209,7 +205,8 @@ adminLoginH ::
          ]
         AdminLoginResponse
     )
-adminLoginH cookieSett jwtSett AdminLoginBodyReq {..} = do
+adminLoginH AdminLoginBodyReq {..} = do
+  AppConfig {..} <- asks appConfig
   mRes <- findAdminByEmail
   case mRes of
     Nothing -> throw400Err "Email/Password is incorrect"
@@ -286,3 +283,127 @@ resendVerifyEmailH userID0 = do
   when (isNothing mUser) $ throw400Err "User does not exists!" -- impossible case
   void $ sendOTPForEmailVerify userID0 (fromMaybe "" (email <$> mUser))
   pure $ ResendVerifyEmailResponse "Verification mail has been sent!"
+
+oauth2LoginH :: (MonadUnliftIO m) => AuthResult UserInfo -> AppM m NoContent
+oauth2LoginH (Authenticated _) = throw401Err "User alread logged IN"
+oauth2LoginH _ = do
+  googleApp <- mkTestGoogleApp
+  void $ redirects (T.encodeUtf8 $ uriToText $ mkAuthorizationRequest googleApp)
+  pure NoContent
+
+mkTestGoogleApp ::
+  (MonadIO m) =>
+  AppM m (IdpApplication Google AuthorizationCodeApplication)
+mkTestGoogleApp = do
+  googleOAuth2Cfg <- googleOauth2Config <$> asks appConfig
+  let application =
+        AuthorizationCodeApplication
+          { acClientId = ClientId $ TL.fromStrict (clientID googleOAuth2Cfg),
+            acClientSecret = ClientSecret $ TL.fromStrict (clientSecret googleOAuth2Cfg),
+            acAuthorizeState = AuthorizeState ("google." <> randomStateValue),
+            acRedirectUri = [uri|http://localhost:8085/callback|],
+            acScope =
+              Set.fromList
+                [ "https://www.googleapis.com/auth/userinfo.email",
+                  "https://www.googleapis.com/auth/userinfo.profile"
+                ],
+            acName = "haskread-app",
+            acAuthorizeRequestExtraParams = Map.empty,
+            acTokenRequestAuthenticationMethod = ClientSecretBasic
+          }
+      idp = Google.defaultGoogleIdp
+  pure IdpApplication {..}
+
+randomStateValue :: TL.Text
+randomStateValue = "random-state-to-prevent-csrf"
+
+oauth2CallbackH ::
+  (MonadUnliftIO m) =>
+  AuthResult UserInfo ->
+  Maybe Text ->
+  Maybe Text ->
+  AppM
+    m
+    ( Headers
+        '[ Header "Set-Cookie" SetCookie,
+           Header "Set-Cookie" SetCookie
+         ]
+        LoginUserResponse
+    )
+oauth2CallbackH (Authenticated _) _ _ = throw401Err "User alread logged IN"
+oauth2CallbackH _ (Just _) (Just codeP) = do
+  let code = ExchangeToken codeP
+  -- idpName = T.takeWhile ('.' /=) stateP
+  googleApp <- mkTestGoogleApp
+  mgr <- liftIO $ newManager tlsManagerSettings
+  eTokenResp <- runExceptT $ (conduitTokenRequest googleApp mgr code)
+  case eTokenResp of
+    Left e -> throw401Err $ BSL.pack $ show e
+    Right tokenResp -> do
+      eGoogleUser <- runExceptT $ Google.fetchUserInfo googleApp mgr (accessToken tokenResp)
+      case eGoogleUser of
+        Left err -> throw401Err $ BSL.pack $ show err
+        Right gUser -> do
+          let gUserEmail = TL.toStrict $ Google.email gUser
+          -- find User in DB
+          mUser0 <- fetchUserByEmail gUserEmail
+          case mUser0 of
+            Nothing -> registerAndLoginUser gUserEmail
+            Just userRead0 -> loginUser userRead0
+  where
+    registerAndLoginUser ::
+      (MonadUnliftIO m) =>
+      Text ->
+      AppM
+        m
+        ( Headers
+            '[ Header "Set-Cookie" SetCookie,
+               Header "Set-Cookie" SetCookie
+             ]
+            LoginUserResponse
+        )
+    registerAndLoginUser email0 = do
+      randomUserName <- liftIO genRandomUserName
+      let randomUserName' = fromRight "not getting value" randomUserName
+      let userWrite0 =
+            User
+              { userID = (),
+                userName = randomUserName',
+                email = email0,
+                userPassword = Nothing,
+                isUserVerified = True,
+                createdAt = (),
+                updatedAt = ()
+              }
+      userRead0 <- addUser userWrite0
+      loginUser userRead0
+oauth2CallbackH _ _ _ = throw401Err "Oauth failed :("
+
+loginUser ::
+  (MonadUnliftIO m) =>
+  UserRead ->
+  AppM
+    m
+    ( Headers
+        '[ Header "Set-Cookie" SetCookie,
+           Header "Set-Cookie" SetCookie
+         ]
+        LoginUserResponse
+    )
+loginUser userRead0 = do
+  AppConfig {..} <- asks appConfig
+  let userInfo = toUserInfo userRead0
+  mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett userInfo
+  case mLoginAccepted of
+    Nothing -> throwError err401
+    Just x -> do
+      etoken <- liftIO $ makeJWT userInfo jwtSett Nothing
+      case etoken of
+        Left _ -> throwError err401 {errBody = "JWT token creation failed"}
+        Right v -> do
+          return $
+            x
+              ( LoginUserResponse
+                  (T.decodeUtf8 $ BSL.toStrict v)
+                  "User loggedIn successfully"
+              )

@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Platform.Common.Types
   ( MyAppState (..),
@@ -12,15 +13,19 @@ module Platform.Common.Types
     DBConfig (..),
     MyPassword (..),
     HaxlConfig (..),
+    OAuth2Config (..),
+    RandomUsername (..),
+    RandomUserNameApiResponse (..),
   )
 where
 
 import Control.Concurrent.QSem
-import Data.Aeson (ToJSON, toJSON)
+import Data.Aeson -- (FromJSON, ToJSON, parseJSON, toJSON)
 import Data.Password.Bcrypt
 import Dhall
 -- import qualified Haxl.Core as Haxl
 import qualified Orville.PostgreSQL as O
+import Servant.Auth.Server (CookieSettings, JWTSettings)
 import System.Log.FastLogger
 
 data DBConfig = DBConfig
@@ -35,6 +40,12 @@ data DBConfig = DBConfig
 data Environment = Production | Development | Sandbox | Test | Local
   deriving (Generic, Eq, Ord, Show, ToJSON, FromDhall)
 
+data OAuth2Config = OAuth2Config
+  { clientID :: Text,
+    clientSecret :: Text
+  }
+  deriving (Generic, FromDhall, Show)
+
 data Env = Env
   { dbConfig :: DBConfig,
     logFilePath :: FilePath,
@@ -42,7 +53,8 @@ data Env = Env
     fileUploadPath :: FilePath,
     applicationPort :: Natural,
     mailAPIToken :: Text,
-    mailFromEmail :: Text
+    mailFromEmail :: Text,
+    oauth2Config :: OAuth2Config
   }
   deriving (Generic, FromDhall, Show)
 
@@ -51,7 +63,10 @@ data AppConfig = AppConfig
     loggerSet :: LoggerSet,
     minLogLevel :: MinLogLevel,
     emailAPIToken :: Text,
-    emailFromEmail :: Text
+    emailFromEmail :: Text,
+    jwtSett :: JWTSettings,
+    cookieSett :: CookieSettings,
+    googleOauth2Config :: OAuth2Config
   }
 
 data HaxlConfig = HaxlConfig
@@ -89,3 +104,20 @@ newtype MyPassword = MyPassword
 
 instance ToJSON MyPassword where
   toJSON myPassword = toJSON (unPasswordHash (getPassword myPassword))
+
+newtype RandomUsername = RandomUsername
+  { randomUsername :: String
+  }
+  deriving (Show, Generic)
+
+instance FromJSON RandomUsername where
+  parseJSON = withObject "Username" $ \v -> do
+    login <- v .: "login"
+    RandomUsername <$> login .: "username"
+
+newtype RandomUserNameApiResponse = RandomUserNameApiResponse
+  { results :: [RandomUsername]
+  }
+  deriving (Show, Generic)
+
+instance FromJSON RandomUserNameApiResponse

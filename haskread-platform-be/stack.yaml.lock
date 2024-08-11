@@ -5,6 +5,20 @@
 
 packages:
 - completed:
+    hackage: hoauth2-providers-0.8.0@sha256:78ac02bed781b7b9c28f4876fb62c8bcce62e21dd8313cdc1e0e654b189df420,3058
+    pantry-tree:
+      sha256: 763c270af90342e60c9d8290fc525528bab64bcb2e970ce96f0d944d447526c9
+      size: 1550
+  original:
+    hackage: hoauth2-providers-0.8.0@sha256:78ac02bed781b7b9c28f4876fb62c8bcce62e21dd8313cdc1e0e654b189df420,3058
+- completed:
+    hackage: jose-jwt-0.10.0@sha256:6ed175a01c721e317ceea15eb251a81de145c03711a977517935633a5cdec1d4,3546
+    pantry-tree:
+      sha256: 58649e68e2d1adb47d8ed8741bd27ac23a2f19e3ee62bc28a68ac8642b3e0858
+      size: 1231
+  original:
+    hackage: jose-jwt-0.10.0@sha256:6ed175a01c721e317ceea15eb251a81de145c03711a977517935633a5cdec1d4,3546
+- completed:
     commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
     git: https://github.com/facebook/Haxl.git
     name: haxl

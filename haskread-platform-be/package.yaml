@@ -54,6 +54,12 @@ dependencies:
 - req
 - string-interpolate
 - random
+- hoauth2
+- hoauth2-providers
+- uri-bytestring
+- containers
+- transformers
+- http-conduit
 
 ghc-options:
 - -Wall

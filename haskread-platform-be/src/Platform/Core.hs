@@ -21,16 +21,13 @@ import System.Exit
 runAppM :: MyAppState -> AppM IO a -> Handler a
 runAppM myAppState appM = Handler $ runMyExceptT $ runReaderT (getApp appM) myAppState
 
-allServer :: CookieSettings -> JWTSettings -> MyAppState -> Server (MainAPI auths)
-allServer cookieSett jwtSett myAppState =
+allServer :: MyAppState -> Server (MainAPI auths)
+allServer myAppState =
   hoistServerWithContext
     (Proxy :: Proxy (MainAPI '[JWT, Cookie]))
     (Proxy :: Proxy '[CookieSettings, JWTSettings])
     (runAppM myAppState)
-    ( mainServer
-        cookieSett
-        jwtSett
-    )
+    mainServer
 
 startApp :: IO ()
 startApp = do
@@ -46,13 +43,13 @@ startApp = do
           eEnv <- readEnv envFilePath
           case eEnv of
             Left e -> (putStrLn $ show e) >> exitFailure
-            Right (appST, jwtSett, ctx, appPort, _) -> do
+            Right (appST, _, ctx, appPort, _) -> do
               putStrLn $ "Application running at pot " <> show appPort
-              run appPort (app appST jwtSett ctx)
+              run appPort (app appST ctx)
 
-app :: MyAppState -> JWTSettings -> Context [CookieSettings, JWTSettings] -> Application
-app appST jwtSett ctx =
+app :: MyAppState -> Context [CookieSettings, JWTSettings] -> Application
+app appST ctx =
   serveWithContext
     (Proxy :: Proxy (MainAPI '[JWT, Cookie]))
     ctx
-    (allServer defaultCookieSettings jwtSett appST)
+    (allServer appST)
