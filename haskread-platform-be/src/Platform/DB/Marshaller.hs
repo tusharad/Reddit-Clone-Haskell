@@ -115,7 +115,7 @@ userMarshaller =
       )
     <*> marshallField (\User {..} -> userName) userNameField
     <*> marshallField (\User {..} -> email) emailField
-    <*> marshallField (\User {..} -> userPassword) passwordField
+    <*> marshallField (\User {..} -> userPassword) (nullableField passwordField)
     <*> marshallField (\User {..} -> isUserVerified) isVerifiedField
     <*> marshallReadOnly
       ( marshallField

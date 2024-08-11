@@ -48,3 +48,6 @@
 [Debug] 2024-08-05 16:38:41.114191448 UTC :  Checking health
 [Debug] 2024-08-05 16:39:12.701559905 UTC :  Checking health
 [Debug] 2024-08-05 16:39:27.116720434 UTC :  Checking health
+[Debug] 2024-08-11 07:19:56.948356499 UTC :  Checking health
+[Debug] 2024-08-11 07:19:56.953238424 UTC :  changing user password of User {userID = 2, userName = "spiderman", email = "peter@abc.com", userPassword = Just (PasswordHash {unPasswordHash = "$2b$10$Loq/bpV4sRfYnTjSsObWM.sEHisuGHxjssvRXg9CHpWoMH66TJOGS"}), isUserVerified = False, createdAt = 2024-08-11 07:19:56.896191 UTC, updatedAt = 2024-08-11 07:19:56.896191 UTC}
+[Debug] 2024-08-11 07:19:57.118845979 UTC :  new password user : User {userID = (), userName = "spiderman", email = "peter@abc.com", userPassword = Just (PasswordHash {unPasswordHash = "$2b$10$ZLqEtH5u0RYS3yun4/VvYe9/6Rn4O1VvFy6PE9CipuBM6UY/2kWzK"}), isUserVerified = False, createdAt = (), updatedAt = ()}

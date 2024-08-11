@@ -59,7 +59,7 @@ data User a b = User
   { userID :: a,
     userName :: Text,
     email :: Text,
-    userPassword :: MyPassword,
+    userPassword :: Maybe MyPassword,
     isUserVerified :: Bool,
     createdAt :: b,
     updatedAt :: b

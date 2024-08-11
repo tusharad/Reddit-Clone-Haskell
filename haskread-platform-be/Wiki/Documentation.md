@@ -551,3 +551,31 @@ Important Note:
  - The Haxl datafetch can be added later on, when we have a better understanding of it.
  - Some places where datafetch was added, but the test cases are not getting stuck, are still there.
    Instead of datafetch, I have added the `uncachedRequest` to fetch the latest data from the database. To avoid any inconsistency.
+
+#### Implementing OAuth
+
+Currently, we will be Implementing only the google oauth2. Later, more providers
+such as github and facebook will be added.
+
+- Database changes:
+    - In the user table, the password shall be a nullable field, Since
+      Oauth2 users will not be having passwords setup. Though, users can remove
+      their OAuth connection by setting up passwords from their profile.
+    - While inserting oauth2 field, the is_verified shall be true.
+
+- API:
+    #### GET "/api/v1/user/oauth2/login"
+    Flow:-
+        - Shall be redirected to authorization url.
+    
+    #### GET "/callback?state&code"
+    Flow:-
+        - Check if query parameters of state and code are there.
+        - Extract email from the google user.
+        - Check if email exists in the db or not. If exists, perform login.
+          Else perform, registration and login.
+        - While performing registraion, a random unique username shall be 
+          generated, either by some login or from some external API.
+        - Shall return the result status 200.
+        - Not with OAuth2, we need to change login of deleteUser API as well.
+          If password is null, then a different delete user API shall be used.

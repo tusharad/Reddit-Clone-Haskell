@@ -106,7 +106,7 @@ sampleUsers =
   [ User
       { userName = "batman",
         email = "bruce@abc.com",
-        userPassword = samplePassword,
+        userPassword = Just samplePassword,
         isUserVerified = False,
         userID = (),
         createdAt = (),
@@ -115,7 +115,7 @@ sampleUsers =
     User
       { userName = "spiderman",
         email = "peter@abc.com",
-        userPassword = samplePassword,
+        userPassword = Just samplePassword,
         isUserVerified = False,
         userID = (),
         createdAt = (),
@@ -124,7 +124,7 @@ sampleUsers =
     User
       { userName = "superman",
         email = "clark@abc.com",
-        userPassword = samplePassword,
+        userPassword = Just samplePassword,
         isUserVerified = False,
         userID = (),
         createdAt = (),
@@ -133,7 +133,7 @@ sampleUsers =
     User
       { userName = "wonderwoman",
         email = "diana@abc.com",
-        userPassword = samplePassword,
+        userPassword = Just samplePassword,
         isUserVerified = False,
         userID = (),
         createdAt = (),
@@ -142,7 +142,7 @@ sampleUsers =
     User
       { userName = "ironman",
         email = "tony@abc.com",
-        userPassword = samplePassword,
+        userPassword = Just samplePassword,
         isUserVerified = True, -- For login test
         userID = (),
         createdAt = (),

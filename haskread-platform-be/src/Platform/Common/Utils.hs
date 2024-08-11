@@ -55,7 +55,7 @@ throw401Err err = throwError $ err401 {errBody = err}
 passwordUpdatedUser :: UserRead -> PasswordHash Bcrypt -> UserWrite
 passwordUpdatedUser u password0 =
   u
-    { userPassword = MyPassword password0,
+    { userPassword = Just (MyPassword password0),
       createdAt = (),
       updatedAt = (),
       userID = ()

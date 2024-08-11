@@ -84,6 +84,7 @@ CREATE TABLE user_email_verify_otp (
 );
 
 alter table users add column is_verified bool default false;
+alter table users alter column password set not null;
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

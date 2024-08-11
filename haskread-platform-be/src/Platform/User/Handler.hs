@@ -96,13 +96,16 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
   mUser <- fetchUserByIDHaxl userIDForUserInfo
   case mUser of
     Nothing -> throw400Err "User is invalid!"
-    Just u@User {userPassword = uPassword} -> do
+    Just u@User {userPassword = mUPassword} -> do
       logDebug $ "changing user password of " <> (T.pack $ show u)
-      checkOldPasswordMatch uPassword
-      checkOldNewPasswordNotMatch
-      checkIfPasswordsConfirmPasswordMatch
-      validateNewPassword
-      changePassword u
+      case mUPassword of
+        Nothing -> throw400Err "Password not setup in the first place"
+        Just uPassword -> do
+          checkOldPasswordMatch uPassword
+          checkOldNewPasswordNotMatch
+          checkIfPasswordsConfirmPasswordMatch
+          validateNewPassword
+          changePassword u
   where
     checkOldPasswordMatch uPassword =
       when
@@ -150,11 +153,14 @@ userDeleteAccountH (Authenticated UserInfo {..}) DeleteUserBody {..} = do
   mUser <- fetchUserByIDHaxl userIDForUserInfo
   case mUser of
     Nothing -> throw400Err "User is invalid!"
-    Just User {userPassword = uPassword} -> do
-      checkIfPasswordMatch uPassword
-      if not areUSure
-        then pure $ DeleteUserResponse "User is not sure, not deleting :)"
-        else deleteUserByID
+    Just User {userPassword = mUPassword} -> do
+      case mUPassword of
+        Nothing -> throw400Err "Password not found"
+        Just uPassword -> do
+          checkIfPasswordMatch uPassword
+          if not areUSure
+            then pure $ DeleteUserResponse "User is not sure, not deleting :)"
+            else deleteUserByID
   where
     checkIfPasswordMatch uPassword =
       when

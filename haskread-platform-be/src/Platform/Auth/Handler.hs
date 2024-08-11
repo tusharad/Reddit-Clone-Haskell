@@ -46,7 +46,7 @@ toUserWrite RegisterUserBody {..} = do
       { userID = (),
         userName = userNameForRegister,
         email = emailForRegister,
-        userPassword = hashedPass,
+        userPassword = Just hashedPass,
         isUserVerified = False,
         createdAt = (),
         updatedAt = ()
@@ -162,27 +162,32 @@ loginUserH cookieSett jwtSett LoginUserBody {..} = do
   case mRes of
     Nothing -> throw400Err "Email/Password is incorrect"
     Just userRead0 -> do
-      if not $ matchPasswords (userPassword userRead0) passwordForLogin
-        then throw400Err "Email/Password is incorrect"
-        else do
-          -- If the user is not verified, throw error
-          when (not $ isUserVerified userRead0) (throw400Err "User is not verified")
-          -- do login
-          let userInfo = toUserInfo userRead0
-          mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett userInfo
-          case mLoginAccepted of
-            Nothing -> throwError err401
-            Just x -> do
-              etoken <- liftIO $ makeJWT userInfo jwtSett Nothing
-              case etoken of
-                Left _ -> throwError err401 {errBody = "JWT token creation failed"}
-                Right v ->
-                  return $
-                    x
-                      ( LoginUserResponse
-                          (T.decodeUtf8 $ BSL.toStrict v)
-                          "User loggedIn successfully"
-                      )
+      let mUPassword = userPassword userRead0
+      case mUPassword of
+        Nothing -> throw400Err "Email/Password is incorrect"
+        Just uPassword -> do
+          if not $
+            matchPasswords uPassword passwordForLogin
+            then throw400Err "Email/Password is incorrect"
+            else do
+              -- If the user is not verified, throw error
+              unless (isUserVerified userRead0) (throw400Err "User is not verified")
+              -- do login
+              let userInfo = toUserInfo userRead0
+              mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett userInfo
+              case mLoginAccepted of
+                Nothing -> throwError err401
+                Just x -> do
+                  etoken <- liftIO $ makeJWT userInfo jwtSett Nothing
+                  case etoken of
+                    Left _ -> throwError err401 {errBody = "JWT token creation failed"}
+                    Right v ->
+                      return $
+                        x
+                          ( LoginUserResponse
+                              (T.decodeUtf8 $ BSL.toStrict v)
+                              "User loggedIn successfully"
+                          )
   where
     findUserByMail = do
       (eMUser :: Either SomeException (Maybe UserRead)) <-
