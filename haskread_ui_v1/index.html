@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Adding Bulma CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <!-- Box Icons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <title>HaskRead - Home</title>
+</head>
+
+<body class="bulma has-navbar-fixed-top">
+    <div id="main" class="container">
+        <div id="main-body" class="container">
+            <!-- Navbar -->
+            <nav class="navbar is-fixed-top px-6 has-shadow" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    <a class="navbar-item" href="/">
+                        <!-- TODO: add image logo here -->
+                        <p class="is-size-3 has-text-weight-bold">HaskRead</p>
+                    </a>
+                    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+                        data-target="navbarBasicExample">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                <!-- Search bar -->
+                <div class="navbar-item" id="search-bar">
+                    <div class="field has-addons">
+                        <div class="control">
+                            <input class="input" type="text" placeholder="Search thread, community or user">
+                        </div>
+                        <div class="control">
+                            <button class="button is-info">
+                                <i class='bx bx-search-alt bx-tada' style="line-height:1.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="navbarBasicExample" class="navbar-menu">
+                    <div class="navbar-end">
+                        <div class="navbar-item">
+                            <div class="buttons">
+                                <a class="button is-primary">
+                                    <strong>Sign up</strong>
+                                </a>
+                                <a class="button is-light">
+                                    Log in
+                                </a>
+                            </div>
+                            <!-- <div class="button is-warning">
+                                <p class="px-2">UserName</p>
+                                <figure class="image is-64x64px">
+                                    <img class="is-rounded" src="https://bulma.io/assets/images/placeholders/128x128.png" />
+                                  </figure>
+                            </div> -->
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <!-- End of navbar -->
+            <div class="columns is-8 py-5">
+                <!-- TODO: Side bar should be collapsable
+                <div class="column has-text-centered">
+                    <p class="is-size-5">Side Bar</p>
+                </div> -->
+                <div class="column">
+                    <p class="is-size-3 has-text-centered pb-4">Threads</p>
+                    <!-- Tabs -->
+                    <div class="tabs is-centered is-rounded">
+                        <ul>
+                            <li class="is-active ">
+                                <a>
+                                    <span class="icon is-small">
+                                        <i class='bx bxs-objects-vertical-top'></i>
+                                    </span>
+                                    <span>Top Voted</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a>
+                                    <span class="icon is-small">
+                                        <i class='bx bx-trending-up'></i>
+                                    </span>
+                                    <span>Trending</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a>
+                                    <span class="icon is-small">
+                                        <i class='bx bx-polygon'></i>
+                                    </span>
+                                    <span>New</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a>
+                                    <span class="icon is-small">
+                                        <i class='bx bx-run'></i>
+                                    </span>
+                                    <span>Following</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- End of tabs -->
+                    <!-- List of posts -->
+                    <div class="card">
+                        <header class="card-header">
+                            <!-- <p class="card-header-title">Post Title</p> -->
+                            <div class="media-content">
+                                <p class="card-header-title">John Smith
+                                </p>
+                            </div>
+
+                            <a class="subtitle is-6 py-4 px-4 has-text-centered ">
+                                Username
+                                <p>Just now</p>
+                            </a>
+                        </header>
+                        <div class="card-content pt-1">
+                            <div class="content">
+                                <p>Post Description.
+                                    <br>
+                                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                                    Ipsa a blanditiis magnam sit eligendi consequuntur, perspiciatis asperiores?
+                                    Animi placeat necessitatibus, voluptatum quidem atque corporis reprehenderit velit
+                                    modi at commodi soluta?
+                                </p>
+                            </div>
+                        </div>
+                        <footer class="card-footer">
+                            <a href="#" class="card-footer-item">
+                                <i class='bx bxs-upvote'></i>
+                                <p class="px-2 py-2">23</p>
+                                <span class="px-3"></span>
+                                <i class='bx bx-downvote'></i>
+                                <p class="px-2 py-2">2</p>
+                            </a>
+                            <a href="#" class="card-footer-item">
+                                <i class='bx bx-comment'></i>
+                                <p class="px-2 py-2">10</p>
+                            </a>
+                            <a href="#" class="card-footer-item">
+                                <i class='bx bxs-share-alt'></i>
+                            </a>
+                        </footer>
+                    </div>
+                    <!-- Another post -->
+                    <div class="card">
+                        <header class="card-header">
+                            <!-- <p class="card-header-title">Post Title</p> -->
+                            <div class="media-content">
+                                <p class="card-header-title">John Smith
+                                </p>
+                            </div>
+
+                            <a class="subtitle is-6 py-4 px-4 has-text-centered ">
+                                Username
+                                <p>Just now</p>
+                            </a>
+                        </header>
+                        <div class="card-content pt-1">
+                            <div class="content">
+                                <p>Post Description.
+                                    <br>
+                                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                                    Ipsa a blanditiis magnam sit eligendi consequuntur, perspiciatis asperiores?
+                                    Animi placeat necessitatibus, voluptatum quidem atque corporis reprehenderit velit
+                                    modi at commodi soluta?
+                                </p>
+                            </div>
+                        </div>
+                        <footer class="card-footer">
+                            <a href="#" class="card-footer-item">
+                                <i class='bx bxs-upvote'></i>
+                                <p class="px-2 py-2">23</p>
+                                <span class="px-3"></span>
+                                <i class='bx bx-downvote'></i>
+                                <p class="px-2 py-2">2</p>
+                            </a>
+                            <a href="#" class="card-footer-item">
+                                <i class='bx bx-comment'></i>
+                                <p class="px-2 py-2">10</p>
+                            </a>
+                            <a href="#" class="card-footer-item">
+                                <i class='bx bxs-share-alt'></i>
+                            </a>
+                        </footer>
+                    </div>
+                    <!-- End of list of posts -->
+                    <!-- Pagination -->
+                    <nav class="pagination is-rounded" role="navigation" aria-label="pagination">
+                        <a href="#" class="pagination-previous">Previous</a>
+                        <a href="#" class="pagination-next">Next page</a>
+                        <ul class="pagination-list">
+                            <li><a href="#" class="pagination-link" aria-label="Goto page 1">1</a></li>
+                            <li><span class="pagination-ellipsis">&hellip;</span></li>
+                            <li><a href="#" class="pagination-link" aria-label="Goto page 45">45</a></li>
+                            <li>
+                                <a class="pagination-link is-current" aria-label="Page 46" aria-current="page">46</a>
+                            </li>
+                            <li><a href="#" class="pagination-link" aria-label="Goto page 47">47</a></li>
+                            <li><span class="pagination-ellipsis">&hellip;</span></li>
+                            <li><a href="#" class="pagination-link" aria-label="Goto page 86">86</a></li>
+                        </ul>
+                    </nav>
+                    <!-- Pagination end -->
+                </div>
+                <div class="column py-5 is-one-quarter">
+                    <p class="is-size-3 has-text-centered"> Trending communities </p>
+                    <div class="card my-3">
+                        <header class="card-header">
+                            <p class="card-header-title">Card header</p>
+                        </header>
+                        <div class="card-content">
+                            <aside class="menu">
+                            <ul class="menu-list">
+                                <li><a>Team Settings</a></li>
+                                <hr class="navbar-divider"  style="border-bottom: solid;">
+                                <!-- <li>
+                                    background-color: #110d1b
+                                    link-color: #6e9cca
+                                    <ul>
+                                        <li><a>Members</a></li>
+                                        <li><a>Plugins</a></li>
+                                        <li><a>Add a member</a></li>
+                                    </ul>
+                                </li> -->
+                                <li><a>Invitations</a></li>
+                                <hr class="navbar-divider" style="border-bottom: solid;">
+                                <li><a>Cloud Storage Environment Settings</a></li>
+                                <hr class="navbar-divider" style="border-bottom: solid;">
+                                <li><a>Authentication</a></li>
+                            </ul>
+                        </aside>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="content has-text-centered">
+                    <p>
+                        <strong>HaskRead</strong> by <a href="https://www.linkedin.com/in/tushar-adhatrao/">Tushar
+                            Adhatrao</a>.
+                        The source code is licensed
+                        <a href="https://opensource.org/license/mit">MIT</a>.
+                    </p>
+                </div>
+            </footer>
+        </div>
+
+    </div>
+</body>
+<script src="./assets/core.js"></script>
+
+</html>
