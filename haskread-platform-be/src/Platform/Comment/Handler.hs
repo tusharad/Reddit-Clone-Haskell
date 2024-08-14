@@ -23,6 +23,7 @@ import Platform.DB.Model
 import Servant.Auth.Server
 import UnliftIO
 import Platform.User.Thread.DB (fetchThreadByIDQ)
+import Platform.Comment.Utils
 
 checkIfThreadExists :: (MonadUnliftIO m) => ThreadID -> AppM m ()
 checkIfThreadExists tID = do
