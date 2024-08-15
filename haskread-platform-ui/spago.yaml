@@ -3,8 +3,9 @@ package:
   dependencies:
     - console
     - effect
+    - halogen
+    - halogen-store
     - prelude
-    - halogen 
     - undefined
   test:
     main: Test.Main

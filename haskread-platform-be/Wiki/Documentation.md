@@ -581,3 +581,10 @@ such as github and facebook will be added.
           If password is null, then a different delete user API shall be used.
     Note:
         In OAuth2Config, redirectURI is not added because of confusion with `URI` type.
+
+#### Handling JWT tokens on UI and BE.
+
+We need to decode JWT token at both UI and BE level. In order to extract and verify tokens at the UI, we need same JWT key and both places.
+For this, we need to create the secret and store it in a file. This file would be read by both UI and BE to create JWT. 
+Need to use `readKey` function from server-auth-server to generate JWT.
+
