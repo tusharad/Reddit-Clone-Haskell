@@ -1,11 +1,18 @@
 package:
   name: haskread-platform-ui
   dependencies:
+    - affjax-web
+    - codec-argonaut
     - console
     - effect
     - halogen
     - halogen-store
+    - http-methods
     - prelude
+    - remotedata
+    - routing
+    - routing-duplex
+    - slug
     - undefined
   test:
     main: Test.Main
