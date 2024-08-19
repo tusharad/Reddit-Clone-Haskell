@@ -1,15 +1,18 @@
 module Store where
 
 import Prelude
-
-import Api.Request (BaseURL)
 import Data.Maybe (Maybe(..))
-import Data.Profile (Profile)
 
 data LogLevel = LogDebug | LogInfo | LogError | LogWarn
 
 derive instance eqLogLevel :: Eq LogLevel
 derive instance ordLogLevel :: Ord LogLevel
+
+newtype BaseURL = BaseURL String
+data Profile = Profile {
+    userID :: Int,
+    userName :: String
+ }
 
 type Store = {
     logLevel :: LogLevel

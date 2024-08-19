@@ -1,15 +1,13 @@
 module Capability.Navigate where
 
-import Prelude
-
-import Data.Route (Route)
 import Control.Monad.Trans.Class (lift)
+import Prelude
 import Halogen (HalogenM)
+import Common.Types (MyRoute)
 
 class Monad m <= Navigate m where
-  navigate :: Route -> m Unit
-  logout :: m Unit
+  navigate :: MyRoute -> m Unit
 
-instance navigateHalogenM :: Navigate m => Navigate (HalogenM st act slots msg m) where
+instance navigateHalogenM :: Navigate m => 
+    Navigate (HalogenM st act slots msg m) where
   navigate = lift <<< navigate
-  logout = lift logout

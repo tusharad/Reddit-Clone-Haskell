@@ -1,4 +1,4 @@
-module Page.Home where
+module Page.Login where
 
 import Prelude
 import Undefined (undefined)
@@ -13,4 +13,4 @@ component = H.mkComponent {
     }
   where
     render :: forall state action slots. state -> H.ComponentHTML action slots m 
-    render _ = HH.div_ [ HH.text "Home Page" ]
+    render _ = HH.div_ [ HH.text "Login Page" ]
