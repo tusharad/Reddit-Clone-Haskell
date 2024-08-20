@@ -15,6 +15,7 @@ import Data.Either (Either(..))
 import Effect.Class.Console (log)
 import Effect.Class (class MonadEffect,liftEffect)
 import Capability.Navigate (class Navigate,navigate)
+import Capability.Resource (class ManageThreads)
 
 import Routing.Hash (getHash)
 import Type.Proxy (Proxy(..))
@@ -35,7 +36,10 @@ type ChildSlots =
   )
 
 component :: 
-    forall input m. Navigate m => MonadEffect m => H.Component Query input Void m
+    forall input m. 
+            Navigate m => 
+            ManageThreads m => 
+            MonadEffect m => H.Component Query input Void m
 component = H.mkComponent {
         initialState 
       , render

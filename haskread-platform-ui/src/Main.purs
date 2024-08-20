@@ -13,13 +13,13 @@ import Effect.Console (log)
 import Effect.Class (liftEffect)
 import Routing.Hash (matchesWith)
 import Routing.Duplex (parse)
-import Common.Types (myRoute)
 import Halogen.Aff as HA
 import Halogen as H
 import Component.Router as Router
 import Effect.Aff (launchAff_)
 import Halogen.VDom.Driver (runUI)
-import Store (LogLevel(..),BaseURL(..))
+import Store (LogLevel(..))
+import Common.Types (myRoute,BaseURL(..))
 
 main :: Effect Unit
 main = do
