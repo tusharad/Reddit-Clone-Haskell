@@ -1,4 +1,18 @@
-module Common.Types where
+module Common.Types
+  ( BaseURL(..)
+  , Endpoint(..)
+  , MyRoute(..)
+  , PaginatedArray
+  , RequestMethod(..)
+  , RequestOptions
+  , Thread
+  , Token(..)
+  , endpointCodec
+  , myRoute
+  , threadCodec
+  , threadsCodec
+  )
+  where
 
 import Prelude hiding ((/))
 import Data.Generic.Rep (class Generic)
@@ -13,7 +27,7 @@ import Data.Codec.Argonaut.Record as CAR
 import Data.Codec ((>~>))
 import Data.Codec.Argonaut.Migration as CAM
 import Data.Codec.Argonaut as CA
-import Data.Codec.Argonaut.Common as CAC
+import Data.Codec.Argonaut.Compat as CAC
 
 newtype BaseURL = BaseURL String
 
@@ -21,9 +35,10 @@ data Endpoint = Threads
 derive instance genericEndpoint :: Generic Endpoint _
 
 endpointCodec :: RouteDuplex' Endpoint
-endpointCodec = root $ prefix "api" $ sum {
-        "Threads" : "threads" / noArgs
-    }
+endpointCodec = root $ sum { "Threads" : "api" / "v1" / "thread" / "all" / noArgs }
+-- root $ prefix "api" $ sum {
+--         "Threads" : "threads" / noArgs
+--     }
 
 data RequestMethod = 
     Get | Post (Maybe Json) | Put (Maybe Json) | Delete

@@ -6,26 +6,24 @@ module AppM
 
 import Prelude
 
+import Capability.Navigate (class Navigate)
+import Capability.Resource (class ManageThreads)
+import Common.Types (RequestOptions(..), Endpoint(..), RequestMethod(..), threadsCodec)
+import Common.Types as Route
+import Common.Utils (mkRequest, decode)
+import Data.Argonaut.Core (stringify, fromString)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Class (class MonadEffect,liftEffect)
+import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Halogen as H
 import Halogen.Store.Monad (class MonadStore, StoreT, runStoreT)
+import Routing.Duplex (print)
+import Routing.Hash (setHash)
 import Safe.Coerce (coerce)
 import Store as Store
-import Capability.Navigate (class Navigate)
-import Capability.Resource (
-    class ManageThreads
- )
-import Routing.Hash (setHash)
-import Routing.Duplex (print)
-import Common.Types as Route
 import Undefined (undefined)
-import Common.Utils (mkRequest,decode)
-import Common.Types (RequestOptions(..),Endpoint(..),RequestMethod(..),threadsCodec )
-import Data.Argonaut.Core (toString,fromString)
-import Data.Maybe (fromMaybe)
 
 newtype AppM a = AppM (StoreT Store.Action Store.Store Aff a)
 
@@ -51,5 +49,7 @@ instance navigateHalogenM :: Navigate AppM where
 instance threadHalogenM :: ManageThreads AppM where
     getThreads = do
        mjson <- mkRequest { endpoint: Threads , method: Get }
-       liftEffect $ log $ "hi" <> fromMaybe "" (toString $ fromMaybe (fromString "{}") mjson)
+      --  case mjson of
+      --    Nothing -> liftEffect $ log "got nothing"
+      --    Just json -> liftEffect $ log (stringify json)
        decode threadsCodec mjson

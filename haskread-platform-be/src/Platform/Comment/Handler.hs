@@ -20,19 +20,19 @@ import Platform.Comment.Types
 import Platform.Common.AppM
 import Platform.Common.Utils
 import Platform.DB.Model
+import Platform.User.Thread.DB (fetchThreadByIDQ)
 import Servant.Auth.Server
 import UnliftIO
-import Platform.User.Thread.DB (fetchThreadByIDQ)
-import Platform.Comment.Utils
 
 checkIfThreadExists :: (MonadUnliftIO m) => ThreadID -> AppM m ()
 checkIfThreadExists tID = do
-    eRes :: Either SomeException (Maybe ThreadRead) <-
-            try $ fetchThreadByIDQ tID
-    case eRes of
-        Left e -> throw400Err $ BSL.pack $ show e
-        Right mThread -> when (isNothing mThread) $
-            throw400Err "Thread does not exist!"
+  eRes :: Either SomeException (Maybe ThreadRead) <-
+    try $ fetchThreadByIDQ tID
+  case eRes of
+    Left e -> throw400Err $ BSL.pack $ show e
+    Right mThread ->
+      when (isNothing mThread) $
+        throw400Err "Thread does not exist!"
 
 sanityCheckCommentContent :: (MonadUnliftIO m) => T.Text -> AppM m ()
 sanityCheckCommentContent c = do
@@ -65,15 +65,17 @@ addComment userID threadID comment = do
 
 checkIfUserOwnsComment :: (MonadUnliftIO m) => CommentID -> UserID -> AppM m CommentRead
 checkIfUserOwnsComment cID uID = do
-    eRes :: Either SomeException (Maybe CommentRead) <-
-            try $ fetchCommentByIDQ cID
-    case eRes of
-        Left e -> throw400Err $ BSL.pack $ show e
-        Right mComment -> case mComment of
-            Nothing -> throw400Err "Comment does not exist!"
-            Just comment@Comment{..} -> if userIDForComment /= uID then
-                throw400Err "You do not own this comment!"
-            else pure comment
+  eRes :: Either SomeException (Maybe CommentRead) <-
+    try $ fetchCommentByIDQ cID
+  case eRes of
+    Left e -> throw400Err $ BSL.pack $ show e
+    Right mComment -> case mComment of
+      Nothing -> throw400Err "Comment does not exist!"
+      Just comment@Comment {..} ->
+        if userIDForComment /= uID
+          then
+            throw400Err "You do not own this comment!"
+          else pure comment
 
 createCommentH ::
   (MonadUnliftIO m) =>
@@ -145,11 +147,11 @@ fetchVoteComment ::
   UserID ->
   AppM m (Maybe CommentVoteRead)
 fetchVoteComment cID uID = do
-    eRes :: Either SomeException (Maybe CommentVoteRead) <- 
-            try $ fetchCommentVoteQ cID uID
-    case eRes of
-        Left e -> throw400Err $ BSL.pack $ show e
-        Right r -> pure r
+  eRes :: Either SomeException (Maybe CommentVoteRead) <-
+    try $ fetchCommentVoteQ cID uID
+  case eRes of
+    Left e -> throw400Err $ BSL.pack $ show e
+    Right r -> pure r
 
 addVoteComment ::
   (MonadUnliftIO m) =>

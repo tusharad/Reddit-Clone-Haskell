@@ -17,6 +17,7 @@ import Servant.Auth.Server
 import System.Directory
 import System.Environment
 import System.Exit
+import Network.Wai.Middleware.Cors (simpleCors)
 
 runAppM :: MyAppState -> AppM IO a -> Handler a
 runAppM myAppState appM = Handler $ runMyExceptT $ runReaderT (getApp appM) myAppState
@@ -32,20 +33,20 @@ allServer myAppState =
 startApp :: IO ()
 startApp = do
   argList <- getArgs
-  if (null argList)
-    then (putStrLn "please provide argument") >> exitFailure
+  if null argList
+    then putStrLn "please provide argument" >> exitFailure
     else do
       let envFilePath = head argList
       fileExists <- doesFileExist envFilePath
       if not fileExists
-        then (putStrLn "please provide argument") >> exitFailure
+        then putStrLn "please provide argument" >> exitFailure
         else do
           eEnv <- readEnv envFilePath
           case eEnv of
-            Left e -> (putStrLn $ show e) >> exitFailure
+            Left e -> putStrLn (show e) >> exitFailure
             Right (appST, _, ctx, appPort, _) -> do
               putStrLn $ "Application running at pot " <> show appPort
-              run appPort (app appST ctx)
+              run appPort $ simpleCors (app appST ctx)
 
 app :: MyAppState -> Context [CookieSettings, JWTSettings] -> Application
 app appST ctx =

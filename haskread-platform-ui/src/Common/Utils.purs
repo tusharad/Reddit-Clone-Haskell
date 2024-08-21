@@ -1,26 +1,27 @@
 module Common.Utils where
 
 import Prelude
-import Data.Maybe (Maybe(..)) 
-import Data.Argonaut.Core (Json)
-import Halogen.Store.Monad (class MonadStore, getStore)
-import Effect.Aff.Class (class MonadAff, liftAff)
-import Affjax.Web (request,Request)
-import Data.Bifunctor (rmap)
-import Data.Either (Either(..),hush)
 
-import Common.Types (BaseURL(..)
-    ,Token(..),RequestOptions,RequestMethod(..),endpointCodec)
-import Data.Tuple (Tuple(..))
-import Routing.Duplex (print)
-import Affjax.RequestHeader (RequestHeader(..))
+import Affjax (printError)
 import Affjax.RequestBody as RB
+import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as RF
-import Data.HTTP.Method (Method(..))
-import Store (Action,Store)
+import Affjax.Web (request, Request)
+import Common.Types (BaseURL(..), Token(..), RequestOptions, RequestMethod(..), endpointCodec)
+import Data.Argonaut.Core (Json)
+import Data.Bifunctor (rmap)
 import Data.Codec.Argonaut (JsonCodec)
 import Data.Codec.Argonaut as CA
-import Effect.Class (class MonadEffect)
+import Data.Either (Either(..), hush)
+import Data.HTTP.Method (Method(..))
+import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..))
+import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class.Console (log)
+import Halogen.Store.Monad (class MonadStore, getStore)
+import Routing.Duplex (print)
+import Store (Action, Store)
 
 mkRequest
   :: forall m
@@ -31,7 +32,11 @@ mkRequest
 mkRequest opts = do
   { baseUrl } <- getStore
   response <- liftAff $ request $ defaultRequest baseUrl Nothing opts
-  pure $ hush $ rmap _.body response
+  case (rmap _.body response) of
+    Left err -> (liftEffect $ log (printError err)) *> pure Nothing
+    Right _ -> do
+      pure $ hush $ rmap _.body response
+  
 
 defaultRequest :: BaseURL -> Maybe Token -> RequestOptions -> Request Json
 defaultRequest (BaseURL baseUrl) auth { endpoint, method } =
@@ -57,5 +62,5 @@ defaultRequest (BaseURL baseUrl) auth { endpoint, method } =
 decode :: forall m a. MonadEffect m => JsonCodec a -> Maybe Json -> m (Maybe a)
 decode _ Nothing = pure Nothing
 decode codec (Just json) = case CA.decode codec json of
-  Left _ -> pure Nothing
+  Left err -> (log $ "failed decodig: " <> (CA.printJsonDecodeError err)) *> pure Nothing
   Right response -> pure (Just response)

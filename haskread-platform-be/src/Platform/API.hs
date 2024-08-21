@@ -60,6 +60,7 @@ mainServer =
     :<|> voteCommentH
     :<|> oauth2LoginH
     :<|> oauth2CallbackH
+    :<|> fetchAllThreadsH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -89,6 +90,7 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> CommentVoteAPI
     :<|> Auth auths UserInfo :> OAuth2LoginAPI
     :<|> Auth auths UserInfo :> OAuth2CallBackAPI
+    :<|> FetchAllThreadsAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -352,3 +354,10 @@ type OAuth2CallBackAPI =
               ]
              LoginUserResponse
          )
+
+type FetchAllThreadsAPI =
+  "api"
+    :> "v1"
+    :> "thread"
+    :> "all"
+    :> Get '[JSON] FetchAllThreadsResponse

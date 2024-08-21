@@ -60,7 +60,7 @@ dependencies:
 - containers
 - transformers
 - http-conduit
-- vector
+- wai-cors
 
 ghc-options:
 - -Wall

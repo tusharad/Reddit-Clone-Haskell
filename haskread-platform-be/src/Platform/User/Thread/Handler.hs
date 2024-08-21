@@ -6,6 +6,7 @@ module Platform.User.Thread.Handler
   ( createThreadH,
     updateThreadH,
     deleteThreadH,
+    fetchAllThreadsH
   )
 where
 
@@ -111,3 +112,8 @@ deleteThreadH (Authenticated UserInfo {..}) threadID = do
     Left e -> throw400Err $ BSL.pack $ show e
     Right _ -> return $ DeleteThreadResponse "Thread deleted successfully!"
 deleteThreadH _ _ = throw401Err "Please login first"
+
+fetchAllThreadsH :: (MonadUnliftIO m) => AppM m FetchAllThreadsResponse
+fetchAllThreadsH = do
+  threadInfoList <- queryWrapper fetchAllThreadsQ
+  return $ FetchAllThreadsResponse (length threadInfoList) threadInfoList

@@ -26,7 +26,7 @@ main = do
   log "Running UI"
   HA.runHalogenAff do
      body <- HA.awaitBody
-     let baseUrl = BaseURL "http://localhost:8001"
+     let baseUrl = BaseURL "http://localhost:8085"
          logLevel = LogDebug
          currentUser = Nothing -- Implementation will be written later.
          initStore = { baseUrl , logLevel , currentUser }

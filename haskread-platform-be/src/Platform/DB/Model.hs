@@ -39,6 +39,7 @@ module Platform.DB.Model
     UserEmailVerifyOTP (..),
     UserEmailVerifyOTPRead,
     UserEmailVerifyOTPWrite,
+    ThreadInfo (..),
   )
 where
 
@@ -212,3 +213,11 @@ data UserEmailVerifyOTP a = UserEmailVerifyOTP
 type UserEmailVerifyOTPRead = UserEmailVerifyOTP UTCTime
 
 type UserEmailVerifyOTPWrite = UserEmailVerifyOTP ()
+
+-- Custom type to fetch data
+
+data ThreadInfo = ThreadInfo
+  { title :: Text,
+    description :: Maybe Text
+  }
+  deriving (Show, Eq, Generic, ToJSON)
