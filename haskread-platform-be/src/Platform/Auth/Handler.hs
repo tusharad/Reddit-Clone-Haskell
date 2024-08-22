@@ -28,6 +28,7 @@ import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
+import Data.Time
 import GHC.Int (Int32)
 import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
 import qualified Haxl.Core as Haxl
@@ -219,7 +220,12 @@ adminLoginH AdminLoginBodyReq {..} = do
           case mLoginAccepted of
             Nothing -> throw401Err "Login failed"
             Just loginAcceptedResp -> do
-              etoken <- liftIO $ makeJWT adminInfo jwtSett Nothing
+              now <- liftIO getCurrentTime
+              etoken <-
+                liftIO $
+                  makeJWT adminInfo jwtSett $
+                    Just $
+                      (fromInteger tokenExpiryTime0) `addUTCTime` now
               case etoken of
                 Left _ -> throw401Err "JWT token creation failed"
                 Right v ->
@@ -397,7 +403,12 @@ loginUser userRead0 = do
   case mLoginAccepted of
     Nothing -> throwError err401
     Just x -> do
-      etoken <- liftIO $ makeJWT userInfo jwtSett Nothing
+      now <- liftIO getCurrentTime
+      etoken <-
+        liftIO $
+          makeJWT userInfo jwtSett $
+            Just $
+              (fromInteger tokenExpiryTime0) `addUTCTime` now
       case etoken of
         Left _ -> throwError err401 {errBody = "JWT token creation failed"}
         Right v -> do

@@ -14,6 +14,7 @@ env:
   MailAPIToken : ${{ secrets.MailAPIToken }}
   GoogleOAuth2ClientID : ${{ secrets.GoogleOAuth2ClientID }}
   GoogleOAuth2ClientSecret : ${{ secrets.GoogleOAuth2ClientSecret }}
+  HaskReadJwtSecret : ${{ secrets.HaskReadJwtSecret }}
 
 jobs:
   build:

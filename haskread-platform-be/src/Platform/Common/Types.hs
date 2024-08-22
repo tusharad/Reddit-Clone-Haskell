@@ -54,7 +54,9 @@ data Env = Env
     applicationPort :: Natural,
     mailAPIToken :: Text,
     mailFromEmail :: Text,
-    oauth2Config :: OAuth2Config
+    oauth2Config :: OAuth2Config,
+    jwtSecretKey_ :: Text,
+    tokenExpiryTime :: Natural
   }
   deriving (Generic, FromDhall, Show)
 
@@ -66,7 +68,8 @@ data AppConfig = AppConfig
     emailFromEmail :: Text,
     jwtSett :: JWTSettings,
     cookieSett :: CookieSettings,
-    googleOauth2Config :: OAuth2Config
+    googleOauth2Config :: OAuth2Config,
+    tokenExpiryTime0 :: Integer
   }
 
 data HaxlConfig = HaxlConfig

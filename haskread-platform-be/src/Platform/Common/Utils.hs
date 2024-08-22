@@ -22,8 +22,6 @@ module Platform.Common.Utils
   )
 where
 
--- import Control.Concurrent.QSem
--- import Control.Exception
 import Control.Monad.Error.Class
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Char8 as BS
@@ -32,11 +30,9 @@ import Data.Char
 import Data.Password.Bcrypt
 import Data.String.Interpolate
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
+import Data.Time.Clock
 import Dhall
--- import Haxl.Core (stateEmpty, stateSet)
-
--- import Platform.Haxl.DataSource
-
 import Network.HTTP.Req as Req
 import qualified Orville.PostgreSQL as O
 import Orville.PostgreSQL.Raw.Connection
@@ -160,7 +156,7 @@ readEnv envFilePath = do
       case ePool of
         Left e -> pure $ Left $ toException e
         Right pool -> do
-          jwtSecretKey <- generateKey
+          let jwtSecretKey = fromSecret $ T.encodeUtf8 jwtSecretKey_
           loggerSet_ <- newFileLoggerSet defaultBufSize logFilePath
           sem <- newQSem 10 -- 10 threads
           let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
@@ -174,7 +170,14 @@ readEnv envFilePath = do
                     emailFromEmail = mailFromEmail,
                     googleOauth2Config = oauth2Config,
                     jwtSett = jwtSett,
-                    cookieSett = defaultCookieSettings
+                    cookieSett =
+                      defaultCookieSettings
+                        { cookieMaxAge =
+                            Just $
+                              secondsToDiffTime $
+                                fromIntegral tokenExpiryTime
+                        },
+                    tokenExpiryTime0 = fromIntegral tokenExpiryTime
                   }
               appST =
                 MyAppState

@@ -19,7 +19,9 @@ let Env = {
     applicationPort : Natural,
     mailAPIToken : Text,
     mailFromEmail : Text,
-    oauth2Config : OAuth2Config
+    oauth2Config : OAuth2Config,
+    jwtSecretKey_ : Text,
+    tokenExpiryTime : Natural -- Seconds
 }
 
 let dbConfig : DBConfig = {
@@ -44,7 +46,9 @@ let env : Env = {
     applicationPort = 8085,
     mailAPIToken = env:MailAPIToken as Text,
     mailFromEmail = env:MailFromEmail as Text,
-    oauth2Config = oauth2Config
+    oauth2Config = oauth2Config,
+    jwtSecretKey_ = env:HaskReadJwtSecret as Text,
+    tokenExpiryTime = 120
 }
 
 in env
