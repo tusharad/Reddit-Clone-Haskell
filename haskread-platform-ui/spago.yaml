@@ -8,12 +8,15 @@ package:
     - halogen
     - halogen-store
     - http-methods
+    - media-types
     - prelude
     - remotedata
     - routing
     - routing-duplex
     - slug
     - undefined
+    - web-html
+    - web-storage
   test:
     main: Test.Main
     dependencies: []

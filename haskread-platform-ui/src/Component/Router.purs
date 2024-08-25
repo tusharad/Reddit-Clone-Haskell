@@ -7,7 +7,7 @@ import Halogen as H
 import Halogen.HTML as HH
 import Undefined
 
-import Common.Types (myRoute,MyRoute(..))
+import Common.Types (myRoute,MyRoute(..),Profile)
 import Data.Maybe (Maybe(..))
 import Routing.Duplex as RD
 import Data.Either (Either(..))
@@ -21,10 +21,16 @@ import Routing.Hash (getHash)
 import Type.Proxy (Proxy(..))
 import Page.Home as Home
 import Page.Login as Login
+import Common.Utils (readToken)
+import Halogen.Store.Connect (Connected, connect)
+import Halogen.Store.Select (selectEq)
+import Store as Store
+import Halogen.Store.Monad (class MonadStore)
 
 data Action = Initialize
 type State = {
-        route :: Maybe MyRoute
+        route :: Maybe MyRoute,
+        currentUser :: Maybe Profile
     }
 data Query a = Navigate MyRoute a 
 
@@ -37,10 +43,11 @@ type ChildSlots =
 
 component :: 
     forall input m. 
+            MonadStore Store.Action Store.Store m =>
             Navigate m => 
             ManageThreads m => 
             MonadEffect m => H.Component Query input Void m
-component = H.mkComponent {
+component = connect (selectEq _.currentUser) $ H.mkComponent {
         initialState 
       , render
       , eval : H.mkEval H.defaultEval {
@@ -50,8 +57,7 @@ component = H.mkComponent {
       }
     }
   where
-    initialState :: input -> State
-    initialState _ = { route : Nothing }
+    initialState { context: currentUser } = { route : Nothing, currentUser : currentUser }
 
     handleAction :: forall state. Action -> H.HalogenM state Action ChildSlots Void m Unit
     handleAction = case _ of
@@ -60,12 +66,10 @@ component = H.mkComponent {
                 case RD.parse myRoute url of
                     Left e -> log $ "err" <> show e
                     Right r -> navigate r
-                log "initializing"
 
     handleQuery :: forall a. Query a -> H.HalogenM State Action ChildSlots Void m (Maybe a)
     handleQuery = case _ of
             Navigate dest a -> do
-              liftEffect $ log "inside handleQuery"
               H.modify_ _ { route = Just dest }
               pure (Just a)
 

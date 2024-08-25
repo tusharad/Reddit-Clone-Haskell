@@ -13,6 +13,7 @@ where
 import Control.Monad (unless, when)
 import Control.Monad.Reader
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import Data.Coerce (coerce)
 import Data.Password.Bcrypt
 import qualified Data.Text as T
 import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
@@ -78,12 +79,11 @@ userDashboardH (Authenticated UserInfo {..}) = do
   mUser <- fetchUserByID userIDForUserInfo
   case mUser of
     Nothing -> throw400Err "User is invalid!"
-    Just User {userName = uName, email = uEmail, createdAt = uCreatedAt} -> do
+    Just User {userName = uName} -> do
       return
         UserProfileResponse
-          { userNameForUPR = uName,
-            userEmailForUPR = uEmail,
-            joinedDateForUPR = uCreatedAt
+          { userIDForUPR = coerce userIDForUserInfo,
+            userNameForUPR = uName
           }
 userDashboardH _ = throw401Err "Please login first"
 

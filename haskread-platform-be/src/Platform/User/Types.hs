@@ -21,8 +21,8 @@ where
 
 import Data.Aeson
 import Data.Text (Text)
-import Data.Time
 import GHC.Generics
+import GHC.Int (Int32)
 import Platform.DB.Model
 import Servant.Multipart
 
@@ -53,9 +53,8 @@ data LoginUserResponse = LoginUserResponse
   deriving (Show, Eq, Generic, ToJSON)
 
 data UserProfileResponse = UserProfileResponse
-  { userNameForUPR :: Text,
-    userEmailForUPR :: Text,
-    joinedDateForUPR :: UTCTime
+  { userIDForUPR :: Int32,
+    userNameForUPR :: Text
   }
   deriving (Show, Eq, Generic, ToJSON)
 

@@ -61,6 +61,7 @@ dependencies:
 - transformers
 - http-conduit
 - wai-cors
+- wai
 
 ghc-options:
 - -Wall

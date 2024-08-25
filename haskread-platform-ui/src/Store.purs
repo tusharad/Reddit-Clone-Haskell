@@ -1,22 +1,12 @@
 module Store where
 
 import Prelude
+
 import Data.Maybe (Maybe(..))
-import Common.Types (BaseURL)
-
-data LogLevel = LogDebug | LogInfo | LogError | LogWarn
-
-derive instance eqLogLevel :: Eq LogLevel
-derive instance ordLogLevel :: Ord LogLevel
-
-data Profile = Profile {
-    userID :: Int,
-    userName :: String
- }
+import Common.Types (BaseURL,Profile)
 
 type Store = {
-    logLevel :: LogLevel
-  , baseUrl :: BaseURL
+   baseUrl :: BaseURL
   , currentUser :: Maybe Profile
 }
 

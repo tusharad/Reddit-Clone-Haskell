@@ -11,6 +11,8 @@ module Common.Types
   , myRoute
   , threadCodec
   , threadsCodec
+  , profileCodec 
+  , Profile
   )
   where
 
@@ -31,14 +33,14 @@ import Data.Codec.Argonaut.Compat as CAC
 
 newtype BaseURL = BaseURL String
 
-data Endpoint = Threads 
+data Endpoint = Threads | UserByToken
 derive instance genericEndpoint :: Generic Endpoint _
 
 endpointCodec :: RouteDuplex' Endpoint
-endpointCodec = root $ sum { "Threads" : "api" / "v1" / "thread" / "all" / noArgs }
--- root $ prefix "api" $ sum {
---         "Threads" : "threads" / noArgs
---     }
+endpointCodec = root $ sum { 
+    "Threads" : "api" / "v1" / "thread" / "all" / noArgs ,
+    "UserByToken" : "api" / "v1" / "user" / "profile" / noArgs
+    }
 
 data RequestMethod = 
     Get | Post (Maybe Json) | Put (Maybe Json) | Delete
@@ -96,3 +98,19 @@ threadsCodec =
       { body: CA.array threadCodec
       , total: CA.int
       }
+
+
+type Profile = {
+        userID :: Int,
+        userName :: String
+    }
+
+profileCodec :: JsonCodec Profile
+profileCodec =
+  CAM.renameField "userIDForUPR" "userID"
+  >~> CAM.renameField "userNameForUPR" "userName"
+  >~>
+  (CAR.object "Profile" { 
+       userID : CA.int,
+       userName: CA.string
+    })

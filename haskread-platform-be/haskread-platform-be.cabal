@@ -101,6 +101,7 @@ library
     , transformers
     , unliftio
     , uri-bytestring
+    , wai
     , wai-cors
     , warp
   default-language: Haskell2010
@@ -149,6 +150,7 @@ executable haskread-platform-be-exe
     , transformers
     , unliftio
     , uri-bytestring
+    , wai
     , wai-cors
     , warp
   default-language: Haskell2010
@@ -206,6 +208,7 @@ test-suite haskread-platform-be-test
     , transformers
     , unliftio
     , uri-bytestring
+    , wai
     , wai-cors
     , warp
   default-language: Haskell2010

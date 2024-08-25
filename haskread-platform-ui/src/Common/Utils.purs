@@ -2,7 +2,7 @@ module Common.Utils where
 
 import Prelude
 
-import Affjax (printError)
+import Affjax (printError,Error,Response)
 import Affjax.RequestBody as RB
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as RF
@@ -22,6 +22,11 @@ import Effect.Class.Console (log)
 import Halogen.Store.Monad (class MonadStore, getStore)
 import Routing.Duplex (print)
 import Store (Action, Store)
+import Web.HTML.Window (localStorage)
+import Web.Storage.Storage (getItem, removeItem, setItem)
+import Effect (Effect)
+import Effect.Aff (Aff)
+import Web.HTML (window)
 
 mkRequest
   :: forall m
@@ -36,7 +41,18 @@ mkRequest opts = do
     Left err -> (liftEffect $ log (printError err)) *> pure Nothing
     Right _ -> do
       pure $ hush $ rmap _.body response
-  
+ 
+mkAuthRequest
+  :: forall m
+   . MonadAff m
+  => MonadStore Action Store m
+  => RequestOptions
+  -> m (Maybe Json)
+mkAuthRequest opts = do
+  { baseUrl } <- getStore
+  token <- liftEffect readToken
+  response <- liftAff $ request $ defaultRequest baseUrl token opts
+  pure $ hush $ map _.body response
 
 defaultRequest :: BaseURL -> Maybe Token -> RequestOptions -> Request Json
 defaultRequest (BaseURL baseUrl) auth { endpoint, method } =
@@ -44,7 +60,7 @@ defaultRequest (BaseURL baseUrl) auth { endpoint, method } =
   , url: baseUrl <> print endpointCodec endpoint
   , headers: case auth of
       Nothing -> []
-      Just (Token t) -> [ RequestHeader "Authorization" $ "Token " <> t ]
+      Just (Token t) -> [RequestHeader "Authorization" $ "Bearer " <> t]
   , content: RB.json <$> body
   , username: Nothing
   , password: Nothing
@@ -58,6 +74,21 @@ defaultRequest (BaseURL baseUrl) auth { endpoint, method } =
     Post b -> Tuple POST b
     Put b -> Tuple PUT b
     Delete -> Tuple DELETE Nothing
+
+tokenKey = "token" :: String
+
+readToken :: Effect (Maybe Token)
+readToken = do
+  str <- getItem tokenKey =<< localStorage =<< window
+  pure $ Token <$> str
+
+writeToken :: Token -> Effect Unit
+writeToken (Token str) =
+  setItem tokenKey str =<< localStorage =<< window
+
+removeToken :: Effect Unit
+removeToken =
+  removeItem tokenKey =<< localStorage =<< window
 
 decode :: forall m a. MonadEffect m => JsonCodec a -> Maybe Json -> m (Maybe a)
 decode _ Nothing = pure Nothing
