@@ -219,3 +219,4 @@ threadToThreadInfo Thread {..} =
     { title = threadTitle,
       description = threadDescription
     }
+

@@ -5,20 +5,29 @@ import Undefined (undefined)
 import Halogen as H
 import Halogen.HTML as HH
 import Network.RemoteData (RemoteData(..),fromMaybe)
-import Common.Types (PaginatedArray,Thread)
+import Common.Types (PaginatedArray,Thread,Profile)
 import Capability.Resource (class ManageThreads,getThreads)
 import Data.Foldable (length)
 import Data.Array (mapWithIndex)
 import Data.Maybe (Maybe(..))
+import Halogen.Store.Connect (Connected, connect)
+import Halogen.Store.Select (selectEq)
+import Effect.Aff.Class (class MonadAff)
+import Store as Store
+import Halogen.Store.Monad (class MonadStore)
 
 type State = {
-        threads :: RemoteData String (PaginatedArray Thread)
+        threads :: RemoteData String (PaginatedArray Thread),
+        currentUser :: Maybe Profile
     }
 
 data Action = Initialize | LoadThreads
 
-component :: forall query input output m. ManageThreads m => H.Component query input output m
-component = H.mkComponent {
+component :: forall query  output m. 
+    MonadAff m =>
+    MonadStore Store.Action Store.Store m =>
+    ManageThreads m => H.Component query Unit output m
+component = connect (selectEq _.currentUser) $ H.mkComponent {
         initialState,
         render,
         eval : H.mkEval H.defaultEval {
@@ -27,12 +36,13 @@ component = H.mkComponent {
         }
     }
   where
-    initialState :: input -> State
-    initialState _ = { threads : NotAsked }
+    initialState  { context: currentUser } = { threads : NotAsked, currentUser }
 
     render :: forall slots. State -> H.ComponentHTML Action slots m 
     render state = HH.div_ [ 
             HH.text "Home Page",
+            HH.br_,
+            HH.text $ "user: " <> show state.currentUser,
             HH.br_,
             threadList state.threads
         ]

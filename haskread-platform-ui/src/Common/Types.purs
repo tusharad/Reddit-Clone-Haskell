@@ -13,6 +13,8 @@ module Common.Types
   , threadsCodec
   , profileCodec 
   , Profile
+  , LoginFields
+  , loginCodec
   )
   where
 
@@ -33,13 +35,14 @@ import Data.Codec.Argonaut.Compat as CAC
 
 newtype BaseURL = BaseURL String
 
-data Endpoint = Threads | UserByToken
+data Endpoint = Threads | UserByToken | Login0
 derive instance genericEndpoint :: Generic Endpoint _
 
 endpointCodec :: RouteDuplex' Endpoint
 endpointCodec = root $ sum { 
     "Threads" : "api" / "v1" / "thread" / "all" / noArgs ,
-    "UserByToken" : "api" / "v1" / "user" / "profile" / noArgs
+    "UserByToken" : "api" / "v1" / "user" / "profile" / noArgs,
+    "Login0" : "api" / "v1" / "user" / "auth" / "login" / noArgs
     }
 
 data RequestMethod = 
@@ -114,3 +117,19 @@ profileCodec =
        userID : CA.int,
        userName: CA.string
     })
+
+
+type LoginFields =
+  { emailForLogin :: String
+  , passwordForLogin :: String
+  }
+
+loginCodec :: JsonCodec LoginFields
+loginCodec =
+  CAR.object "LoginFields"
+    { emailForLogin: CA.string
+    , passwordForLogin: CA.string
+    }
+
+
+

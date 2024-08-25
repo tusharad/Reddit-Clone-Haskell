@@ -15,7 +15,8 @@ import Data.Either (Either(..))
 import Effect.Class.Console (log)
 import Effect.Class (class MonadEffect,liftEffect)
 import Capability.Navigate (class Navigate,navigate)
-import Capability.Resource (class ManageThreads)
+import Capability.Resource (class ManageThreads,class ManageUser)
+import Effect.Aff.Class (class MonadAff)
 
 import Routing.Hash (getHash)
 import Type.Proxy (Proxy(..))
@@ -28,6 +29,8 @@ import Store as Store
 import Halogen.Store.Monad (class MonadStore)
 
 data Action = Initialize
+        | Receive (Connected (Maybe Profile) Unit)
+
 type State = {
         route :: Maybe MyRoute,
         currentUser :: Maybe Profile
@@ -41,17 +44,19 @@ type ChildSlots =
   , login :: OpaqueSlot Unit
   )
 
-component :: 
-    forall input m. 
+component :: forall m.
             MonadStore Store.Action Store.Store m =>
             Navigate m => 
             ManageThreads m => 
-            MonadEffect m => H.Component Query input Void m
+            MonadAff m => 
+            ManageUser m =>
+            MonadEffect m => H.Component Query Unit Void m
 component = connect (selectEq _.currentUser) $ H.mkComponent {
         initialState 
       , render
       , eval : H.mkEval H.defaultEval {
         initialize = Just Initialize,
+               receive = Just <<< Receive,
         handleAction = handleAction,
         handleQuery = handleQuery
       }
@@ -59,13 +64,16 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
   where
     initialState { context: currentUser } = { route : Nothing, currentUser : currentUser }
 
-    handleAction :: forall state. Action -> H.HalogenM state Action ChildSlots Void m Unit
+    handleAction :: Action -> H.HalogenM State Action ChildSlots Void m Unit
     handleAction = case _ of
             Initialize -> do
                 url <- liftEffect getHash
                 case RD.parse myRoute url of
                     Left e -> log $ "err" <> show e
                     Right r -> navigate r
+            Receive { context: currentUser } -> do
+                log $ "user" <> show currentUser
+                H.modify_ _ { currentUser = currentUser }
 
     handleQuery :: forall a. Query a -> H.HalogenM State Action ChildSlots Void m (Maybe a)
     handleQuery = case _ of
@@ -77,5 +85,5 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
     render {route} = case route of  
                 Just r -> case r of
                               Home -> HH.slot_ (Proxy :: _ "home") unit Home.component unit
-                              Login -> HH.slot_ (Proxy :: _ "login") unit Login.component unit
+                              Login -> HH.slot_ (Proxy :: _ "login") unit Login.component { redirect: true }
                 Nothing -> HH.div_ [ HH.text "page not found!" ]

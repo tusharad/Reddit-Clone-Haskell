@@ -7,7 +7,7 @@ import Affjax.RequestBody as RB
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as RF
 import Affjax.Web (request, Request)
-import Common.Types (BaseURL(..), Token(..), RequestOptions, RequestMethod(..), endpointCodec)
+import Common.Types -- (BaseURL(..), Token(..), RequestOptions, RequestMethod(..), endpointCodec,Profile)
 import Data.Argonaut.Core (Json)
 import Data.Bifunctor (rmap)
 import Data.Codec.Argonaut (JsonCodec)
@@ -19,14 +19,21 @@ import Data.Tuple (Tuple(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
-import Halogen.Store.Monad (class MonadStore, getStore)
+import Halogen.Store.Monad (class MonadStore, getStore,updateStore)
 import Routing.Duplex (print)
-import Store (Action, Store)
+import Store (Action, Store, Action(..))
 import Web.HTML.Window (localStorage)
 import Web.Storage.Storage (getItem, removeItem, setItem)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Web.HTML (window)
+import Data.Codec as Codec
+import Data.Codec.Argonaut.Record as CAR
+import Data.Codec.Argonaut (JsonCodec, JsonDecodeError, printJsonDecodeError)
+import Data.Bifunctor (lmap)
+import Halogen (lift)
+
+import Undefined (undefined)
 
 mkRequest
   :: forall m
@@ -95,3 +102,73 @@ decode _ Nothing = pure Nothing
 decode codec (Just json) = case CA.decode codec json of
   Left err -> (log $ "failed decodig: " <> (CA.printJsonDecodeError err)) *> pure Nothing
   Right response -> pure (Just response)
+
+authenticate
+  :: forall m a
+   . MonadAff m
+  => MonadStore Action Store m
+  => (BaseURL -> a -> m (Either String (Tuple Token Profile)))
+  -> a
+  -> m (Maybe Profile)
+authenticate req fields = do
+  { baseUrl } <- getStore
+  req baseUrl fields >>= case _ of
+    Left err -> pure Nothing
+    Right (Tuple token profile) -> do
+      updateStore $ LoginUser profile
+      pure (Just profile)
+
+login :: forall m. MonadAff m => BaseURL -> LoginFields -> m (Either String (Tuple Token Profile))
+login baseUrl fields =
+  let
+    method = Post $ Just $ Codec.encode loginCodec fields
+  in
+    requestUser baseUrl { endpoint: Login0, method }
+
+requestUser :: forall m. MonadAff m => BaseURL -> RequestOptions -> m (Either String (Tuple Token Profile))
+requestUser baseUrl opts = do
+  eRes <- liftAff $ request $ defaultRequest baseUrl Nothing opts
+  log "reached here!"
+  case eRes of
+    Left e -> pure $ Left $ printError e
+    Right v -> do 
+      log "reached here@!"
+      let eToken = lmap printJsonDecodeError $ decodeToken v.body
+      case eToken of
+        Left err -> do
+          log $ "got error" <> err 
+          pure $ Left err
+        Right token -> do
+          _ <- liftEffect $ writeToken token
+          mProfile <- liftAff $ getCurrentUser baseUrl
+          case mProfile of
+            Nothing -> pure $ Left ""
+            Just profile ->
+              pure (Right $ Tuple token profile)
+
+decodeToken :: Json -> Either JsonDecodeError Token
+decodeToken user = do
+  { jwtToken } <- Codec.decode tokenCodec user
+  pure $ Token jwtToken
+  where
+  tokenCodec =
+     CAR.object "Token"
+      { jwtToken: CA.string 
+      }
+
+getCurrentUser :: BaseURL -> Aff (Maybe Profile)
+getCurrentUser baseUrl = do
+    mToken <- liftEffect readToken
+    case mToken of
+        Nothing -> pure Nothing
+        Just token -> do
+           let requestOptions = { endpoint: UserByToken, method: Get }
+           res <- request $ defaultRequest baseUrl (Just token) requestOptions
+           let
+               user :: Either String Profile
+               user = case res of
+                Left e ->
+                    Left "error fetching request"
+                Right v -> lmap printJsonDecodeError do
+                    CA.decode profileCodec v.body
+           pure $ hush user
