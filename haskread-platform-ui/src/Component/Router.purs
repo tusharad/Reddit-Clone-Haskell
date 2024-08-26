@@ -6,22 +6,20 @@ import Prelude
 import Halogen as H
 import Halogen.HTML as HH
 import Undefined
-
 import Common.Types (myRoute,MyRoute(..),Profile)
 import Data.Maybe (Maybe(..))
 import Routing.Duplex as RD
 import Data.Either (Either(..))
-
 import Effect.Class.Console (log)
 import Effect.Class (class MonadEffect,liftEffect)
 import Capability.Navigate (class Navigate,navigate)
 import Capability.Resource (class ManageThreads,class ManageUser)
 import Effect.Aff.Class (class MonadAff)
-
 import Routing.Hash (getHash)
 import Type.Proxy (Proxy(..))
 import Page.Home as Home
 import Page.Login as Login
+import Page.Register as Register
 import Common.Utils (readToken)
 import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Select (selectEq)
@@ -42,6 +40,7 @@ type OpaqueSlot slot = forall query. H.Slot query Void slot
 type ChildSlots =
   ( home :: OpaqueSlot Unit
   , login :: OpaqueSlot Unit
+  , register :: OpaqueSlot Unit
   )
 
 component :: forall m.
@@ -69,7 +68,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
             Initialize -> do
                 url <- liftEffect getHash
                 case RD.parse myRoute url of
-                    Left e -> log $ "err" <> show e
+                    Left e -> (log $ "err" <> show e) *> navigate Home
                     Right r -> navigate r
             Receive { context: currentUser } -> do
                 log $ "user" <> show currentUser
@@ -84,6 +83,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
     render :: State -> H.ComponentHTML Action ChildSlots m 
     render {route} = case route of  
                 Just r -> case r of
-                              Home -> HH.slot_ (Proxy :: _ "home") unit Home.component unit
-                              Login -> HH.slot_ (Proxy :: _ "login") unit Login.component { redirect: true }
+                    Home -> HH.slot_ (Proxy :: _ "home") unit Home.component unit
+                    Login -> HH.slot_ (Proxy :: _ "login") unit Login.component { redirect: true }
+                    Register -> HH.slot_ (Proxy :: _ "register") unit Register.component { redirect: true }
                 Nothing -> HH.div_ [ HH.text "page not found!" ]

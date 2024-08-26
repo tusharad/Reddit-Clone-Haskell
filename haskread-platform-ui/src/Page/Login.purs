@@ -13,13 +13,10 @@ import Effect.Aff.Class (class MonadAff)
 import Data.Maybe (Maybe(..))
 import Capability.Resource (class ManageUser, loginUser)
 import Common.Types (MyRoute(..))
+import Common.Utils (safeHref,whenElem)
 import Halogen.HTML.Events as HE
 import Form.Field as Field
 import Halogen.HTML.Properties as HP
-
-
-whenElem :: forall p i. Boolean -> (Unit -> HH.HTML p i) -> HH.HTML p i
-whenElem cond f = if cond then f unit else HH.text ""
 
 type Input = { redirect :: Boolean }
 
@@ -83,49 +80,34 @@ component =  F.formless { liftAction : Eval } mempty $ H.mkComponent {
 
     render :: State -> H.ComponentHTML Action () m
     render { loginError, form: { formActions, fields, actions } } =
-      container
-      [ HH.h1
-          [  ]
-          [ HH.text "Sign In" ]
-      , HH.p
-          [  ]
-          [ HH.a
-              [  ] -- safeHref Register
-              [ HH.text "Need an account?" ]
-          ]
-      , HH.form
-          [ HE.onSubmit formActions.handleSubmit ]
-          [ whenElem loginError \_ ->
-              HH.div
-                [  ]
-                [ HH.text "Email or password is invalid" ]
-          , HH.fieldset_
-              [ Field.textInput
-                  { state: fields.emailForLogin, action: actions.emailForLogin }
-                  [ HP.placeholder "Email"
-                  , HP.type_ HP.InputEmail
-                  ]
-              , Field.textInput
-                  { state: fields.passwordForLogin, action: actions.passwordForLogin }
-                  [ HP.placeholder "Password"
-                  , HP.type_ HP.InputPassword
-                  ]
-              , Field.submitButton "Log in"
-              ]
-          ]
-      ]
-      where
-        container html =
-          HH.div
+      HH.div_
+        [ HH.h1
             [  ]
-            [ 
-             HH.div
-                [  ]
-                [ HH.div
-                    [  ]
-                    [ HH.div
-                        [  ]
-                        html
+            [ HH.text "Sign In" ]
+        , HH.p
+            [  ]
+            [ HH.a
+                [ safeHref Register ] -- 
+                [ HH.text "Need an account?" ]
+            ]
+        , HH.form
+            [ HE.onSubmit formActions.handleSubmit ]
+            [ whenElem loginError \_ ->
+                HH.div
+                  [  ]
+                  [ HH.text "Email or password is invalid" ]
+            , HH.fieldset_
+                [ Field.textInput
+                    { state: fields.emailForLogin, action: actions.emailForLogin }
+                    [ HP.placeholder "Email"
+                    , HP.type_ HP.InputEmail
                     ]
+                , Field.textInput
+                    { state: fields.passwordForLogin, action: actions.passwordForLogin }
+                    [ HP.placeholder "Password"
+                    , HP.type_ HP.InputPassword
+                    ]
+                , Field.submitButton "Log in"
                 ]
             ]
+        ]

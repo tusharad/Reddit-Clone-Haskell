@@ -2,15 +2,15 @@ module Common.Utils where
 
 import Prelude
 
-import Affjax (printError,Error,Response)
+import Affjax (printError)
 import Affjax.RequestBody as RB
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as RF
 import Affjax.Web (request, Request)
 import Common.Types -- (BaseURL(..), Token(..), RequestOptions, RequestMethod(..), endpointCodec,Profile)
 import Data.Argonaut.Core (Json)
-import Data.Bifunctor (rmap)
-import Data.Codec.Argonaut (JsonCodec)
+import Data.Bifunctor (rmap,lmap)
+import Data.Codec.Argonaut (JsonCodec,JsonDecodeError, printJsonDecodeError)
 import Data.Codec.Argonaut as CA
 import Data.Either (Either(..), hush)
 import Data.HTTP.Method (Method(..))
@@ -21,7 +21,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Halogen.Store.Monad (class MonadStore, getStore,updateStore)
 import Routing.Duplex (print)
-import Store (Action, Store, Action(..))
+import Store (Store, Action(..))
 import Web.HTML.Window (localStorage)
 import Web.Storage.Storage (getItem, removeItem, setItem)
 import Effect (Effect)
@@ -29,11 +29,8 @@ import Effect.Aff (Aff)
 import Web.HTML (window)
 import Data.Codec as Codec
 import Data.Codec.Argonaut.Record as CAR
-import Data.Codec.Argonaut (JsonCodec, JsonDecodeError, printJsonDecodeError)
-import Data.Bifunctor (lmap)
-import Halogen (lift)
-
-import Undefined (undefined)
+import Halogen.HTML as HH
+import Halogen.HTML.Properties as HP
 
 mkRequest
   :: forall m
@@ -84,6 +81,12 @@ defaultRequest (BaseURL baseUrl) auth { endpoint, method } =
 
 tokenKey = "token" :: String
 
+safeHref :: forall r i. MyRoute -> HH.IProp (href :: String | r) i
+safeHref = HP.href <<< append "#" <<< print myRoute
+
+whenElem :: forall p i. Boolean -> (Unit -> HH.HTML p i) -> HH.HTML p i
+whenElem cond f = if cond then f unit else HH.text ""
+
 readToken :: Effect (Maybe Token)
 readToken = do
   str <- getItem tokenKey =<< localStorage =<< window
@@ -125,18 +128,26 @@ login baseUrl fields =
   in
     requestUser baseUrl { endpoint: Login0, method }
 
+register :: forall m. 
+    MonadStore Action Store m => 
+    MonadAff m => RegisterFields -> m (Either String Unit)
+register fields = do
+    let method = Post $ Just $ Codec.encode registerCodec fields
+    mjson <- mkRequest { endpoint: Register0, method }
+    case mjson of
+        Nothing -> pure $ Left "got nothing"
+        Just _ -> pure $ Right unit
+
 requestUser :: forall m. MonadAff m => BaseURL -> RequestOptions -> m (Either String (Tuple Token Profile))
 requestUser baseUrl opts = do
   eRes <- liftAff $ request $ defaultRequest baseUrl Nothing opts
-  log "reached here!"
   case eRes of
     Left e -> pure $ Left $ printError e
     Right v -> do 
-      log "reached here@!"
       let eToken = lmap printJsonDecodeError $ decodeToken v.body
       case eToken of
         Left err -> do
-          log $ "got error" <> err 
+          log $ "got error: " <> err 
           pure $ Left err
         Right token -> do
           _ <- liftEffect $ writeToken token

@@ -14,35 +14,39 @@ module Common.Types
   , profileCodec 
   , Profile
   , LoginFields
+  , RegisterFields
   , loginCodec
+  , registerCodec
   )
   where
 
 import Prelude hiding ((/))
+
+import Data.Argonaut.Core (Json)
+import Data.Codec ((>~>))
+import Data.Codec.Argonaut (JsonCodec)
+import Data.Codec.Argonaut as CA
+import Data.Codec.Argonaut.Compat as CAC
+import Data.Codec.Argonaut.Migration as CAM
+import Data.Codec.Argonaut.Record as CAR
 import Data.Generic.Rep (class Generic)
-import Routing.Duplex.Generic as G
 import Data.Maybe (Maybe)
 import Routing.Duplex (RouteDuplex', int, path, optional, prefix, root, segment, string)
 import Routing.Duplex.Generic (noArgs, sum)
+import Routing.Duplex.Generic as G
 import Routing.Duplex.Generic.Syntax ((/), (?))
-import Data.Argonaut.Core (Json)
-import Data.Codec.Argonaut (JsonCodec)
-import Data.Codec.Argonaut.Record as CAR
-import Data.Codec ((>~>))
-import Data.Codec.Argonaut.Migration as CAM
-import Data.Codec.Argonaut as CA
-import Data.Codec.Argonaut.Compat as CAC
 
 newtype BaseURL = BaseURL String
 
-data Endpoint = Threads | UserByToken | Login0
+data Endpoint = Threads | UserByToken | Login0 | Register0
 derive instance genericEndpoint :: Generic Endpoint _
 
 endpointCodec :: RouteDuplex' Endpoint
 endpointCodec = root $ sum { 
     "Threads" : "api" / "v1" / "thread" / "all" / noArgs ,
     "UserByToken" : "api" / "v1" / "user" / "profile" / noArgs,
-    "Login0" : "api" / "v1" / "user" / "auth" / "login" / noArgs
+    "Login0" : "api" / "v1" / "user" / "auth" / "login" / noArgs,
+    "Register0" : "api" / "v1" / "user" / "auth" / "register" / noArgs
     }
 
 data RequestMethod = 
@@ -56,6 +60,7 @@ type RequestOptions =
 data MyRoute =
       Home
     | Login
+    | Register
 
 derive instance genericRoute :: Generic MyRoute _
 derive instance eqRoute :: Eq MyRoute
@@ -70,6 +75,7 @@ myRoute :: RouteDuplex' MyRoute
 myRoute = root $ G.sum {
         "Home" : G.noArgs
       , "Login" : path "login" G.noArgs
+      , "Register" : path "register" G.noArgs
     }
 
 type PaginatedArray a =
@@ -124,6 +130,13 @@ type LoginFields =
   , passwordForLogin :: String
   }
 
+type RegisterFields = {
+    userNameForRegister :: String
+   , emailForRegister :: String
+   , passwordForRegister :: String
+   , confirmPasswordForRegister :: String
+}
+
 loginCodec :: JsonCodec LoginFields
 loginCodec =
   CAR.object "LoginFields"
@@ -131,5 +144,11 @@ loginCodec =
     , passwordForLogin: CA.string
     }
 
-
-
+registerCodec :: JsonCodec RegisterFields
+registerCodec =
+  CAR.object "LoginFields"
+    { userNameForRegister: CA.string
+    , emailForRegister : CA.string
+   , passwordForRegister : CA.string
+   , confirmPasswordForRegister : CA.string
+    }

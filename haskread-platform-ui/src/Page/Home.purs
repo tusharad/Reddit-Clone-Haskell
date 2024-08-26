@@ -1,30 +1,34 @@
 module Page.Home where
 
 import Prelude
-import Undefined (undefined)
+
+import Capability.Navigate (class Navigate, navigate)
+import Capability.Resource (class ManageThreads, getThreads)
+import Common.Types (PaginatedArray, Thread, Profile, MyRoute(..))
+import Data.Array (mapWithIndex)
+import Data.Foldable (length)
+import Data.Maybe (Maybe(..))
+import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
-import Network.RemoteData (RemoteData(..),fromMaybe)
-import Common.Types (PaginatedArray,Thread,Profile)
-import Capability.Resource (class ManageThreads,getThreads)
-import Data.Foldable (length)
-import Data.Array (mapWithIndex)
-import Data.Maybe (Maybe(..))
+import Halogen.HTML.Events as HE
 import Halogen.Store.Connect (Connected, connect)
-import Halogen.Store.Select (selectEq)
-import Effect.Aff.Class (class MonadAff)
-import Store as Store
 import Halogen.Store.Monad (class MonadStore)
+import Halogen.Store.Select (selectEq)
+import Network.RemoteData (RemoteData(..), fromMaybe)
+import Store as Store
+import Undefined (undefined)
 
 type State = {
         threads :: RemoteData String (PaginatedArray Thread),
         currentUser :: Maybe Profile
     }
 
-data Action = Initialize | LoadThreads
+data Action = Initialize | LoadThreads | GoToLogin
 
 component :: forall query  output m. 
     MonadAff m =>
+    Navigate m =>
     MonadStore Store.Action Store.Store m =>
     ManageThreads m => H.Component query Unit output m
 component = connect (selectEq _.currentUser) $ H.mkComponent {
@@ -44,6 +48,8 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
             HH.br_,
             HH.text $ "user: " <> show state.currentUser,
             HH.br_,
+            HH.button [ HE.onClick \_ -> GoToLogin ] [ HH.text "Go to login" ],
+            HH.br_,
             threadList state.threads
         ]
 
@@ -56,6 +62,8 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
                H.modify_ _ { threads = Loading }
                mThreadList <- getThreads
                H.modify_ _ { threads = fromMaybe mThreadList }
+            
+            GoToLogin -> navigate Login
 
 threadList :: forall props act. 
     RemoteData String (PaginatedArray Thread) ->
