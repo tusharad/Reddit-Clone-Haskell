@@ -1,4 +1,4 @@
-module Page.Register where
+module Page.OTP where
 
 import Prelude
 import Undefined (undefined)
@@ -19,8 +19,6 @@ import Halogen.HTML.Properties as HP
 import Effect.Class.Console (log)
 import Data.Either (Either(..))
 
-type Input = { redirect :: Boolean }
-
 type Form :: (Type -> Type -> Type -> Type) -> Row Type
 type Form f =
   ( 
@@ -30,7 +28,7 @@ type Form f =
     confirmPasswordForRegister :: f String FormError String
   )
 
-type FormContext = F.FormContext (Form F.FieldState) (Form (F.FieldAction Action)) Input Action
+type FormContext = F.FormContext (Form F.FieldState) (Form (F.FieldAction Action)) Unit Action
 type FormlessAction = F.FormlessAction (Form F.FieldState)
 
 data Action
@@ -47,7 +45,7 @@ component ::
   MonadAff m =>
   Navigate m =>
   ManageUser m =>
-  H.Component query Input output m
+  H.Component query Unit output m
 component =  F.formless { liftAction : Eval } mempty $ H.mkComponent {
         initialState : \context ->  { form: context, registerError : false } ,
         render,
@@ -71,10 +69,8 @@ component =  F.formless { liftAction : Eval } mempty $ H.mkComponent {
             H.modify_ _ { registerError = true }
           Right _ -> do
             H.modify_ _ { registerError = false }
-            { redirect } <- H.gets _.form.input
             -- initiating OTP process
-            log "dasdasdasdasdsa"
-            when redirect (navigate OTP)
+            navigate OTP
 
         validation =
           {

@@ -44,7 +44,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
 
     render :: forall slots. State -> H.ComponentHTML Action slots m 
     render state = HH.div_ [ 
-            HH.text "Home Page",
+            HH.text "home Pages :)",
             HH.br_,
             HH.text $ "user: " <> show state.currentUser,
             HH.br_,

@@ -16,18 +16,10 @@ import Routing.Duplex (parse)
 import Halogen.Aff as HA
 import Halogen as H
 import Component.Router as Router
-import Effect.Aff (launchAff_,Aff)
 import Halogen.VDom.Driver (runUI)
-import Common.Types (myRoute,BaseURL(..),Endpoint(..),RequestMethod(..),profileCodec,Profile)
-import Common.Utils (readToken,defaultRequest,getCurrentUser)
-import Affjax.Web (request)
-import Data.Either (Either(..),hush)
-import Data.Codec.Argonaut as CA
-import Store as Store
-import Undefined (undefined)
-import Data.Codec.Argonaut (printJsonDecodeError)
-import Data.Bifunctor (lmap)
-import Data.Codec as Codec
+import Common.Types (myRoute,BaseURL(..))
+import Common.Utils (getCurrentUser)
+import Effect.Aff (launchAff_)
 
 main :: Effect Unit
 main = do

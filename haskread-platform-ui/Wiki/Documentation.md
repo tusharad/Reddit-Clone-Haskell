@@ -1,6 +1,7 @@
 ### TODO:
 
-- Take environment variables from DotEnv.
+- Create Package.dhall to maintain same version of package-sets.
+
 
 ### Get Current User Flow:
 

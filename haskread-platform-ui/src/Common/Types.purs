@@ -31,10 +31,10 @@ import Data.Codec.Argonaut.Migration as CAM
 import Data.Codec.Argonaut.Record as CAR
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
-import Routing.Duplex (RouteDuplex', int, path, optional, prefix, root, segment, string)
+import Routing.Duplex (RouteDuplex', path, root)
 import Routing.Duplex.Generic (noArgs, sum)
 import Routing.Duplex.Generic as G
-import Routing.Duplex.Generic.Syntax ((/), (?))
+import Routing.Duplex.Generic.Syntax ((/))
 
 newtype BaseURL = BaseURL String
 
@@ -61,6 +61,7 @@ data MyRoute =
       Home
     | Login
     | Register
+    | OTP
 
 derive instance genericRoute :: Generic MyRoute _
 derive instance eqRoute :: Eq MyRoute
@@ -76,6 +77,7 @@ myRoute = root $ G.sum {
         "Home" : G.noArgs
       , "Login" : path "login" G.noArgs
       , "Register" : path "register" G.noArgs
+      , "OTP" : path "otp" G.noArgs
     }
 
 type PaginatedArray a =

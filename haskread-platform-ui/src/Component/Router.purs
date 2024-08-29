@@ -5,7 +5,6 @@ import Prelude
 
 import Halogen as H
 import Halogen.HTML as HH
-import Undefined
 import Common.Types (myRoute,MyRoute(..),Profile)
 import Data.Maybe (Maybe(..))
 import Routing.Duplex as RD
@@ -17,14 +16,15 @@ import Capability.Resource (class ManageThreads,class ManageUser)
 import Effect.Aff.Class (class MonadAff)
 import Routing.Hash (getHash)
 import Type.Proxy (Proxy(..))
-import Page.Home as Home
-import Page.Login as Login
-import Page.Register as Register
-import Common.Utils (readToken)
 import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Select (selectEq)
 import Store as Store
 import Halogen.Store.Monad (class MonadStore)
+-- Pages
+import Page.Home as Home
+import Page.Login as Login
+import Page.Register as Register
+import Page.OTP as OTP
 
 data Action = Initialize
         | Receive (Connected (Maybe Profile) Unit)
@@ -41,6 +41,7 @@ type ChildSlots =
   ( home :: OpaqueSlot Unit
   , login :: OpaqueSlot Unit
   , register :: OpaqueSlot Unit
+  , otp :: OpaqueSlot Unit
   )
 
 component :: forall m.
@@ -86,4 +87,5 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
                     Home -> HH.slot_ (Proxy :: _ "home") unit Home.component unit
                     Login -> HH.slot_ (Proxy :: _ "login") unit Login.component { redirect: true }
                     Register -> HH.slot_ (Proxy :: _ "register") unit Register.component { redirect: true }
+                    OTP -> HH.slot_ (Proxy :: _ "otp") unit OTP.component unit
                 Nothing -> HH.div_ [ HH.text "page not found!" ]

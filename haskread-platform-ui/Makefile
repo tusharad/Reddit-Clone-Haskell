@@ -1,2 +1,2 @@
 run-haskread-platform-ui:
-	spago bundle && python3 -m http.server
+	concurrently "nodemon -e purs -x spago bundle" "browser-sync start --server --files 'index.js' --port 8089"
