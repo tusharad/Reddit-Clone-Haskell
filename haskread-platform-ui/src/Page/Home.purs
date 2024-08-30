@@ -12,7 +12,7 @@ import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Halogen.Store.Connect (Connected, connect)
+import Halogen.Store.Connect (connect)
 import Halogen.Store.Monad (class MonadStore)
 import Halogen.Store.Select (selectEq)
 import Network.RemoteData (RemoteData(..), fromMaybe)
@@ -44,7 +44,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
 
     render :: forall slots. State -> H.ComponentHTML Action slots m 
     render state = HH.div_ [ 
-            HH.text "home Pages :)",
+            HH.text "Home Pages :)",
             HH.br_,
             HH.text $ "user: " <> show state.currentUser,
             HH.br_,

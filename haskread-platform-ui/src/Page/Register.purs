@@ -74,7 +74,7 @@ component =  F.formless { liftAction : Eval } mempty $ H.mkComponent {
             { redirect } <- H.gets _.form.input
             -- initiating OTP process
             log "dasdasdasdasdsa"
-            when redirect (navigate OTP)
+            when redirect (navigate $ OTP 1)
 
         validation =
           {

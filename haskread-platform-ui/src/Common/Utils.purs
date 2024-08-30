@@ -31,6 +31,7 @@ import Data.Codec as Codec
 import Data.Codec.Argonaut.Record as CAR
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
+import Undefined (undefined)
 
 mkRequest
   :: forall m
@@ -106,6 +107,16 @@ decode codec (Just json) = case CA.decode codec json of
   Left err -> (log $ "failed decodig: " <> (CA.printJsonDecodeError err)) *> pure Nothing
   Right response -> pure (Just response)
 
+verifyOtp :: forall m. 
+    MonadStore Action Store m => 
+    MonadAff m => OtpFields -> m (Either String Unit)
+verifyOtp fields = do
+    let method = Put Nothing
+    mjson <- mkRequest { endpoint: VerifyOtp0 fields.userID  fields.otp, method }
+    case mjson of
+      Nothing -> pure $ Left "got nothing"
+      Just _ -> pure $ Right unit
+         
 authenticate
   :: forall m a
    . MonadAff m
@@ -130,15 +141,31 @@ login baseUrl fields =
 
 register :: forall m. 
     MonadStore Action Store m => 
-    MonadAff m => RegisterFields -> m (Either String Unit)
+    MonadAff m => RegisterFields -> m (Either String Int)
 register fields = do
     let method = Post $ Just $ Codec.encode registerCodec fields
     mjson <- mkRequest { endpoint: Register0, method }
     case mjson of
         Nothing -> pure $ Left "got nothing"
-        Just _ -> pure $ Right unit
+        Just registerResp -> do
+           let eRes = decodeRegisterResp registerResp
+           case eRes of
+               Left _ -> pure $ Left "Decoding response failed"
+               Right res -> pure $ Right res
 
-requestUser :: forall m. MonadAff m => BaseURL -> RequestOptions -> m (Either String (Tuple Token Profile))
+decodeRegisterResp :: Json -> Either JsonDecodeError Int
+decodeRegisterResp registerResp = do
+    { userIDForRUR } <- Codec.decode decodeResp_ registerResp
+    pure userIDForRUR
+    where
+      decodeResp_ =
+          CAR.object "Register Response" { userIDForRUR : CA.int }
+
+requestUser :: 
+    forall m. MonadAff m => 
+    BaseURL -> 
+    RequestOptions -> 
+    m (Either String (Tuple Token Profile))
 requestUser baseUrl opts = do
   eRes <- liftAff $ request $ defaultRequest baseUrl Nothing opts
   case eRes of

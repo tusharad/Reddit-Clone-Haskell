@@ -17,6 +17,7 @@ module Common.Types
   , RegisterFields
   , loginCodec
   , registerCodec
+  , OtpFields
   )
   where
 
@@ -31,14 +32,14 @@ import Data.Codec.Argonaut.Migration as CAM
 import Data.Codec.Argonaut.Record as CAR
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
-import Routing.Duplex (RouteDuplex', path, root)
+import Routing.Duplex (RouteDuplex', path, root,int,segment)
 import Routing.Duplex.Generic (noArgs, sum)
 import Routing.Duplex.Generic as G
 import Routing.Duplex.Generic.Syntax ((/))
 
 newtype BaseURL = BaseURL String
 
-data Endpoint = Threads | UserByToken | Login0 | Register0
+data Endpoint = Threads | UserByToken | Login0 | Register0 | VerifyOtp0 Int Int
 derive instance genericEndpoint :: Generic Endpoint _
 
 endpointCodec :: RouteDuplex' Endpoint
@@ -46,7 +47,8 @@ endpointCodec = root $ sum {
     "Threads" : "api" / "v1" / "thread" / "all" / noArgs ,
     "UserByToken" : "api" / "v1" / "user" / "profile" / noArgs,
     "Login0" : "api" / "v1" / "user" / "auth" / "login" / noArgs,
-    "Register0" : "api" / "v1" / "user" / "auth" / "register" / noArgs
+    "Register0" : "api" / "v1" / "user" / "auth" / "register" / noArgs,
+    "VerifyOtp0" : "api" / "v1" / "user" / "auth" / "verify" / (int segment) / (int segment)
     }
 
 data RequestMethod = 
@@ -61,7 +63,7 @@ data MyRoute =
       Home
     | Login
     | Register
-    | OTP
+    | OTP Int
 
 derive instance genericRoute :: Generic MyRoute _
 derive instance eqRoute :: Eq MyRoute
@@ -77,7 +79,7 @@ myRoute = root $ G.sum {
         "Home" : G.noArgs
       , "Login" : path "login" G.noArgs
       , "Register" : path "register" G.noArgs
-      , "OTP" : path "otp" G.noArgs
+      , "OTP" : "otp" / (int segment)
     }
 
 type PaginatedArray a =
@@ -126,6 +128,10 @@ profileCodec =
        userName: CA.string
     })
 
+type OtpFields = {
+        otp :: Int,
+        userID :: Int
+    }
 
 type LoginFields =
   { emailForLogin :: String

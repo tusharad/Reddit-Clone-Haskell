@@ -32,7 +32,6 @@ type TextInput action output =
   , action :: F.FieldAction action String FormError output
   }
 
-
 textInput
   :: forall output action slots m
    . TextInput action output

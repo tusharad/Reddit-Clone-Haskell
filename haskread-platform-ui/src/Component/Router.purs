@@ -86,6 +86,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
                 Just r -> case r of
                     Home -> HH.slot_ (Proxy :: _ "home") unit Home.component unit
                     Login -> HH.slot_ (Proxy :: _ "login") unit Login.component { redirect: true }
-                    Register -> HH.slot_ (Proxy :: _ "register") unit Register.component { redirect: true }
-                    OTP -> HH.slot_ (Proxy :: _ "otp") unit OTP.component unit
+                    Register -> 
+                        HH.slot_ (Proxy :: _ "register") unit Register.component { redirect: true }
+                    OTP uID -> HH.slot_ (Proxy :: _ "otp") unit OTP.component { uId : uID }
                 Nothing -> HH.div_ [ HH.text "page not found!" ]
