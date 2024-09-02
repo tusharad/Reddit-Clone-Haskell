@@ -18,6 +18,13 @@ module Common.Types
   , loginCodec
   , registerCodec
   , OtpFields
+  , CreateThreadFields 
+  , createThreadCodec
+  , changePasswordCodec 
+  , ChangePasswordFields
+  , DeleteUserFields
+  , deleteUserCodec 
+  , updateThreadCodec
   )
   where
 
@@ -39,20 +46,35 @@ import Routing.Duplex.Generic.Syntax ((/))
 
 newtype BaseURL = BaseURL String
 
-data Endpoint = Threads | UserByToken | Login0 | Register0 | VerifyOtp0 Int Int
+data Endpoint = Threads 
+                | UserByToken 
+                | Login0 
+                | Register0 
+                | VerifyOtp0 Int Int
+                | CreateThread0
+                | ChangePassword0
+                | DeleteThread0 Int
+                | DeleteUser0
+                | UpdateThread0
+
 derive instance genericEndpoint :: Generic Endpoint _
 
 endpointCodec :: RouteDuplex' Endpoint
 endpointCodec = root $ sum { 
-    "Threads" : "api" / "v1" / "thread" / "all" / noArgs ,
-    "UserByToken" : "api" / "v1" / "user" / "profile" / noArgs,
-    "Login0" : "api" / "v1" / "user" / "auth" / "login" / noArgs,
-    "Register0" : "api" / "v1" / "user" / "auth" / "register" / noArgs,
-    "VerifyOtp0" : "api" / "v1" / "user" / "auth" / "verify" / (int segment) / (int segment)
+     "Threads" : "api" / "v1" / "thread" / "all" / noArgs
+   , "UserByToken" : "api" / "v1" / "user" / "profile" / noArgs
+   , "Login0" : "api" / "v1" / "user" / "auth" / "login" / noArgs
+   , "Register0" : "api" / "v1" / "user" / "auth" / "register" / noArgs
+   , "VerifyOtp0" : "api" / "v1" / "user" / "auth" / "verify" / (int segment) / (int segment)
+   , "CreateThread0" : "api" / "v1" / "user" / "thread" / "create" / noArgs
+   , "ChangePassword0" : "api" / "v1" / "user" / "profile" / "change-password" / noArgs
+   , "DeleteThread0" : "api" / "v1" / "user" / "thread" / "delete" / (int segment)
+   , "DeleteUser0" : "api" / "v1" / "user" / "profile" / "delete-account" / noArgs
+   , "UpdateThread0" : "api" / "v1" / "user" / "thread" / "update" / noArgs
     }
 
 data RequestMethod = 
-    Get | Post (Maybe Json) | Put (Maybe Json) | Delete
+    Get | Post (Maybe Json) | Put (Maybe Json) | Delete (Maybe Json)
 
 type RequestOptions =
   { endpoint :: Endpoint
@@ -64,6 +86,10 @@ data MyRoute =
     | Login
     | Register
     | OTP Int
+    | CreateThread
+    | ChangePassword
+    | DeleteUser
+    | UpdateThread Int
 
 derive instance genericRoute :: Generic MyRoute _
 derive instance eqRoute :: Eq MyRoute
@@ -80,6 +106,10 @@ myRoute = root $ G.sum {
       , "Login" : path "login" G.noArgs
       , "Register" : path "register" G.noArgs
       , "OTP" : "otp" / (int segment)
+      , "CreateThread" : path "create-thread" G.noArgs
+      , "ChangePassword" : path "change-password" G.noArgs
+      , "DeleteUser" : path "delete-my-account" G.noArgs
+      , "UpdateThread" : "update-thread" / (int segment)
     }
 
 type PaginatedArray a =
@@ -111,7 +141,6 @@ threadsCodec =
       { body: CA.array threadCodec
       , total: CA.int
       }
-
 
 type Profile = {
         userID :: Int,
@@ -145,6 +174,30 @@ type RegisterFields = {
    , confirmPasswordForRegister :: String
 }
 
+type CreateThreadFields = {
+    threadTitleForCreate :: String,
+    threadDescriptionForCreate :: String, 
+    threadCommunityIDForCreate :: Int
+}
+
+type ChangePasswordFields = {
+        oldPasswordForChangePass :: String,
+        newPasswordForChangePass :: String,
+        confirmPasswordForChangePass :: String
+    }
+
+type DeleteUserFields = {
+        passwordForDeleteUser :: String,
+        areUSure :: Boolean
+    }
+
+type UpdateThreadFields = {
+        threadIDForUpdate :: Int,
+        threadTitleForUpdate :: String,
+        threadDescriptionForUpdate :: String,
+        threadCommunityIDForUpdate :: Int
+    }
+
 loginCodec :: JsonCodec LoginFields
 loginCodec =
   CAR.object "LoginFields"
@@ -159,4 +212,36 @@ registerCodec =
     , emailForRegister : CA.string
    , passwordForRegister : CA.string
    , confirmPasswordForRegister : CA.string
+    }
+
+createThreadCodec :: JsonCodec CreateThreadFields
+createThreadCodec =
+    CAR.object "create thread fields" {
+    threadTitleForCreate : CA.string,
+    threadDescriptionForCreate : CA.string, 
+    threadCommunityIDForCreate : CA.int
+    }
+
+changePasswordCodec :: JsonCodec ChangePasswordFields
+changePasswordCodec = 
+    CAR.object "change password fields" {
+        oldPasswordForChangePass : CA.string,
+        newPasswordForChangePass : CA.string,
+        confirmPasswordForChangePass : CA.string
+    }
+
+deleteUserCodec :: JsonCodec DeleteUserFields
+deleteUserCodec =
+    CAR.object "Delete user" {
+        passwordForDeleteUser : CA.string,
+        areUSure : CA.boolean
+    }
+
+updateThreadCodec :: JsonCodec UpdateThreadFields
+updateThreadCodec = 
+    CAR.object "update thread" {
+    threadIDForUpdate : CA.int,
+    threadTitleForUpdate : CA.string,
+    threadDescriptionForUpdate : CA.string,
+    threadCommunityIDForUpdate : CA.int
     }

@@ -78,7 +78,7 @@ defaultRequest (BaseURL baseUrl) auth { endpoint, method } =
     Get -> Tuple GET Nothing
     Post b -> Tuple POST b
     Put b -> Tuple PUT b
-    Delete -> Tuple DELETE Nothing
+    Delete b -> Tuple DELETE b
 
 tokenKey = "token" :: String
 
@@ -210,3 +210,48 @@ getCurrentUser baseUrl = do
                 Right v -> lmap printJsonDecodeError do
                     CA.decode profileCodec v.body
            pure $ hush user
+
+createThread :: forall m. 
+    MonadStore Action Store m => 
+    MonadAff m => CreateThreadFields -> m (Maybe String)
+createThread fields = do
+    let method = Post $ Just $ Codec.encode createThreadCodec fields
+    mjson <- mkAuthRequest { endpoint: CreateThread0 , method }
+    case mjson of
+      Nothing -> pure Nothing
+      Just _ -> pure $ Just "All good"
+
+changePassword :: forall m.
+    MonadStore Action Store m =>
+    MonadAff m => ChangePasswordFields -> m (Maybe String)
+changePassword fields = do
+    let method = Put $ Just $ Codec.encode changePasswordCodec fields
+    mjson <- mkAuthRequest { endpoint: ChangePassword0, method }
+    case mjson of
+        Nothing -> pure Nothing
+        Just _ -> pure $ Just "All good"
+
+deleteThread :: forall m.
+    MonadStore Action Store m =>
+    MonadAff m => Int -> m (Maybe String)
+deleteThread threadID = do
+    let method = Delete Nothing
+    mjson <- mkAuthRequest { endpoint : DeleteThread0 threadID, method }
+    case mjson of
+        Nothing -> pure Nothing
+        Just _ -> pure $ Just "Thread deleted"
+
+deleteUser :: forall m.
+    MonadStore Action Store m =>
+    MonadAff m => DeleteUserFields -> m (Maybe String)
+deleteUser fields = do
+    let method = Delete $ Just $ Codec.encode deleteUserCodec fields
+    mjson <- mkAuthRequest { endpoint : DeleteUser0,method }
+    case mjson of
+        Nothing -> pure Nothing
+        Just _ -> pure $ Just "User deleted"
+
+getThread :: forall m.
+    MonadStore Action Store m =>
+    MonadAff m => Int -> m (Maybe Thread)
+getThread threadID = undefined

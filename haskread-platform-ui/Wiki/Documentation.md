@@ -1,6 +1,8 @@
 ### TODO:
 
 - Create Package.dhall to maintain same version of package-sets.
+- Create `create thread` page.
+- In create thread, community IDs are hard coded.
 
 
 ### Get Current User Flow:

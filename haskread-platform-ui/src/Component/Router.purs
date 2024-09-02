@@ -6,7 +6,8 @@ import Prelude
 import Halogen as H
 import Halogen.HTML as HH
 import Common.Types (myRoute,MyRoute(..),Profile)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..),isNothing)
+import Data.Foldable (elem)
 import Routing.Duplex as RD
 import Data.Either (Either(..))
 import Effect.Class.Console (log)
@@ -25,6 +26,10 @@ import Page.Home as Home
 import Page.Login as Login
 import Page.Register as Register
 import Page.OTP as OTP
+import Page.CreateThread as CreateThread
+import Page.ChangePassword as ChangePassword
+import Page.DeleteUser as DeleteUser
+import Page.UpdateThread as UpdateThread
 
 data Action = Initialize
         | Receive (Connected (Maybe Profile) Unit)
@@ -42,6 +47,10 @@ type ChildSlots =
   , login :: OpaqueSlot Unit
   , register :: OpaqueSlot Unit
   , otp :: OpaqueSlot Unit
+  , createThread :: OpaqueSlot Unit
+  , changePassword :: OpaqueSlot Unit
+  , deleteUser :: OpaqueSlot Unit
+  , updateThread :: OpaqueSlot Unit
   )
 
 component :: forall m.
@@ -62,6 +71,8 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
       }
     }
   where
+    authRoute = [CreateThread, ChangePassword, DeleteUser, UpdateThread 1]
+
     initialState { context: currentUser } = { route : Nothing, currentUser : currentUser }
 
     handleAction :: Action -> H.HalogenM State Action ChildSlots Void m Unit
@@ -72,13 +83,14 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
                     Left e -> (log $ "err" <> show e) *> navigate Home
                     Right r -> navigate r
             Receive { context: currentUser } -> do
-                log $ "user" <> show currentUser
                 H.modify_ _ { currentUser = currentUser }
-
+    
     handleQuery :: forall a. Query a -> H.HalogenM State Action ChildSlots Void m (Maybe a)
     handleQuery = case _ of
             Navigate dest a -> do
-              H.modify_ _ { route = Just dest }
+              { route,currentUser } <- H.get
+              unless (isNothing currentUser && dest `elem` authRoute)
+                (H.modify_ _ { route = Just dest })
               pure (Just a)
 
     render :: State -> H.ComponentHTML Action ChildSlots m 
@@ -89,4 +101,18 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
                     Register -> 
                         HH.slot_ (Proxy :: _ "register") unit Register.component { redirect: true }
                     OTP uID -> HH.slot_ (Proxy :: _ "otp") unit OTP.component { uId : uID }
+                    CreateThread -> 
+                        HH.slot_ 
+                            (Proxy :: _ "createThread") 
+                            unit 
+                            CreateThread.component 
+                            unit
+                    ChangePassword ->
+                        HH.slot_ (Proxy :: _ "changePassword") unit ChangePassword.component unit
+                    DeleteUser ->
+                        HH.slot_ (Proxy :: _ "deleteUser") unit DeleteUser.component unit
+                    UpdateThread threadID ->
+                        HH.slot_ 
+                            (Proxy :: _ "updateThread") 
+                            unit UpdateThread.component { threadID : threadID }
                 Nothing -> HH.div_ [ HH.text "page not found!" ]

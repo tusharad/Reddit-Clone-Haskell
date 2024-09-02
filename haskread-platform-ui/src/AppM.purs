@@ -10,7 +10,19 @@ import Capability.Navigate (class Navigate)
 import Capability.Resource (class ManageThreads,class ManageUser)
 import Common.Types (Endpoint(..), RequestMethod(..), threadsCodec)
 import Common.Types as Route
-import Common.Utils (mkRequest, decode, authenticate,login,register,verifyOtp)
+import Common.Utils (
+      mkRequest
+    , decode
+    , authenticate
+    , login
+    , register
+    , verifyOtp
+    , createThread
+    , changePassword
+    , deleteThread
+    , deleteUser
+    , getThread
+    )
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -46,8 +58,13 @@ instance threadHalogenM :: ManageThreads AppM where
     getThreads = do
        mjson <- mkRequest { endpoint: Threads , method: Get }
        decode threadsCodec mjson
+    createThread = createThread
+    deleteThread = deleteThread
+    getThread = getThread
 
 instance manageUserAppM :: ManageUser AppM where
   loginUser = authenticate login
   registerUser = register
   verifyOtp = verifyOtp
+  changePassword = changePassword
+  deleteUser = deleteUser

@@ -1,7 +1,6 @@
 module Page.OTP where
 
 import Prelude
-import Undefined (undefined)
 import Halogen as H
 import Halogen.HTML as HH
 import Formless as F
@@ -16,7 +15,6 @@ import Common.Utils (safeHref,whenElem)
 import Halogen.HTML.Events as HE
 import Form.Field as Field
 import Halogen.HTML.Properties as HP
-import Effect.Class.Console (log)
 import Data.Either (Either(..))
 import Data.Int (fromString)
 import Store as Store
@@ -90,7 +88,7 @@ component =  F.formless { liftAction : Eval } mempty $ H.mkComponent {
           otpField : V.required
           }
       
-      {userID} <- H.get
+      { userID } <- H.get
       let onSubmit_ { otpField} = 
             onSubmit { otp : toInt otpField,userID : userID}
       F.handleSubmitValidate onSubmit_ F.validate validation r

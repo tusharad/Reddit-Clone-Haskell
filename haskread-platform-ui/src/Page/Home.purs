@@ -26,7 +26,7 @@ type State = {
 
 data Action = Initialize | LoadThreads | GoToLogin
 
-component :: forall query  output m. 
+component :: forall query output m. 
     MonadAff m =>
     Navigate m =>
     MonadStore Store.Action Store.Store m =>

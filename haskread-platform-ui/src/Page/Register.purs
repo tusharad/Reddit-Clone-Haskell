@@ -1,7 +1,6 @@
 module Page.Register where
 
 import Prelude
-import Undefined (undefined)
 import Halogen as H
 import Halogen.HTML as HH
 import Formless as F

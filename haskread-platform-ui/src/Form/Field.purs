@@ -27,6 +27,12 @@ submitButton label =
     , HP.value label
     ]
 
+type SelectInput action input output =
+    {
+    state :: F.FieldState input Void output,
+    action :: F.FieldAction action input Void output
+    }
+
 type TextInput action output =
   { state :: F.FieldState String FormError output
   , action :: F.FieldAction action String FormError output
