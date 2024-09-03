@@ -216,7 +216,9 @@ genRandomUserName = do
 threadToThreadInfo :: ThreadRead -> ThreadInfo
 threadToThreadInfo Thread {..} =
   ThreadInfo
-    { title = threadTitle,
-      description = threadDescription
+    { threadIDForThreadInfo = threadID,
+      title = threadTitle,
+      description = threadDescription,
+      communityIDForThreadInfo = threadCommunityID,
+      userIDForThreadInfo = threadUserID
     }
-

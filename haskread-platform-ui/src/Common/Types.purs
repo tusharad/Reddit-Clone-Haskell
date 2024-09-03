@@ -25,6 +25,7 @@ module Common.Types
   , DeleteUserFields
   , deleteUserCodec 
   , updateThreadCodec
+  , UpdateThreadFields 
   )
   where
 
@@ -56,6 +57,7 @@ data Endpoint = Threads
                 | DeleteThread0 Int
                 | DeleteUser0
                 | UpdateThread0
+                | GetThreadByID0 Int
 
 derive instance genericEndpoint :: Generic Endpoint _
 
@@ -71,6 +73,7 @@ endpointCodec = root $ sum {
    , "DeleteThread0" : "api" / "v1" / "user" / "thread" / "delete" / (int segment)
    , "DeleteUser0" : "api" / "v1" / "user" / "profile" / "delete-account" / noArgs
    , "UpdateThread0" : "api" / "v1" / "user" / "thread" / "update" / noArgs
+   , "GetThreadByID0" : "api" / "v1" / "thread" / (int segment)
     }
 
 data RequestMethod = 
@@ -120,14 +123,18 @@ type PaginatedArray a =
 -- Thread
 type Thread = {
     title :: String,
-    description :: Maybe String
+    description :: Maybe String,
+    communityIDForThreadInfo :: Int,
+    userIDForThreadInfo :: Int
   }
 
 threadCodec :: JsonCodec Thread
 threadCodec =
     CAR.object "Thread" {
         title : CA.string,
-        description : CAC.maybe CA.string
+        description : CAC.maybe CA.string,
+        communityIDForThreadInfo : CA.int
+      , userIDForThreadInfo : CA.int
     }
 
 threadsCodec :: JsonCodec (PaginatedArray Thread)

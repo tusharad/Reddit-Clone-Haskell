@@ -61,6 +61,7 @@ mainServer =
     :<|> oauth2LoginH
     :<|> oauth2CallbackH
     :<|> fetchAllThreadsH
+    :<|> fetchThreadH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -91,6 +92,7 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> OAuth2LoginAPI
     :<|> Auth auths UserInfo :> OAuth2CallBackAPI
     :<|> FetchAllThreadsAPI
+    :<|> FetchThreadAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -361,3 +363,10 @@ type FetchAllThreadsAPI =
     :> "thread"
     :> "all"
     :> Get '[JSON] FetchAllThreadsResponse
+
+type FetchThreadAPI =
+  "api"
+    :> "v1"
+    :> "thread"
+    :> Capture "ThreadID" ThreadID
+    :> Get '[JSON] ThreadInfo

@@ -22,6 +22,7 @@ import Common.Utils (
     , deleteThread
     , deleteUser
     , getThread
+    , updateThread
     )
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
@@ -61,6 +62,7 @@ instance threadHalogenM :: ManageThreads AppM where
     createThread = createThread
     deleteThread = deleteThread
     getThread = getThread
+    updateThread = updateThread
 
 instance manageUserAppM :: ManageUser AppM where
   loginUser = authenticate login

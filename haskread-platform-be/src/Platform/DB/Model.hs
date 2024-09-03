@@ -217,7 +217,10 @@ type UserEmailVerifyOTPWrite = UserEmailVerifyOTP ()
 -- Custom type to fetch data
 
 data ThreadInfo = ThreadInfo
-  { title :: Text,
-    description :: Maybe Text
+  { threadIDForThreadInfo :: ThreadID,
+    title :: Text,
+    description :: Maybe Text,
+    communityIDForThreadInfo :: CommunityID,
+    userIDForThreadInfo :: UserID
   }
   deriving (Show, Eq, Generic, ToJSON)

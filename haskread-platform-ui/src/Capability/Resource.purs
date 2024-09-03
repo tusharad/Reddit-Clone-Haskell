@@ -11,6 +11,7 @@ import Common.Types (
     , CreateThreadFields
     , ChangePasswordFields
     , DeleteUserFields 
+    , UpdateThreadFields
     )
 import Data.Maybe (Maybe)
 import Data.Either (Either)
@@ -22,12 +23,14 @@ class Monad m <= ManageThreads m where
   createThread :: CreateThreadFields -> m (Maybe String)
   deleteThread :: Int -> m (Maybe String)
   getThread :: Int -> m (Maybe Thread)
+  updateThread :: UpdateThreadFields -> m (Maybe String)
 
 instance manageThreadHalogenM :: ManageThreads m => ManageThreads (HalogenM st act slots msg m) where
   getThreads = lift getThreads
   createThread = lift <<< createThread
   deleteThread = lift <<< deleteThread
   getThread = lift <<< getThread
+  updateThread = lift <<< updateThread
 
 class Monad m <= ManageUser m where
   loginUser :: LoginFields -> m (Maybe Profile)

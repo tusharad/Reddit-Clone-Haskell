@@ -6,7 +6,8 @@ module Platform.User.Thread.Handler
   ( createThreadH,
     updateThreadH,
     deleteThreadH,
-    fetchAllThreadsH
+    fetchAllThreadsH,
+    fetchThreadH,
   )
 where
 
@@ -14,10 +15,10 @@ import Control.Monad (void, when)
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Maybe (isNothing)
 import qualified Data.Text as T
-import Platform.Community.DB
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Utils
+import Platform.Community.DB
 import Platform.DB.Model
 import Platform.User.Thread.DB
 import Platform.User.Thread.Types
@@ -58,14 +59,15 @@ addThread userID CreateThreadReqBody {..} = do
 
 checkIfUserOwnsThread :: (MonadUnliftIO m) => ThreadID -> UserID -> AppM m ()
 checkIfUserOwnsThread tID uID = do
-    eRes :: Either SomeException (Maybe ThreadRead) <- 
-            try $ fetchThreadByIDQ tID
-    case eRes of
-      Left e -> throw400Err $ BSL.pack $ show e
-      Right mThread -> case mThread of
-        Nothing -> throw400Err "Thread does not exist!"
-        Just Thread{..} -> when (threadUserID /= uID) $ 
-            throw400Err "You do not own this thread!"
+  eRes :: Either SomeException (Maybe ThreadRead) <-
+    try $ fetchThreadByIDQ tID
+  case eRes of
+    Left e -> throw400Err $ BSL.pack $ show e
+    Right mThread -> case mThread of
+      Nothing -> throw400Err "Thread does not exist!"
+      Just Thread {..} ->
+        when (threadUserID /= uID) $
+          throw400Err "You do not own this thread!"
 
 createThreadH ::
   (MonadUnliftIO m) =>
@@ -117,3 +119,10 @@ fetchAllThreadsH :: (MonadUnliftIO m) => AppM m FetchAllThreadsResponse
 fetchAllThreadsH = do
   threadInfoList <- queryWrapper fetchAllThreadsQ
   return $ FetchAllThreadsResponse (length threadInfoList) threadInfoList
+
+fetchThreadH :: (MonadUnliftIO m) => ThreadID -> AppM m ThreadInfo
+fetchThreadH threadID0 = do
+  mThreadRead <- queryWrapper $ fetchThreadByIDQ threadID0
+  case mThreadRead of
+    Nothing -> throw400Err "Thread not found"
+    Just threadRead0 -> pure $ threadToThreadInfo threadRead0

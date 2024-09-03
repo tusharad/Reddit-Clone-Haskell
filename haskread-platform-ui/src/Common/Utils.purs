@@ -254,4 +254,19 @@ deleteUser fields = do
 getThread :: forall m.
     MonadStore Action Store m =>
     MonadAff m => Int -> m (Maybe Thread)
-getThread threadID = undefined
+getThread threadID = do
+    let method = Get
+    mjson <- mkRequest { endpoint : GetThreadByID0 threadID ,method }
+    case mjson of
+        Nothing -> pure Nothing
+        Just t -> decode threadCodec mjson
+
+updateThread :: forall m.
+    MonadStore Action Store m =>
+    MonadAff m => UpdateThreadFields -> m (Maybe String)
+updateThread fields = do
+    let method = Put $ Just $ Codec.encode updateThreadCodec fields
+    mjson <- mkAuthRequest { endpoint : UpdateThread0,method }
+    case mjson of
+        Nothing -> pure Nothing
+        Just _ -> pure $ Just "Thread Updated"

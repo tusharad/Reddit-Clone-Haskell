@@ -7,8 +7,8 @@ import Halogen.HTML as HH
 import Capability.Navigate (class Navigate, navigate)
 import Effect.Aff.Class (class MonadAff)
 import Data.Maybe (Maybe(..))
-import Capability.Resource (class ManageThreads,createThread)
-import Common.Types (MyRoute(..),Thread)
+import Capability.Resource (class ManageThreads,getThread,updateThread)
+import Common.Types (MyRoute(..),Thread,Profile)
 import Network.RemoteData (RemoteData(..), fromMaybe)
 import Common.Utils (safeHref,whenElem)
 import Halogen.HTML.Events as HE
@@ -18,22 +18,27 @@ import Data.Either (Either(..),isLeft,fromLeft)
 import Web.Event.Event as Event
 import Web.Event.Event (Event)
 import Data.String (length)
-import Data.Maybe (isNothing,fromMaybe)
+import Data.Maybe (isNothing)
+import Data.Maybe as Maybe
 import Data.Int (fromString)
+import Halogen.Store.Connect (connect)
+import Halogen.Store.Select (selectEq)
+import Store as Store
+import Halogen.Store.Monad (class MonadStore)
 
 type Input = { threadID :: Int }
 
 type State = {
-        threadInfo :: Thread,
+        threadInfo :: RemoteData String Thread,
         threadID :: Int,
         threadTitle :: String,
         threadDescription :: String,
         threadCommunityID :: String,
-        createThreadError :: Either String Unit
+        updateThreadError :: Either String Unit,
+        currentUser :: Maybe Profile
     }
 
 data Action = Initialize 
-        | HandleSubmit 
         | LoadThread Int
         | SetThreadTitle String
         | SetThreadDescription String
@@ -51,8 +56,9 @@ component :: forall query output m.
     MonadAff m =>
     Navigate m =>
     ManageThreads m =>
+    MonadStore Store.Action Store.Store m =>
     H.Component query Input output m
-component = H.mkComponent {
+component = connect (selectEq _.currentUser) $ H.mkComponent {
         initialState,
         render,
         eval : H.mkEval H.defaultEval {
@@ -61,12 +67,14 @@ component = H.mkComponent {
         }
     }
   where
-    initialState {threadID} = {
-        threadID : threadID,
-        threadTitle : "",
-        threadDescription : "",
-        threadCommunityID : "6" -- currently selected community ID
-      , createThreadError : Right unit
+    initialState { context : currentUser, input : { threadID } } = {
+        threadID : threadID
+      , threadTitle : ""
+      , threadDescription : ""
+      , threadCommunityID : "6" -- currently selected community ID
+      , updateThreadError : Right unit
+      , threadInfo : NotAsked
+      , currentUser : currentUser
     }
 
     handleAction :: forall slots. Action -> H.HalogenM State Action slots output m Unit
@@ -74,33 +82,52 @@ component = H.mkComponent {
             Initialize -> do
                 st <- H.get
                 void $ H.fork $ handleAction (LoadThread st.threadID)
+            
             LoadThread threadID -> do
-               H.modify_ _ { threads = Loading }
+               H.modify_ _ { threadInfo = Loading }
                mThreadList <- getThread threadID
+               case mThreadList of
+                   Nothing -> pure unit
+                   Just threadInfo -> do
+                      -- check if user is owner of this thread or not.
+                      mCurrentUser <- H.gets _.currentUser
+                      case mCurrentUser of
+                          Nothing -> navigate Home
+                          Just currUser -> do
+                             when (currUser.userID /= threadInfo.userIDForThreadInfo)
+                                    (navigate Home)
+                      H.modify_ _ {
+                        threadTitle = threadInfo.title,
+                        threadDescription = Maybe.fromMaybe "" threadInfo.description,
+                        threadCommunityID = show threadInfo.communityIDForThreadInfo
+                      }
                H.modify_ _ { threadInfo = fromMaybe mThreadList }
 
-            HandleSubmit -> pure unit
             SetThreadTitle tTitle -> 
-                H.modify_ (_ { threadTitle = tTitle })
+                H.modify_ _ { threadTitle = tTitle }
+            
             SetThreadDescription tDescription -> 
                 H.modify_ _ {threadDescription = tDescription}
+            
             SetCommunityID communityID -> 
                H.modify_ _ { threadCommunityID = communityID }
+            
             MakeRequest event -> do
                 H.liftEffect $ Event.preventDefault event
                 st <- H.get
                 mRes <- case validateInput st of
                     Left err -> do
-                       H.modify_ _ {createThreadError = Left err}
+                       H.modify_ _ { updateThreadError = Left err }
                        log err *> pure Nothing
                     Right _ -> do 
-                       let createThreadFields = {
-                            threadTitleForCreate : st.threadTitle,
-                            threadDescriptionForCreate : st.threadDescription,
-                            threadCommunityIDForCreate : 
-                                fromMaybe (-1) (fromString st.threadCommunityID)
+                       let updateThreadFields = {
+                            threadIDForUpdate : st.threadID,
+                            threadTitleForUpdate : st.threadTitle,
+                            threadDescriptionForUpdate : st.threadDescription,
+                            threadCommunityIDForUpdate : 
+                                Maybe.fromMaybe (-1) (fromString st.threadCommunityID)
                            }
-                       createThread createThreadFields
+                       updateThread updateThreadFields
                 case mRes of
                     Nothing -> pure unit
                     Just _ -> navigate Home
@@ -111,10 +138,10 @@ component = H.mkComponent {
             HH.form
                 [HE.onSubmit MakeRequest]
                 [
-                    whenElem (isLeft st.createThreadError) \_ ->
+                    whenElem (isLeft st.updateThreadError) \_ ->
               HH.div
                 [  ]
-                [ HH.text $ fromLeft "" st.createThreadError]
+                [ HH.text $ fromLeft "" st.updateThreadError]
 
                     , HH.label [] [HH.text "Title"]
                     , HH.input [
