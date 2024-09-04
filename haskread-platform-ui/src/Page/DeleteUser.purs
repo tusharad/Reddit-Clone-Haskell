@@ -3,9 +3,8 @@ module Page.DeleteUser where
 import Prelude
 import Halogen as H
 import Halogen.HTML as HH
-import Capability.Navigate (class Navigate, navigate)
 import Effect.Aff.Class (class MonadAff)
-import Capability.Resource (class ManageUser ,deleteUser)
+import Capability.Resource (class ManageUser ,deleteUser,class Navigate, navigate)
 import Common.Types (MyRoute(..))
 import Common.Utils (whenElem)
 import Halogen.HTML.Events as HE

@@ -6,10 +6,9 @@ import Halogen.HTML as HH
 import Formless as F
 import Form.Validation (FormError)
 import Form.Validation as V
-import Capability.Navigate (class Navigate, navigate)
 import Effect.Aff.Class (class MonadAff)
 import Data.Maybe (Maybe(..))
-import Capability.Resource (class ManageUser, verifyOtp)
+import Capability.Resource (class ManageUser, verifyOtp,class Navigate, navigate)
 import Common.Types (MyRoute(..))
 import Common.Utils (safeHref,whenElem)
 import Halogen.HTML.Events as HE

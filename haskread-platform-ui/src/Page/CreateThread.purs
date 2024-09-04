@@ -4,9 +4,8 @@ import Prelude
 import Undefined (undefined)
 import Halogen as H
 import Halogen.HTML as HH
-import Capability.Navigate (class Navigate, navigate)
 import Effect.Aff.Class (class MonadAff)
-import Capability.Resource (class ManageThreads,createThread)
+import Capability.Resource (class ManageThreads,createThread,class Navigate, navigate)
 import Common.Types (MyRoute(..))
 import Common.Utils (safeHref,whenElem)
 import Halogen.HTML.Events as HE

@@ -12,6 +12,7 @@ import Common.Types (
     , ChangePasswordFields
     , DeleteUserFields 
     , UpdateThreadFields
+    , MyRoute
     )
 import Data.Maybe (Maybe)
 import Data.Either (Either)
@@ -46,3 +47,10 @@ instance manageUserHalogenM :: ManageUser m => ManageUser (HalogenM st act slots
   verifyOtp = lift <<< verifyOtp
   changePassword = lift <<< changePassword
   deleteUser = lift <<< deleteUser
+
+class Monad m <= Navigate m where
+  navigate :: MyRoute -> m Unit
+
+instance navigateHalogenM :: Navigate m => 
+    Navigate (HalogenM st act slots msg m) where
+  navigate = lift <<< navigate

@@ -6,8 +6,7 @@ module AppM
 
 import Prelude
 
-import Capability.Navigate (class Navigate)
-import Capability.Resource (class ManageThreads,class ManageUser)
+import Capability.Resource (class ManageThreads,class ManageUser,class Navigate)
 import Common.Types (Endpoint(..), RequestMethod(..), threadsCodec)
 import Common.Types as Route
 import Common.Utils (

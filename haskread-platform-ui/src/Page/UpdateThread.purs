@@ -4,10 +4,9 @@ import Prelude
 import Undefined (undefined)
 import Halogen as H
 import Halogen.HTML as HH
-import Capability.Navigate (class Navigate, navigate)
 import Effect.Aff.Class (class MonadAff)
 import Data.Maybe (Maybe(..))
-import Capability.Resource (class ManageThreads,getThread,updateThread)
+import Capability.Resource (class ManageThreads,getThread,updateThread,class Navigate, navigate)
 import Common.Types (MyRoute(..),Thread,Profile)
 import Network.RemoteData (RemoteData(..), fromMaybe)
 import Common.Utils (safeHref,whenElem)

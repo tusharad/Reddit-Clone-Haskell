@@ -2,8 +2,7 @@ module Page.Home where
 
 import Prelude
 
-import Capability.Navigate (class Navigate, navigate)
-import Capability.Resource (class ManageThreads, getThreads)
+import Capability.Resource (class ManageThreads, getThreads,class Navigate, navigate)
 import Common.Types (PaginatedArray, Thread, Profile, MyRoute(..))
 import Data.Array (mapWithIndex)
 import Data.Foldable (length)

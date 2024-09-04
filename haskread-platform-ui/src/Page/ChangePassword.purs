@@ -4,10 +4,9 @@ import Prelude
 import Undefined (undefined)
 import Halogen as H
 import Halogen.HTML as HH
-import Capability.Navigate (class Navigate, navigate)
 import Effect.Aff.Class (class MonadAff)
 import Data.Maybe (Maybe(..))
-import Capability.Resource (class ManageUser ,changePassword)
+import Capability.Resource (class ManageUser ,changePassword,class Navigate, navigate)
 import Common.Types (MyRoute(..))
 import Common.Utils (safeHref,whenElem)
 import Halogen.HTML.Events as HE
