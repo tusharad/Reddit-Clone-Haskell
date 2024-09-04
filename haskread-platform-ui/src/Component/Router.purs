@@ -87,7 +87,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
     handleQuery :: forall a. Query a -> H.HalogenM State Action ChildSlots Void m (Maybe a)
     handleQuery = case _ of
             Navigate dest a -> do
-              { route,currentUser } <- H.get
+              { currentUser } <- H.get
               unless (isNothing currentUser && dest `elem` authRoute)
                 (H.modify_ _ { route = Just dest })
               pure (Just a)
@@ -99,7 +99,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
                     Login -> HH.slot_ (Proxy :: _ "login") unit Login.component { redirect: true }
                     Register -> 
                         HH.slot_ (Proxy :: _ "register") unit Register.component { redirect: true }
-                    OTP uID -> HH.slot_ (Proxy :: _ "otp") unit OTP.component { uId : uID }
+                    OTP uID -> HH.slot_ (Proxy :: _ "otp") unit OTP.component { userID : uID }
                     CreateThread -> 
                         HH.slot_ 
                             (Proxy :: _ "createThread") 

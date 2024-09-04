@@ -6,7 +6,6 @@ package:
     - console
     - effect
     - halogen
-    - halogen-formless
     - halogen-store
     - http-methods
     - media-types

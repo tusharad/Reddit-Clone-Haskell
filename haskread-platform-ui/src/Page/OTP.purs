@@ -3,121 +3,107 @@ module Page.OTP where
 import Prelude
 import Halogen as H
 import Halogen.HTML as HH
-import Formless as F
-import Form.Validation (FormError)
-import Form.Validation as V
 import Effect.Aff.Class (class MonadAff)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..),isNothing,fromMaybe)
 import Capability.Resource (class ManageUser, verifyOtp,class Navigate, navigate)
 import Common.Types (MyRoute(..))
 import Common.Utils (safeHref,whenElem)
 import Halogen.HTML.Events as HE
-import Form.Field as Field
 import Halogen.HTML.Properties as HP
-import Data.Either (Either(..))
+import Web.Event.Event as Event
+import Web.Event.Event (Event)
+import Data.Either (Either(..),isLeft,hush)
+import Effect.Class.Console (log)
+import Data.String (length)
 import Data.Int (fromString)
-import Store as Store
-import Halogen.Store.Monad (class MonadStore)
 
-type Input = {uId :: Int }
-
-type Form :: (Type -> Type -> Type -> Type) -> Row Type
-type Form f =
-  ( 
-    otpField :: f String FormError String
-  )
-
-type FormContext = F.FormContext (Form F.FieldState) (Form (F.FieldAction Action)) Input Action
-type FormlessAction = F.FormlessAction (Form F.FieldState)
+type Input = { userID :: Int }
 
 data Action
-  = Receive FormContext
-  | Eval FormlessAction
+  = SetOTP String | HandleSubmit Event
 
-type State =
-  { form :: FormContext
-  , otpError :: Boolean
-  , userID :: Int
+type State = {
+      otp :: String
+    , userID :: Int
+    , otpError :: Either String Unit
   }
 
-toInt :: String ->  Int
-toInt str = 
-    case fromString str of
-        Nothing -> 23
-        Just num -> num
+validateInput :: State -> Either String Unit
+validateInput { otp } = do
+    if (length otp /= 4) then Left "OTP should be 4 digit long!"
+    else if (isNothing (fromString otp)) then Left "OTP should be digits only"
+    else (Right unit)
 
 component :: 
   forall query output m. 
   MonadAff m =>
-  MonadStore Store.Action Store.Store m =>
   Navigate m =>
   ManageUser m =>
   H.Component query Input output m
-component =  F.formless { liftAction : Eval } mempty $ H.mkComponent {
+component = H.mkComponent {
         initialState,
         render,
         eval : H.mkEval H.defaultEval {
-          receive = Just <<< Receive
-        , handleAction = handleAction
-        , handleQuery = handleQuery
+         handleAction = handleAction
         }
     }
   where
-    initialState ctx = { form: ctx, otpError : false, userID : ctx.input.uId} 
+    initialState { userID } = {
+        otp : "",
+        userID : userID, 
+        otpError : Right unit
+    }
 
-    handleAction :: Action -> H.HalogenM _ _ _ _ _ Unit
+    handleAction :: forall slots. Action -> H.HalogenM State Action slots output m Unit
     handleAction = case _ of
-      Receive context -> H.modify_ _ { form = context }
-      Eval action -> F.eval action
-
-    handleQuery :: forall a. F.FormQuery _ _ _ _ a -> H.HalogenM _ _ _ _ _ (Maybe a)
-    handleQuery r = do
-      let
-        onSubmit = do
-          verifyOtp >=> case _ of
-            Left _ -> do
-               H.modify_ _ { otpError = true }
-            Right _ -> do
-               H.modify_ _ { otpError = false }
-               -- initiating OTP process
-               navigate Home
-
-        validation =
-          {
-          otpField : V.required
-          }
-      
-      { userID } <- H.get
-      let onSubmit_ { otpField} = 
-            onSubmit { otp : toInt otpField,userID : userID}
-      F.handleSubmitValidate onSubmit_ F.validate validation r
+            SetOTP otp -> H.modify_ _ { otp = otp }
+            HandleSubmit event -> do
+                H.liftEffect $ Event.preventDefault event
+                st <- H.get
+                mRes <- case validateInput st of
+                    Left err -> do
+                       H.modify_ _ { otpError = Left err }
+                       log err *> pure Nothing
+                    Right _ -> do 
+                       let otpFields = {
+                            otp : fromMaybe (-1) (fromString st.otp)
+                            , userID : st.userID
+                           }
+                       res <- verifyOtp otpFields
+                       pure $ hush res
+                case mRes of
+                    Nothing -> pure unit
+                    Just _ -> navigate Home
 
     render :: State -> H.ComponentHTML Action () m
-    render { otpError, form: { formActions, fields, actions} } =
+    render st =
       HH.div_
-      [ HH.h1
-          [  ]
-          [ HH.text "OTP Veify" ]
-      , HH.p
-          [  ]
-          [ HH.a
-              [ safeHref Register] -- 
-              [ HH.text "wanna Resend?" ]
-          ]
-      , HH.form
-          [ HE.onSubmit formActions.handleSubmit ]
-          [ whenElem otpError \_ ->
-              HH.div
-                [  ]
-                [ HH.text "Something went wrong" ]
-          , HH.fieldset_
-              [
-                Field.textInput
-                  { state: fields.otpField , action: actions.otpField}
-                  [ HP.placeholder "Enter OTP"
-                  , HP.type_ HP.InputNumber
-                  ]
-                , Field.submitButton "Verify"
-              ]
-          ]
-      ]
+        [ HH.h1
+            [  ]
+            [ HH.text "Enter OTP" ]
+        , HH.p
+            [  ]
+            [ HH.a
+                [ safeHref Register ] -- 
+                [ HH.text "Wanna resend?" ]
+            ]
+        , HH.form
+            [ HE.onSubmit HandleSubmit ]
+            [ whenElem (isLeft st.otpError) \_ ->
+                HH.div
+                  [  ]
+                  [ HH.text "Something went wrong!" ]
+            , HH.fieldset_
+                [ HH.input
+                    [ 
+                      HP.placeholder "Enter OTP e.g 1234"
+                    , HP.type_ HP.InputNumber
+                    , HE.onValueInput SetOTP
+                    , HP.value st.otp
+                    ]
+                ,HH.button 
+                        [HP.type_ HP.ButtonSubmit]
+                        [HH.text "Verify"]
+                ]
+            ]
+        ]

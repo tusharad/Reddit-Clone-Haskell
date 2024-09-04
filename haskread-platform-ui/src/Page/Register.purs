@@ -3,42 +3,43 @@ module Page.Register where
 import Prelude
 import Halogen as H
 import Halogen.HTML as HH
-import Formless as F
-import Form.Validation (FormError)
-import Form.Validation as V
 import Effect.Aff.Class (class MonadAff)
-import Data.Maybe (Maybe(..))
 import Capability.Resource (class ManageUser, registerUser,class Navigate, navigate)
 import Common.Types (MyRoute(..))
 import Common.Utils (safeHref,whenElem)
 import Halogen.HTML.Events as HE
-import Form.Field as Field
 import Halogen.HTML.Properties as HP
+import Web.Event.Event as Event
+import Web.Event.Event (Event)
+import Data.Either (Either(..),isLeft)
 import Effect.Class.Console (log)
-import Data.Either (Either(..))
 
 type Input = { redirect :: Boolean }
 
-type Form :: (Type -> Type -> Type -> Type) -> Row Type
-type Form f =
-  ( 
-    userNameForRegister :: f String FormError String,
-    emailForRegister :: f String FormError String,
-    passwordForRegister :: f String FormError String,
-    confirmPasswordForRegister :: f String FormError String
-  )
-
-type FormContext = F.FormContext (Form F.FieldState) (Form (F.FieldAction Action)) Input Action
-type FormlessAction = F.FormlessAction (Form F.FieldState)
-
 data Action
-  = Receive FormContext
-  | Eval FormlessAction
+  = 
+    SetUserName String
+  | SetEmail String 
+  | SetPassword String
+  | SetConfirmPassword String
+  | HandleSubmit Event
 
-type State =
-  { form :: FormContext
-  , registerError :: Boolean
+type State = {
+      userName :: String
+    , email :: String
+    , password :: String
+    , confirmPassword :: String
+    , registerError :: Either String Unit
   }
+
+validateInput :: State -> Either String Unit
+validateInput { email, password, confirmPassword, userName } = do
+    if (email == mempty) then Left "email required"
+    else if (password == mempty) then Left "password required" 
+    else if (confirmPassword == mempty) then Left "confirm password required" 
+    else if (userName == mempty) then Left "userName required" 
+    else if (password /= confirmPassword) then Left "Passwords did not matched!" 
+    else (Right unit)
 
 component :: 
   forall query output m. 
@@ -46,86 +47,96 @@ component ::
   Navigate m =>
   ManageUser m =>
   H.Component query Input output m
-component =  F.formless { liftAction : Eval } mempty $ H.mkComponent {
-        initialState : \context ->  { form: context, registerError : false } ,
+component = H.mkComponent {
+        initialState,
         render,
         eval : H.mkEval H.defaultEval {
-          receive = Just <<< Receive
-        , handleAction = handleAction
-        , handleQuery = handleQuery
+         handleAction = handleAction
         }
     }
   where
-    handleAction :: Action -> H.HalogenM _ _ _ _ _ Unit
+    initialState _ = {
+        userName : "",
+        email : "",
+        password : "",
+        confirmPassword : "",
+        registerError : Right unit
+    }
+
+    handleAction :: forall slots. Action -> H.HalogenM State Action slots output m Unit
     handleAction = case _ of
-      Receive context -> H.modify_ _ { form = context }
-      Eval action -> F.eval action
-
-    handleQuery :: forall a. F.FormQuery _ _ _ _ a -> H.HalogenM _ _ _ _ _ (Maybe a)
-    handleQuery = do 
-      let
-        onSubmit = registerUser >=> case _ of
-          Left _ -> 
-            H.modify_ _ { registerError = true }
-          Right _ -> do
-            H.modify_ _ { registerError = false }
-            { redirect } <- H.gets _.form.input
-            -- initiating OTP process
-            log "dasdasdasdasdsa"
-            when redirect (navigate $ OTP 1)
-
-        validation =
-          {
-          passwordForRegister : V.required ,
-          confirmPasswordForRegister : V.required ,
-          emailForRegister : V.required,
-          userNameForRegister : V.required
-          }
-      
-      F.handleSubmitValidate onSubmit F.validate validation
+            SetUserName userName -> H.modify_ _ { userName = userName }
+            SetEmail email -> H.modify_ _ { email = email }
+            SetPassword password -> H.modify_ _ { password = password }
+            SetConfirmPassword confirmPassword ->
+                H.modify_ _ { confirmPassword = confirmPassword }
+            HandleSubmit event -> do
+                H.liftEffect $ Event.preventDefault event
+                st <- H.get
+                case validateInput st of
+                    Left err -> do
+                       H.modify_ _ { registerError = Left err }
+                       log err 
+                    Right _ -> do 
+                       let registerFields = {
+                            userNameForRegister : st.userName
+                           , emailForRegister : st.email
+                           , passwordForRegister : st.password
+                           , confirmPasswordForRegister : st.confirmPassword
+                           }
+                       eRes <- registerUser registerFields
+                       case eRes of
+                           Left _ -> log "Registration failed" *> pure unit 
+                           Right userID -> navigate (OTP userID)
 
     render :: State -> H.ComponentHTML Action () m
-    render { registerError, form: { formActions, fields, actions } } =
+    render st =
       HH.div_
-      [ HH.h1
-          [  ]
-          [ HH.text "Sign up" ]
-      , HH.p
-          [  ]
-          [ HH.a
-              [ safeHref Login ] -- 
-              [ HH.text "Already have an account?" ]
-          ]
-      , HH.form
-          [ HE.onSubmit formActions.handleSubmit ]
-          [ whenElem registerError \_ ->
-              HH.div
-                [  ]
-                [ HH.text "Something went wrong" ]
-          , HH.fieldset_
-              [
-                Field.textInput
-                  { state: fields.userNameForRegister, action: actions.userNameForRegister }
-                  [ HP.placeholder "Username"
-                  , HP.type_ HP.InputText
-                  ]
-                , Field.textInput
-                  { state: fields.emailForRegister, action: actions.emailForRegister }
-                  [ HP.placeholder "Email"
-                  , HP.type_ HP.InputEmail
-                  ]
-              , Field.textInput
-                  { state: fields.passwordForRegister, action: actions.passwordForRegister }
-                  [ HP.placeholder "Password"
-                  , HP.type_ HP.InputPassword
-                  ]
-              , 
-              Field.textInput
-                  { state: fields.confirmPasswordForRegister, action: actions.confirmPasswordForRegister }
-                  [ HP.placeholder "Confirm password"
-                  , HP.type_ HP.InputPassword
-                  ]
-              , Field.submitButton "Get OTP"
-              ]
-          ]
-      ]
+        [ HH.h1
+            [  ]
+            [ HH.text "Sign Up" ]
+        , HH.p
+            [  ]
+            [ HH.a
+                [ safeHref Login] -- 
+                [ HH.text "already have an account?" ]
+            ]
+        , HH.form
+            [ HE.onSubmit HandleSubmit ]
+            [ whenElem (isLeft st.registerError) \_ ->
+                HH.div
+                  [  ]
+                  [ HH.text $ show st.registerError]
+            , HH.fieldset_
+                [ 
+                  HH.input
+                    [ 
+                      HP.placeholder "User Name"
+                    , HP.type_ HP.InputText
+                    , HE.onValueInput SetUserName
+                    , HP.value st.userName
+                    ]
+                , HH.input [ 
+                      HP.placeholder "Email"
+                    , HP.type_ HP.InputEmail
+                    , HE.onValueInput SetEmail
+                    , HP.value st.email
+                    ]
+                , HH.input
+                    [ HP.placeholder "Password"
+                    , HP.type_ HP.InputPassword
+                    , HE.onValueInput SetPassword
+                    , HP.value st.password
+                    ]
+                , HH.input
+                    [ HP.placeholder "Confirm Password"
+                    , HP.type_ HP.InputPassword
+                    , HE.onValueInput SetConfirmPassword
+                    , HP.value st.confirmPassword
+                    ]
+                , HH.button 
+                        [HP.type_ HP.ButtonSubmit]
+                        [HH.text "Send OTP"]
+                ]
+            ]
+        ]
