@@ -220,7 +220,12 @@ data ThreadInfo = ThreadInfo
   { threadIDForThreadInfo :: ThreadID,
     title :: Text,
     description :: Maybe Text,
+    createdAtForThreadInfo :: UTCTime,
+    userIDForThreadInfo :: UserID,
+    userNameForThreadInfo :: Text,
     communityIDForThreadInfo :: CommunityID,
-    userIDForThreadInfo :: UserID
+    communityNameForThreadInfo :: Text,
+    upvoteCount :: Maybe Int32,
+    downvoteCount :: Maybe Int32
   }
   deriving (Show, Eq, Generic, ToJSON)

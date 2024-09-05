@@ -1,13 +1,17 @@
-### TODO:
+### my-profile Page
 
-- Create Package.dhall to maintain same version of package-sets.
-- Create `create thread` page.
-- In create thread, community IDs are hard coded.
+- Access: Authorized
+- Diplay users' user-name, email, joined since (time).
+- Have buttons for options: Change Password, Delete Account.
+- Have a list of threads by user, comments by user.
 
+### Home page
 
-### Get Current User Flow:
-
-- Read browser localStorage.
-- If token is not their, return Nothing.
-- If token found. Send mkAuthRequest with bearer token. To get userInfo.
-- Send returned data in `Just`.
+- Access: Open
+- Include, header and footer.
+- Main content would be a paginated list of threads.
+- Each thread would contain:
+    - Thread title, description.
+    - upvote, downvote and comment count.
+    - Community name, thread's age (date of creation).
+    - Creator's name.

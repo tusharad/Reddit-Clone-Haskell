@@ -120,49 +120,24 @@ type PaginatedArray a =
   , body :: Array a
   }
 
--- Thread
+-- Types for Fetching and inserting
 type Thread = {
     title :: String,
     description :: Maybe String,
     communityIDForThreadInfo :: Int,
-    userIDForThreadInfo :: Int
+    userIDForThreadInfo :: Int,
+    communityNameForThreadInfo :: String,
+    createdAtForThreadInfo :: String,
+    downvoteCount :: Maybe Int,
+    threadIDForThreadInfo :: Int,
+    upvoteCount :: Maybe Int,
+    userNameForThreadInfo :: String
   }
-
-threadCodec :: JsonCodec Thread
-threadCodec =
-    CAR.object "Thread" {
-        title : CA.string,
-        description : CAC.maybe CA.string,
-        communityIDForThreadInfo : CA.int
-      , userIDForThreadInfo : CA.int
-    }
-
-threadsCodec :: JsonCodec (PaginatedArray Thread)
-threadsCodec = 
-    CAM.renameField "threads" "body"
-    >~> CAM.renameField "threadsCount" "total"
-    >~> codec
-  where
-  codec =
-    CAR.object "PaginatedArray Thread"
-      { body: CA.array threadCodec
-      , total: CA.int
-      }
 
 type Profile = {
         userID :: Int,
         userName :: String
     }
-
-profileCodec :: JsonCodec Profile
-profileCodec =
-  CAM.renameField "userIDForUPR" "userID"
-  >~> CAM.renameField "userNameForUPR" "userName"
-  >~>
-  (CAR.object "Profile" { 
-       userID : CA.int,
-       userName: CA.string
-    })
 
 type OtpFields = {
         otp :: Int,
@@ -205,6 +180,43 @@ type UpdateThreadFields = {
         threadCommunityIDForUpdate :: Int
     }
 
+profileCodec :: JsonCodec Profile
+profileCodec =
+  CAM.renameField "userIDForUPR" "userID"
+  >~> CAM.renameField "userNameForUPR" "userName"
+  >~>
+  (CAR.object "Profile" { 
+       userID : CA.int,
+       userName: CA.string
+    })
+
+threadCodec :: JsonCodec Thread
+threadCodec =
+    CAR.object "Thread" {
+        threadIDForThreadInfo : CA.int
+      , title : CA.string
+      , description : CAC.maybe CA.string
+      , userIDForThreadInfo : CA.int
+      , userNameForThreadInfo : CA.string
+      , communityIDForThreadInfo : CA.int
+      , communityNameForThreadInfo : CA.string
+      , createdAtForThreadInfo : CA.string
+      , upvoteCount: CAC.maybe CA.int
+      , downvoteCount: CAC.maybe CA.int
+    }
+
+threadsCodec :: JsonCodec (PaginatedArray Thread)
+threadsCodec = 
+    CAM.renameField "threads" "body"
+    >~> CAM.renameField "threadsCount" "total"
+    >~> codec
+  where
+  codec =
+    CAR.object "PaginatedArray Thread"
+      { body: CA.array threadCodec
+      , total: CA.int
+      }
+
 loginCodec :: JsonCodec LoginFields
 loginCodec =
   CAR.object "LoginFields"
@@ -246,7 +258,7 @@ deleteUserCodec =
 
 updateThreadCodec :: JsonCodec UpdateThreadFields
 updateThreadCodec = 
-    CAR.object "update thread" {
+ CAR.object "update thread" {
     threadIDForUpdate : CA.int,
     threadTitleForUpdate : CA.string,
     threadDescriptionForUpdate : CA.string,

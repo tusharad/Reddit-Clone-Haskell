@@ -1,6 +1,6 @@
 ## Haskread platform UI
 
-The UI of Haskread application.
+The UI of HaskRead application.
 
 ### Tech Stack
 
@@ -8,10 +8,16 @@ The UI of Haskread application.
 - Halogen
 - Bulma CSS
 
-### The architechture of this application is highly inspired by `[Real-World-Halogen]()`
+### The architechture of this application is highly inspired by `[Real-World-Halogen](https://github.com/thomashoneyman/purescript-halogen-realworld)`
 
-### TODO:
+### Features
 
-- Add Registration Page
-- After registration is successful, the page should be redirected to OTP page. From OTP upon success,
-  the page should be redirected to login page.
+- [x] Login Page 
+- [x] Register Page
+- [x] Add Thread
+- [x] Update Thread
+- [x] Delete Thread
+- [x] Change Password
+- [x] Delete User
+- [x] Home Page
+- [x] OTP page

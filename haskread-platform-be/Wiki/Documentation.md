@@ -588,3 +588,6 @@ We need to decode JWT token at both UI and BE level. In order to extract and ver
 For this, we need to create the secret and store it in a file. This file would be read by both UI and BE to create JWT. 
 Need to use `readKey` function from server-auth-server to generate JWT.
 
+## TODO:
+
+- Make threadID from vote_thread table indexed.

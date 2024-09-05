@@ -22,6 +22,12 @@ module Platform.DB.Marshaller
     commentIDField,
     commentVoteMarshaller,
     userEmailVerifyOTPMarshaller,
+    threadInfoMarshaller,
+    threadTitleField,
+    threadDescriptionField,
+    upvoteCountField,
+    downvoteCountField,
+    voteField,
   )
 where
 
@@ -68,6 +74,12 @@ communityDescriptionField = unboundedTextField "community_description"
 
 communityLabelListField :: FieldDefinition NotNull Text
 communityLabelListField = unboundedTextField "label_list"
+
+upvoteCountField :: FieldDefinition NotNull Int32
+upvoteCountField = integerField "upvote_count"
+
+downvoteCountField :: FieldDefinition NotNull Int32
+downvoteCountField = integerField "downvote_count"
 
 createdAtField :: FieldDefinition NotNull UTCTime
 createdAtField =
@@ -267,3 +279,21 @@ userEmailVerifyOTPMarshaller =
           (\UserEmailVerifyOTP {..} -> createdAtForUEVO)
           createdAtField
       )
+
+-- Custom marshallers for fetching
+threadInfoMarshaller ::
+  SqlMarshaller
+    ThreadInfo
+    ThreadInfo
+threadInfoMarshaller =
+  ThreadInfo
+    <$> marshallField (\ThreadInfo {..} -> threadIDForThreadInfo) threadIDField
+    <*> marshallField (\ThreadInfo {..} -> title) threadTitleField
+    <*> marshallField (\ThreadInfo {..} -> description) (nullableField threadDescriptionField)
+    <*> marshallField (\ThreadInfo {..} -> createdAtForThreadInfo) createdAtField
+    <*> marshallField (\ThreadInfo {..} -> userIDForThreadInfo) userIDField
+    <*> marshallField (\ThreadInfo {..} -> userNameForThreadInfo) userNameField
+    <*> marshallField (\ThreadInfo {..} -> communityIDForThreadInfo) communityIDField
+    <*> marshallField (\ThreadInfo {..} -> communityNameForThreadInfo) communityNameField
+    <*> marshallField (\ThreadInfo {..} -> upvoteCount) (nullableField upvoteCountField)
+    <*> marshallField (\ThreadInfo {..} -> downvoteCount) (nullableField downvoteCountField)
