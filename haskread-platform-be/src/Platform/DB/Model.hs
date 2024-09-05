@@ -40,6 +40,8 @@ module Platform.DB.Model
     UserEmailVerifyOTPRead,
     UserEmailVerifyOTPWrite,
     ThreadInfo (..),
+    CommentInfo (..),
+    NestedComment (..),
   )
 where
 
@@ -228,5 +230,22 @@ data ThreadInfo = ThreadInfo
     upvoteCount :: Maybe Int32,
     downvoteCount :: Maybe Int32,
     commentCount :: Maybe Int32
+  }
+  deriving (Show, Eq, Generic, ToJSON)
+
+data CommentInfo = CommentInfo
+  { commentIDForCommentInfo :: CommentID,
+    commentContentForCommentInfo :: Text,
+    userIDForCommentInfo :: UserID,
+    userNameForCommentInfo :: Text,
+    threadIDForCommentInfo :: ThreadID,
+    createdAtForCommentInfo :: UTCTime,
+    parentCommentIDForCommentInfo :: Maybe CommentID
+  }
+  deriving (Show, Eq, Generic, ToJSON)
+
+data NestedComment = NestedComment
+  { mainComment :: CommentInfo,
+    children :: [NestedComment]
   }
   deriving (Show, Eq, Generic, ToJSON)

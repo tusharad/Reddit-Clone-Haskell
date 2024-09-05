@@ -7,6 +7,7 @@ module Platform.Comment.Handler
     deleteCommentH,
     updateCommentH,
     voteCommentH,
+    fetchCommentsByThreadH,
   )
 where
 
@@ -17,6 +18,7 @@ import qualified Data.Text as T
 import Platform.Auth.Types
 import Platform.Comment.DB
 import Platform.Comment.Types
+import Platform.Comment.Utils
 import Platform.Common.AppM
 import Platform.Common.Utils
 import Platform.DB.Model
@@ -203,3 +205,9 @@ updateVoteComment cID uID vote = do
   case eRes of
     Left e -> throw400Err $ BSL.pack $ show e
     Right _ -> return $ VoteCommentResponse "Vote updated successfully!"
+
+fetchCommentsByThreadH :: (MonadUnliftIO m) => ThreadID -> AppM m [NestedComment]
+fetchCommentsByThreadH threadID = do
+  checkIfThreadExists threadID
+  commentInfoList <- queryWrapper $ fetchCommentsByThreadQ threadID
+  pure $ buildNestedComments commentInfoList

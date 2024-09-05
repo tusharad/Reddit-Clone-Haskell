@@ -19,7 +19,12 @@ import Halogen.Store.Select (selectEq)
 import Network.RemoteData (RemoteData(..), fromMaybe)
 import Store as Store
 import Undefined (undefined)
-import Common.Utils (stringToDate, toThreadInfo)
+import Common.Utils (stringToDate, toThreadInfo, safeHref)
+import Type.Proxy (Proxy(..))
+import Halogen.HTML.Properties as HP
+
+import Component.Header as Header
+import Component.Footer as Footer
 
 type State =
   { threads :: RemoteData String (PaginatedArray ThreadInfo)
@@ -27,6 +32,9 @@ type State =
   }
 
 data Action = Initialize | LoadThreads | GoToLogin
+
+type OpaqueSlot slot = forall query. H.Slot query Void slot
+type ChildSlots = ( header :: OpaqueSlot Unit, footer :: OpaqueSlot Unit )
 
 component
   :: forall query output m
@@ -46,15 +54,18 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
   where
   initialState { context: currentUser } = { threads: NotAsked, currentUser }
 
-  render :: forall slots. State -> H.ComponentHTML Action slots m
+  render :: State -> H.ComponentHTML Action ChildSlots m
   render state = HH.div_
-    [ HH.text "Home Pages :)"
+    [ 
+      HH.slot_ (Proxy :: _ "header") unit Header.component unit
+    , HH.text "Home Pages :)"
     , HH.br_
     , HH.text $ "user: " <> show state.currentUser
     , HH.br_
     , HH.button [ HE.onClick \_ -> GoToLogin ] [ HH.text "Go to login" ]
     , HH.br_
     , threadList state.threads
+    , HH.slot_ (Proxy :: _ "footer") unit Footer.component unit
     ]
 
   handleAction :: forall slots. Action -> H.HalogenM State Action slots output m Unit
@@ -93,15 +104,17 @@ threadList = case _ of
 threadPreview :: forall props act. Int -> ThreadInfo -> HH.HTML props act
 threadPreview _ thread =
   HH.div_
-    [ HH.text thread.title
-    , HH.br_
-    , HH.text $ Maybe.fromMaybe "" thread.description
-    , HH.br_
-    , HH.text thread.userNameForThreadInfo
-    , HH.br_
+    [ 
+     HH.text thread.userNameForThreadInfo
     , HH.text thread.communityNameForThreadInfo
+    , HH.a [ safeHref (ViewThread thread.threadIDForThreadInfo) ] [
+         HH.text thread.title
+        , HH.br_
+        , HH.text $ Maybe.fromMaybe "" thread.description]
     , HH.br_
     , HH.text $ show $ Maybe.fromMaybe 0 thread.upvoteCount
+    , HH.text $ show $ Maybe.fromMaybe 0 thread.downvoteCount
+    , HH.text $ show $ Maybe.fromMaybe 0 thread.commentCount
     , HH.br_
     , HH.text $ Maybe.fromMaybe "aasdsa" thread.age
     ]

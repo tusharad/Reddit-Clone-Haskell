@@ -98,6 +98,7 @@ data MyRoute
   | ChangePassword
   | DeleteUser
   | UpdateThread Int
+  | ViewThread Int
 
 derive instance genericRoute :: Generic MyRoute _
 derive instance eqRoute :: Eq MyRoute
@@ -118,6 +119,7 @@ myRoute = root $ G.sum
   , "ChangePassword": path "change-password" G.noArgs
   , "DeleteUser": path "delete-my-account" G.noArgs
   , "UpdateThread": "update-thread" / (int segment)
+  , "ViewThread" : "view-thread" / (int segment)
   }
 
 type PaginatedArray a =
@@ -191,6 +193,10 @@ type UpdateThreadFields =
   , threadDescriptionForUpdate :: String
   , threadCommunityIDForUpdate :: Int
   }
+
+type Comment = {
+    
+ }
 
 profileCodec :: JsonCodec Profile
 profileCodec =

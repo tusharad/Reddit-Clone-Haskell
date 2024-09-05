@@ -55,3 +55,7 @@ instance navigateHalogenM ::
   Navigate m =>
   Navigate (HalogenM st act slots msg m) where
   navigate = lift <<< navigate
+
+class Monad m <= ManageComments m where
+    getCommentsByThreadID :: Int -> m (Maybe (PaginatedArray Comment))
+

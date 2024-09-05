@@ -62,6 +62,7 @@ mainServer =
     :<|> oauth2CallbackH
     :<|> fetchAllThreadsH
     :<|> fetchThreadH
+    :<|> fetchCommentsByThreadH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -93,6 +94,7 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> OAuth2CallBackAPI
     :<|> FetchAllThreadsAPI
     :<|> FetchThreadAPI
+    :<|> FetchCommentsByThreadAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -370,3 +372,11 @@ type FetchThreadAPI =
     :> "thread"
     :> Capture "ThreadID" ThreadID
     :> Get '[JSON] ThreadInfo
+
+type FetchCommentsByThreadAPI =
+  "api"
+    :> "v1"
+    :> "thread"
+    :> "comment"
+    :> Capture "ThreadID" ThreadID
+    :> Get '[JSON] [NestedComment]

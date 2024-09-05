@@ -2,19 +2,18 @@ module Platform.Comment.Utils (buildNestedComments) where
 
 import qualified Data.List as L
 import Data.Maybe (isNothing)
-import Platform.Comment.Types
 import Platform.DB.Model
 
 -- Build a nested comment structure
-buildNestedComments :: [CommentRead] -> [NestedComment]
+buildNestedComments :: [CommentInfo] -> [NestedComment]
 buildNestedComments comments =
-  let (roots, others) = L.partition (isNothing . parentCommentID) comments
+  let (roots, others) = L.partition (isNothing . parentCommentIDForCommentInfo) comments
    in map (`buildTree` others) roots
 
 -- Build a tree from a comment and the remaining comments
-buildTree :: CommentRead -> [CommentRead] -> NestedComment
+buildTree :: CommentInfo -> [CommentInfo] -> NestedComment
 buildTree comment comments =
-  let children0 = filter ((== Just (commentID comment)) . parentCommentID) comments
+  let children0 = filter ((== Just (commentIDForCommentInfo comment)) . parentCommentIDForCommentInfo) comments
    in NestedComment comment (map (`buildTree` comments) children0)
 
 {-

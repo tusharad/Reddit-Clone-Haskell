@@ -29,6 +29,9 @@ module Platform.DB.Marshaller
     downvoteCountField,
     voteField,
     commentCountField,
+    commentInfoMarshaller,
+    commentContentField,
+    parentCommentIDField,
   )
 where
 
@@ -115,8 +118,8 @@ commentIDField = coerceField $ serialField "comment_id"
 commentContentField :: FieldDefinition NotNull Text
 commentContentField = boundedTextField "comment_content" 255
 
-parentCommentIDFiled :: FieldDefinition NotNull CommentID
-parentCommentIDFiled = coerceField $ integerField "parent_comment_id"
+parentCommentIDField :: FieldDefinition NotNull CommentID
+parentCommentIDField = coerceField $ integerField "parent_comment_id"
 
 isVerifiedField :: FieldDefinition NotNull Bool
 isVerifiedField = setDefaultValue (booleanDefault False) $ booleanField "is_verified"
@@ -243,9 +246,23 @@ commentMarshaller =
     <*> marshallField (\Comment {..} -> userIDForComment) userIDField
     <*> marshallField (\Comment {..} -> threadIDForComment) threadIDField
     <*> marshallField (\Comment {..} -> commentContent) commentContentField
-    <*> marshallField (\Comment {..} -> parentCommentID) (nullableField parentCommentIDFiled)
+    <*> marshallField (\Comment {..} -> parentCommentID) (nullableField parentCommentIDField)
     <*> marshallReadOnly (marshallField (\Comment {..} -> createdAtForComment) createdAtField)
     <*> marshallReadOnly (marshallField (\Comment {..} -> updatedAtForComment) updatedAtField)
+
+commentInfoMarshaller ::
+  SqlMarshaller
+    CommentInfo
+    CommentInfo
+commentInfoMarshaller =
+  CommentInfo
+    <$> marshallField (\CommentInfo {..} -> commentIDForCommentInfo) commentIDField
+    <*> marshallField (\CommentInfo {..} -> commentContentForCommentInfo) commentContentField
+    <*> marshallField (\CommentInfo {..} -> userIDForCommentInfo) userIDField
+    <*> marshallField (\CommentInfo {..} -> userNameForCommentInfo) userNameField
+    <*> marshallField (\CommentInfo {..} -> threadIDForCommentInfo) threadIDField
+    <*> marshallField (\CommentInfo {..} -> createdAtForCommentInfo) createdAtField
+    <*> marshallField (\CommentInfo {..} -> parentCommentIDForCommentInfo) (nullableField parentCommentIDField)
 
 -- -- CommentVote Model
 commentVoteMarshaller ::

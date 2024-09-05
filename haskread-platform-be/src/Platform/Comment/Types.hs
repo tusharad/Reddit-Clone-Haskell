@@ -10,7 +10,6 @@ module Platform.Comment.Types
     UpdateCommentReqBody (..),
     UpdateCommentResponse (..),
     VoteCommentResponse (..),
-    NestedComment (..),
   )
 where
 
@@ -47,9 +46,3 @@ newtype VoteCommentResponse = VoteCommentResponse
   { voteCommentResponseMsg :: Text
   }
   deriving newtype (Show, Eq, Ord, ToJSON, FromJSON, FromHttpApiData)
-
-data NestedComment = NestedComment
-  { mainComment :: CommentRead,
-    children :: [NestedComment]
-  }
-  deriving (Show, Eq, Generic, ToJSON)

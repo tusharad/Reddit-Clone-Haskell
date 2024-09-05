@@ -28,6 +28,7 @@ import Page.CreateThread as CreateThread
 import Page.ChangePassword as ChangePassword
 import Page.DeleteUser as DeleteUser
 import Page.UpdateThread as UpdateThread
+import Page.ViewThread as ViewThread
 
 data Action
   = Initialize
@@ -51,6 +52,7 @@ type ChildSlots =
   , changePassword :: OpaqueSlot Unit
   , deleteUser :: OpaqueSlot Unit
   , updateThread :: OpaqueSlot Unit
+  , viewThread :: OpaqueSlot Unit
   )
 
 component
@@ -119,4 +121,6 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
           unit
           UpdateThread.component
           { threadID: threadID }
+      ViewThread threadID -> HH.slot_ (Proxy :: _ "viewThread") unit 
+                                ViewThread.component { threadID : threadID }
     Nothing -> HH.div_ [ HH.text "page not found!" ]
