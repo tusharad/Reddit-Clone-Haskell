@@ -28,6 +28,7 @@ module Platform.DB.Marshaller
     upvoteCountField,
     downvoteCountField,
     voteField,
+    commentCountField,
   )
 where
 
@@ -80,6 +81,9 @@ upvoteCountField = integerField "upvote_count"
 
 downvoteCountField :: FieldDefinition NotNull Int32
 downvoteCountField = integerField "downvote_count"
+
+commentCountField :: FieldDefinition NotNull Int32
+commentCountField = integerField "comment_count"
 
 createdAtField :: FieldDefinition NotNull UTCTime
 createdAtField =
@@ -289,11 +293,20 @@ threadInfoMarshaller =
   ThreadInfo
     <$> marshallField (\ThreadInfo {..} -> threadIDForThreadInfo) threadIDField
     <*> marshallField (\ThreadInfo {..} -> title) threadTitleField
-    <*> marshallField (\ThreadInfo {..} -> description) (nullableField threadDescriptionField)
+    <*> marshallField
+      (\ThreadInfo {..} -> description)
+      (nullableField threadDescriptionField)
     <*> marshallField (\ThreadInfo {..} -> createdAtForThreadInfo) createdAtField
     <*> marshallField (\ThreadInfo {..} -> userIDForThreadInfo) userIDField
     <*> marshallField (\ThreadInfo {..} -> userNameForThreadInfo) userNameField
     <*> marshallField (\ThreadInfo {..} -> communityIDForThreadInfo) communityIDField
     <*> marshallField (\ThreadInfo {..} -> communityNameForThreadInfo) communityNameField
-    <*> marshallField (\ThreadInfo {..} -> upvoteCount) (nullableField upvoteCountField)
-    <*> marshallField (\ThreadInfo {..} -> downvoteCount) (nullableField downvoteCountField)
+    <*> marshallField
+      (\ThreadInfo {..} -> upvoteCount)
+      (nullableField upvoteCountField)
+    <*> marshallField
+      (\ThreadInfo {..} -> downvoteCount)
+      (nullableField downvoteCountField)
+    <*> marshallField
+      (\ThreadInfo {..} -> commentCount)
+      (nullableField commentCountField)

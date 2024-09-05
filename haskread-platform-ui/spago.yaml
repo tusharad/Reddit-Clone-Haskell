@@ -17,6 +17,7 @@ package:
     - undefined
     - web-html
     - web-storage
+    - js-date
   test:
     main: Test.Main
     dependencies: []

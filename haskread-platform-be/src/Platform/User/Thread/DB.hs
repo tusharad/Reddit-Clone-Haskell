@@ -46,7 +46,8 @@ fetchAllThreadsQ = undefined
        c.community_id,
        c.community_name,
        upvote_count,
-       downvote_count
+       downvote_count,
+       comment_count
 FROM   THREAD t
        join users u
          ON t.user_id = u.user_id
@@ -89,7 +90,8 @@ fetchThreadInfoExpr =
           fieldColumnName (Just (stringToAliasName "c")) communityIDField,
           fieldColumnName (Just (stringToAliasName "c")) communityNameField,
           fieldColumnName Nothing upvoteCountField,
-          fieldColumnName Nothing downvoteCountField
+          fieldColumnName Nothing downvoteCountField,
+          fieldColumnName Nothing commentCountField
         ]
     threadIDColumnName = fieldColumnName Nothing threadIDField
     threadTableName = tableFromItemWithAlias (stringToAliasExpr "t") (tableName threadTable)
@@ -104,6 +106,9 @@ fetchThreadInfoExpr =
     communityIDConstraint =
       columnReference (fieldColumnName (Just (stringToAliasName "c")) communityIDField)
         `equals` columnReference (fieldColumnName (Just (stringToAliasName "t")) communityIDField)
+    commentConstraint =
+      columnReference (fieldColumnName (Just (stringToAliasName "comm")) threadIDField)
+        `equals` columnReference (fieldColumnName (Just (stringToAliasName "t")) threadIDField)
     voteCountTable =
       subQueryAsFromItemExpr (stringToAliasExpr "s") voteCountExpr
     voteCountExpr =
@@ -149,10 +154,32 @@ fetchThreadInfoExpr =
     threadIDConstraint =
       columnReference (fieldColumnName (Just (stringToAliasName "s")) threadIDField)
         `equals` columnReference (fieldColumnName (Just (stringToAliasName "t")) threadIDField)
+    commentCountSelectList =
+      selectDerivedColumns
+        [ deriveColumn $ columnReference (fieldColumnName Nothing threadIDField),
+          deriveColumnAsAlias commentCountFieldExpr (stringToAliasExpr "comment_count")
+        ]
+    commentCountTable =
+      subQueryAsFromItemExpr (stringToAliasExpr "comm") commentCountExpr
+    commentCountFieldExpr =
+      countColumn (fieldColumnName Nothing threadIDField)
+    commentCountExpr =
+      queryExpr selectClause_ commentCountSelectList (Just fromCommentTable)
+    fromCommentTable =
+      tableExpr
+        (tableFromItem (tableName commentTable))
+        Nothing
+        (Just groupByThreadID)
+        Nothing
+        Nothing
+        Nothing
+        Nothing
+        Nothing
     joinList =
       [ joinExpr innerJoinType userTableName (joinOnConstraint userIDConstraint),
         joinExpr innerJoinType communityTableName (joinOnConstraint communityIDConstraint),
-        joinExpr leftJoinType voteCountTable (joinOnConstraint threadIDConstraint)
+        joinExpr leftJoinType voteCountTable (joinOnConstraint threadIDConstraint),
+        joinExpr leftJoinType commentCountTable (joinOnConstraint commentConstraint)
       ]
     fromTable =
       tableExpr

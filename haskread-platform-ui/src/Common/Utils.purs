@@ -9,8 +9,8 @@ import Affjax.ResponseFormat as RF
 import Affjax.Web (request, Request)
 import Common.Types -- (BaseURL(..), Token(..), RequestOptions, RequestMethod(..), endpointCodec,Profile)
 import Data.Argonaut.Core (Json)
-import Data.Bifunctor (rmap,lmap)
-import Data.Codec.Argonaut (JsonCodec,JsonDecodeError, printJsonDecodeError)
+import Data.Bifunctor (rmap, lmap)
+import Data.Codec.Argonaut (JsonCodec, JsonDecodeError, printJsonDecodeError)
 import Data.Codec.Argonaut as CA
 import Data.Either (Either(..), hush)
 import Data.HTTP.Method (Method(..))
@@ -19,7 +19,7 @@ import Data.Tuple (Tuple(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
-import Halogen.Store.Monad (class MonadStore, getStore,updateStore)
+import Halogen.Store.Monad (class MonadStore, getStore, updateStore)
 import Routing.Duplex (print)
 import Store (Store, Action(..))
 import Web.HTML.Window (localStorage)
@@ -32,6 +32,8 @@ import Data.Codec.Argonaut.Record as CAR
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
 import Undefined (undefined)
+import Data.JSDate
+import Data.Traversable (traverse)
 
 mkRequest
   :: forall m
@@ -46,7 +48,7 @@ mkRequest opts = do
     Left err -> (liftEffect $ log (printError err)) *> pure Nothing
     Right _ -> do
       pure $ hush $ rmap _.body response
- 
+
 mkAuthRequest
   :: forall m
    . MonadAff m
@@ -65,7 +67,7 @@ defaultRequest (BaseURL baseUrl) auth { endpoint, method } =
   , url: baseUrl <> print endpointCodec endpoint
   , headers: case auth of
       Nothing -> []
-      Just (Token t) -> [RequestHeader "Authorization" $ "Bearer " <> t]
+      Just (Token t) -> [ RequestHeader "Authorization" $ "Bearer " <> t ]
   , content: RB.json <$> body
   , username: Nothing
   , password: Nothing
@@ -107,16 +109,19 @@ decode codec (Just json) = case CA.decode codec json of
   Left err -> (log $ "failed decodig: " <> (CA.printJsonDecodeError err)) *> pure Nothing
   Right response -> pure (Just response)
 
-verifyOtp :: forall m. 
-    MonadStore Action Store m => 
-    MonadAff m => OtpFields -> m (Either String Unit)
+verifyOtp
+  :: forall m
+   . MonadStore Action Store m
+  => MonadAff m
+  => OtpFields
+  -> m (Either String Unit)
 verifyOtp fields = do
-    let method = Put Nothing
-    mjson <- mkRequest { endpoint: VerifyOtp0 fields.userID  fields.otp, method }
-    case mjson of
-      Nothing -> pure $ Left "got nothing"
-      Just _ -> pure $ Right unit
-         
+  let method = Put Nothing
+  mjson <- mkRequest { endpoint: VerifyOtp0 fields.userID fields.otp, method }
+  case mjson of
+    Nothing -> pure $ Left "got nothing"
+    Just _ -> pure $ Right unit
+
 authenticate
   :: forall m a
    . MonadAff m
@@ -139,42 +144,46 @@ login baseUrl fields =
   in
     requestUser baseUrl { endpoint: Login0, method }
 
-register :: forall m. 
-    MonadStore Action Store m => 
-    MonadAff m => RegisterFields -> m (Either String Int)
+register
+  :: forall m
+   . MonadStore Action Store m
+  => MonadAff m
+  => RegisterFields
+  -> m (Either String Int)
 register fields = do
-    let method = Post $ Just $ Codec.encode registerCodec fields
-    mjson <- mkRequest { endpoint: Register0, method }
-    case mjson of
-        Nothing -> pure $ Left "got nothing"
-        Just registerResp -> do
-           let eRes = decodeRegisterResp registerResp
-           case eRes of
-               Left _ -> pure $ Left "Decoding response failed"
-               Right res -> pure $ Right res
+  let method = Post $ Just $ Codec.encode registerCodec fields
+  mjson <- mkRequest { endpoint: Register0, method }
+  case mjson of
+    Nothing -> pure $ Left "got nothing"
+    Just registerResp -> do
+      let eRes = decodeRegisterResp registerResp
+      case eRes of
+        Left _ -> pure $ Left "Decoding response failed"
+        Right res -> pure $ Right res
 
 decodeRegisterResp :: Json -> Either JsonDecodeError Int
 decodeRegisterResp registerResp = do
-    { userIDForRUR } <- Codec.decode decodeResp_ registerResp
-    pure userIDForRUR
-    where
-      decodeResp_ =
-          CAR.object "Register Response" { userIDForRUR : CA.int }
+  { userIDForRUR } <- Codec.decode decodeResp_ registerResp
+  pure userIDForRUR
+  where
+  decodeResp_ =
+    CAR.object "Register Response" { userIDForRUR: CA.int }
 
-requestUser :: 
-    forall m. MonadAff m => 
-    BaseURL -> 
-    RequestOptions -> 
-    m (Either String (Tuple Token Profile))
+requestUser
+  :: forall m
+   . MonadAff m
+  => BaseURL
+  -> RequestOptions
+  -> m (Either String (Tuple Token Profile))
 requestUser baseUrl opts = do
   eRes <- liftAff $ request $ defaultRequest baseUrl Nothing opts
   case eRes of
     Left e -> pure $ Left $ printError e
-    Right v -> do 
+    Right v -> do
       let eToken = lmap printJsonDecodeError $ decodeToken v.body
       case eToken of
         Left err -> do
-          log $ "got error: " <> err 
+          log $ "got error: " <> err
           pure $ Left err
         Right token -> do
           _ <- liftEffect $ writeToken token
@@ -190,83 +199,132 @@ decodeToken user = do
   pure $ Token jwtToken
   where
   tokenCodec =
-     CAR.object "Token"
-      { jwtToken: CA.string 
+    CAR.object "Token"
+      { jwtToken: CA.string
       }
 
 getCurrentUser :: BaseURL -> Aff (Maybe Profile)
 getCurrentUser baseUrl = do
-    mToken <- liftEffect readToken
-    case mToken of
-        Nothing -> pure Nothing
-        Just token -> do
-           let requestOptions = { endpoint: UserByToken, method: Get }
-           res <- request $ defaultRequest baseUrl (Just token) requestOptions
-           let
-               user :: Either String Profile
-               user = case res of
-                Left e ->
-                    Left "error fetching request"
-                Right v -> lmap printJsonDecodeError do
-                    CA.decode profileCodec v.body
-           pure $ hush user
+  mToken <- liftEffect readToken
+  case mToken of
+    Nothing -> pure Nothing
+    Just token -> do
+      let requestOptions = { endpoint: UserByToken, method: Get }
+      res <- request $ defaultRequest baseUrl (Just token) requestOptions
+      let
+        user :: Either String Profile
+        user = case res of
+          Left e ->
+            Left "error fetching request"
+          Right v -> lmap printJsonDecodeError do
+            CA.decode profileCodec v.body
+      pure $ hush user
 
-createThread :: forall m. 
-    MonadStore Action Store m => 
-    MonadAff m => CreateThreadFields -> m (Maybe String)
+createThread
+  :: forall m
+   . MonadStore Action Store m
+  => MonadAff m
+  => CreateThreadFields
+  -> m (Maybe String)
 createThread fields = do
-    let method = Post $ Just $ Codec.encode createThreadCodec fields
-    mjson <- mkAuthRequest { endpoint: CreateThread0 , method }
-    case mjson of
-      Nothing -> pure Nothing
-      Just _ -> pure $ Just "All good"
+  let method = Post $ Just $ Codec.encode createThreadCodec fields
+  mjson <- mkAuthRequest { endpoint: CreateThread0, method }
+  case mjson of
+    Nothing -> pure Nothing
+    Just _ -> pure $ Just "All good"
 
-changePassword :: forall m.
-    MonadStore Action Store m =>
-    MonadAff m => ChangePasswordFields -> m (Maybe String)
+changePassword
+  :: forall m
+   . MonadStore Action Store m
+  => MonadAff m
+  => ChangePasswordFields
+  -> m (Maybe String)
 changePassword fields = do
-    let method = Put $ Just $ Codec.encode changePasswordCodec fields
-    mjson <- mkAuthRequest { endpoint: ChangePassword0, method }
-    case mjson of
-        Nothing -> pure Nothing
-        Just _ -> pure $ Just "All good"
+  let method = Put $ Just $ Codec.encode changePasswordCodec fields
+  mjson <- mkAuthRequest { endpoint: ChangePassword0, method }
+  case mjson of
+    Nothing -> pure Nothing
+    Just _ -> pure $ Just "All good"
 
-deleteThread :: forall m.
-    MonadStore Action Store m =>
-    MonadAff m => Int -> m (Maybe String)
+deleteThread
+  :: forall m
+   . MonadStore Action Store m
+  => MonadAff m
+  => Int
+  -> m (Maybe String)
 deleteThread threadID = do
-    let method = Delete Nothing
-    mjson <- mkAuthRequest { endpoint : DeleteThread0 threadID, method }
-    case mjson of
-        Nothing -> pure Nothing
-        Just _ -> pure $ Just "Thread deleted"
+  let method = Delete Nothing
+  mjson <- mkAuthRequest { endpoint: DeleteThread0 threadID, method }
+  case mjson of
+    Nothing -> pure Nothing
+    Just _ -> pure $ Just "Thread deleted"
 
-deleteUser :: forall m.
-    MonadStore Action Store m =>
-    MonadAff m => DeleteUserFields -> m (Maybe String)
+deleteUser
+  :: forall m
+   . MonadStore Action Store m
+  => MonadAff m
+  => DeleteUserFields
+  -> m (Maybe String)
 deleteUser fields = do
-    let method = Delete $ Just $ Codec.encode deleteUserCodec fields
-    mjson <- mkAuthRequest { endpoint : DeleteUser0,method }
-    case mjson of
-        Nothing -> pure Nothing
-        Just _ -> pure $ Just "User deleted"
+  let method = Delete $ Just $ Codec.encode deleteUserCodec fields
+  mjson <- mkAuthRequest { endpoint: DeleteUser0, method }
+  case mjson of
+    Nothing -> pure Nothing
+    Just _ -> pure $ Just "User deleted"
 
-getThread :: forall m.
-    MonadStore Action Store m =>
-    MonadAff m => Int -> m (Maybe Thread)
+getThread
+  :: forall m
+   . MonadStore Action Store m
+  => MonadAff m
+  => Int
+  -> m (Maybe Thread)
 getThread threadID = do
-    let method = Get
-    mjson <- mkRequest { endpoint : GetThreadByID0 threadID ,method }
-    case mjson of
-        Nothing -> pure Nothing
-        Just t -> decode threadCodec mjson
+  let method = Get
+  mjson <- mkRequest { endpoint: GetThreadByID0 threadID, method }
+  case mjson of
+    Nothing -> pure Nothing
+    Just t -> decode threadCodec mjson
 
-updateThread :: forall m.
-    MonadStore Action Store m =>
-    MonadAff m => UpdateThreadFields -> m (Maybe String)
+updateThread
+  :: forall m
+   . MonadStore Action Store m
+  => MonadAff m
+  => UpdateThreadFields
+  -> m (Maybe String)
 updateThread fields = do
-    let method = Put $ Just $ Codec.encode updateThreadCodec fields
-    mjson <- mkAuthRequest { endpoint : UpdateThread0,method }
-    case mjson of
-        Nothing -> pure Nothing
-        Just _ -> pure $ Just "Thread Updated"
+  let method = Put $ Just $ Codec.encode updateThreadCodec fields
+  mjson <- mkAuthRequest { endpoint: UpdateThread0, method }
+  case mjson of
+    Nothing -> pure Nothing
+    Just _ -> pure $ Just "Thread Updated"
+
+stringToDate :: String -> Effect (Maybe JSDate)
+stringToDate str = do
+  jsDate <- parse str
+  if (isValid jsDate) then (pure $ Just jsDate)
+  else (pure Nothing)
+
+toThreadInfo :: PaginatedArray Thread -> Effect (PaginatedArray ThreadInfo)
+toThreadInfo threadList = do
+  b <- traverse toThreadInfo_ threadList.body
+  pure $ threadList { body = b }
+
+toThreadInfo_ :: Thread -> Effect ThreadInfo
+toThreadInfo_ thread = do
+  mAge <- stringToDate thread.createdAtForThreadInfo
+  let
+    threadInfo =
+      { title: thread.title
+      , description: thread.description
+      , communityIDForThreadInfo: thread.communityIDForThreadInfo
+      , userIDForThreadInfo: thread.userIDForThreadInfo
+      , communityNameForThreadInfo: thread.communityNameForThreadInfo
+      , createdAtForThreadInfo: thread.createdAtForThreadInfo
+      , downvoteCount: thread.downvoteCount
+      , threadIDForThreadInfo: thread.threadIDForThreadInfo
+      , upvoteCount: thread.upvoteCount
+      , userNameForThreadInfo: thread.userNameForThreadInfo
+      , commentCount: thread.commentCount
+      , age: toString <$> mAge
+      }
+  pure threadInfo

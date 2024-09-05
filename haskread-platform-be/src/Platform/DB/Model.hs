@@ -226,6 +226,7 @@ data ThreadInfo = ThreadInfo
     communityIDForThreadInfo :: CommunityID,
     communityNameForThreadInfo :: Text,
     upvoteCount :: Maybe Int32,
-    downvoteCount :: Maybe Int32
+    downvoteCount :: Maybe Int32,
+    commentCount :: Maybe Int32
   }
   deriving (Show, Eq, Generic, ToJSON)

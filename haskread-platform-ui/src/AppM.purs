@@ -1,28 +1,27 @@
 module AppM
   ( AppM
   , runAppM
-  )
-  where
+  ) where
 
 import Prelude
 
-import Capability.Resource (class ManageThreads,class ManageUser,class Navigate)
+import Capability.Resource (class ManageThreads, class ManageUser, class Navigate)
 import Common.Types (Endpoint(..), RequestMethod(..), threadsCodec)
 import Common.Types as Route
-import Common.Utils (
-      mkRequest
-    , decode
-    , authenticate
-    , login
-    , register
-    , verifyOtp
-    , createThread
-    , changePassword
-    , deleteThread
-    , deleteUser
-    , getThread
-    , updateThread
-    )
+import Common.Utils
+  ( mkRequest
+  , decode
+  , authenticate
+  , login
+  , register
+  , verifyOtp
+  , createThread
+  , changePassword
+  , deleteThread
+  , deleteUser
+  , getThread
+  , updateThread
+  )
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -35,10 +34,11 @@ import Store as Store
 
 newtype AppM a = AppM (StoreT Store.Action Store.Store Aff a)
 
-runAppM :: 
-    forall query input output. Store.Store -> 
-    H.Component query input output AppM -> 
-    Aff (H.Component query input output Aff)
+runAppM
+  :: forall query input output
+   . Store.Store
+  -> H.Component query input output AppM
+  -> Aff (H.Component query input output Aff)
 runAppM store = runStoreT store Store.reduce <<< coerce
 
 derive newtype instance functorAppM :: Functor AppM
@@ -51,17 +51,17 @@ derive newtype instance monadAffAppM :: MonadAff AppM
 derive newtype instance monadStoreAppM :: MonadStore Store.Action Store.Store AppM
 
 instance navigateHalogenM :: Navigate AppM where
-   navigate =
-     liftEffect <<< setHash <<< print Route.myRoute
+  navigate =
+    liftEffect <<< setHash <<< print Route.myRoute
 
 instance threadHalogenM :: ManageThreads AppM where
-    getThreads = do
-       mjson <- mkRequest { endpoint: Threads , method: Get }
-       decode threadsCodec mjson
-    createThread = createThread
-    deleteThread = deleteThread
-    getThread = getThread
-    updateThread = updateThread
+  getThreads = do
+    mjson <- mkRequest { endpoint: Threads, method: Get }
+    decode threadsCodec mjson
+  createThread = createThread
+  deleteThread = deleteThread
+  getThread = getThread
+  updateThread = updateThread
 
 instance manageUserAppM :: ManageUser AppM where
   loginUser = authenticate login

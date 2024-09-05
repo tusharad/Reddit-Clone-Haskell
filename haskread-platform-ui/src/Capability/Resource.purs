@@ -1,19 +1,19 @@
 module Capability.Resource where
 
 import Halogen (HalogenM, lift)
-import Common.Types (
-      PaginatedArray
-    , Thread
-    , LoginFields
-    , Profile
-    , RegisterFields
-    , OtpFields
-    , CreateThreadFields
-    , ChangePasswordFields
-    , DeleteUserFields 
-    , UpdateThreadFields
-    , MyRoute
-    )
+import Common.Types
+  ( PaginatedArray
+  , Thread
+  , LoginFields
+  , Profile
+  , RegisterFields
+  , OtpFields
+  , CreateThreadFields
+  , ChangePasswordFields
+  , DeleteUserFields
+  , UpdateThreadFields
+  , MyRoute
+  )
 import Data.Maybe (Maybe)
 import Data.Either (Either)
 
@@ -51,6 +51,7 @@ instance manageUserHalogenM :: ManageUser m => ManageUser (HalogenM st act slots
 class Monad m <= Navigate m where
   navigate :: MyRoute -> m Unit
 
-instance navigateHalogenM :: Navigate m => 
-    Navigate (HalogenM st act slots msg m) where
+instance navigateHalogenM ::
+  Navigate m =>
+  Navigate (HalogenM st act slots msg m) where
   navigate = lift <<< navigate
