@@ -28,10 +28,14 @@ module Common.Types
   , UpdateThreadFields
   , ThreadRep
   , ThreadInfo(..)
+  , CommentInfo(..)
+  , NestedComment(..)
+  , nestedCommentsCodec
   ) where
 
 import Prelude hiding ((/))
 
+import Undefined (undefined)
 import Data.Argonaut.Core (Json)
 import Data.Codec ((>~>))
 import Data.Codec.Argonaut (JsonCodec)
@@ -45,6 +49,9 @@ import Routing.Duplex (RouteDuplex', path, root, int, segment)
 import Routing.Duplex.Generic (noArgs, sum)
 import Routing.Duplex.Generic as G
 import Routing.Duplex.Generic.Syntax ((/))
+-- import Control.Lazy (fix)
+import Data.Newtype (class Newtype)
+import Data.Profunctor (wrapIso)
 
 newtype BaseURL = BaseURL String
 
@@ -60,6 +67,7 @@ data Endpoint
   | DeleteUser0
   | UpdateThread0
   | GetThreadByID0 Int
+  | Comments Int
 
 derive instance genericEndpoint :: Generic Endpoint _
 
@@ -76,6 +84,7 @@ endpointCodec = root $ sum
   , "DeleteUser0": "api" / "v1" / "user" / "profile" / "delete-account" / noArgs
   , "UpdateThread0": "api" / "v1" / "user" / "thread" / "update" / noArgs
   , "GetThreadByID0": "api" / "v1" / "thread" / (int segment)
+  , "Comments" : "api" / "v1" / "thread" / "comment" / (int segment)
   }
 
 data RequestMethod
@@ -194,9 +203,22 @@ type UpdateThreadFields =
   , threadCommunityIDForUpdate :: Int
   }
 
-type Comment = {
-    
+type CommentInfo = {
+    commentIDForCommentInfo :: Int,
+    commentContentForCommentInfo :: String,
+    userIDForCommentInfo :: Int,
+    userNameForCommentInfo :: String,
+    threadIDForCommentInfo :: Int,
+    createdAtForCommentInfo :: String,
+    parentCommentIDForCommentInfo :: Maybe Int
+}
+
+newtype NestedComment = NestedComment {
+    mainComment :: CommentInfo
+  , children :: Array NestedComment
  }
+
+derive instance newtypeNestedComment ∷ Newtype NestedComment _
 
 profileCodec :: JsonCodec Profile
 profileCodec =
@@ -284,3 +306,36 @@ updateThreadCodec =
     , threadDescriptionForUpdate: CA.string
     , threadCommunityIDForUpdate: CA.int
     }
+
+commentCodec :: JsonCodec CommentInfo
+commentCodec = 
+    CAR.object "commmentInfo" {
+        commentIDForCommentInfo : CA.int,
+        commentContentForCommentInfo : CA.string,
+        userIDForCommentInfo : CA.int,
+        userNameForCommentInfo : CA.string,
+        threadIDForCommentInfo : CA.int,
+        createdAtForCommentInfo : CA.string,
+        parentCommentIDForCommentInfo : CAC.maybe CA.int
+    }
+
+nestedCommentCodec :: JsonCodec NestedComment
+nestedCommentCodec =
+    CA.fix \e ->
+      wrapIso NestedComment $
+        CAR.object "NestedComment" {
+        mainComment : commentCodec
+            , children : CA.array e
+          }
+
+nestedCommentsCodec :: JsonCodec (PaginatedArray NestedComment) 
+nestedCommentsCodec = 
+    CAM.renameField "comments" "body"
+        >~> CAM.renameField "commentsCount" "total"
+        >~> codec
+  where
+    codec =
+        CAR.object "Paginated NestedComment"
+            { body : CA.array nestedCommentCodec
+             , total: CA.int
+            }

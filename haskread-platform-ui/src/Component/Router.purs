@@ -11,7 +11,13 @@ import Routing.Duplex as RD
 import Data.Either (Either(..))
 import Effect.Class.Console (log)
 import Effect.Class (class MonadEffect, liftEffect)
-import Capability.Resource (class ManageThreads, class ManageUser, class Navigate, navigate)
+import Capability.Resource (
+    class ManageThreads
+    , class ManageUser
+    , class Navigate
+    , class ManageComments
+    , navigate
+    )
 import Effect.Aff.Class (class MonadAff)
 import Routing.Hash (getHash)
 import Type.Proxy (Proxy(..))
@@ -62,6 +68,7 @@ component
   => ManageThreads m
   => MonadAff m
   => ManageUser m
+  => ManageComments m
   => MonadEffect m
   => H.Component Query Unit Void m
 component = connect (selectEq _.currentUser) $ H.mkComponent

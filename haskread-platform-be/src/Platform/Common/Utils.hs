@@ -18,7 +18,6 @@ module Platform.Common.Utils
     queryWrapper,
     redirects,
     genRandomUserName,
-    threadToThreadInfo,
   )
 where
 
@@ -212,13 +211,3 @@ genRandomUserName = do
                 head $
                   results (responseBody jsonRes :: RandomUserNameApiResponse)
         pure $ Right (T.pack res0)
-
-threadToThreadInfo :: ThreadRead -> ThreadInfo
-threadToThreadInfo Thread {..} =
-  ThreadInfo
-    { threadIDForThreadInfo = threadID,
-      title = threadTitle,
-      description = threadDescription,
-      communityIDForThreadInfo = threadCommunityID,
-      userIDForThreadInfo = threadUserID
-    }

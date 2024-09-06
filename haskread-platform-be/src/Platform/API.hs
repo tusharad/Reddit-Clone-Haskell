@@ -379,4 +379,4 @@ type FetchCommentsByThreadAPI =
     :> "thread"
     :> "comment"
     :> Capture "ThreadID" ThreadID
-    :> Get '[JSON] [NestedComment]
+    :> Get '[JSON] FetchCommentsResponse

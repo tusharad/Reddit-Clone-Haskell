@@ -13,6 +13,7 @@ import Common.Types
   , DeleteUserFields
   , UpdateThreadFields
   , MyRoute
+  , NestedComment
   )
 import Data.Maybe (Maybe)
 import Data.Either (Either)
@@ -57,5 +58,9 @@ instance navigateHalogenM ::
   navigate = lift <<< navigate
 
 class Monad m <= ManageComments m where
-    getCommentsByThreadID :: Int -> m (Maybe (PaginatedArray Comment))
+    getCommentsByThreadID :: Int -> m (Maybe (PaginatedArray NestedComment))
+
+instance manageCommentsHalogenM :: ManageComments m 
+    => ManageComments (HalogenM st act slots msg m) where
+  getCommentsByThreadID = lift <<< getCommentsByThreadID
 

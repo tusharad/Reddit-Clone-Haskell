@@ -206,8 +206,9 @@ updateVoteComment cID uID vote = do
     Left e -> throw400Err $ BSL.pack $ show e
     Right _ -> return $ VoteCommentResponse "Vote updated successfully!"
 
-fetchCommentsByThreadH :: (MonadUnliftIO m) => ThreadID -> AppM m [NestedComment]
+fetchCommentsByThreadH :: (MonadUnliftIO m) => ThreadID -> AppM m FetchCommentsResponse
 fetchCommentsByThreadH threadID = do
   checkIfThreadExists threadID
   commentInfoList <- queryWrapper $ fetchCommentsByThreadQ threadID
-  pure $ buildNestedComments commentInfoList
+  let res = buildNestedComments commentInfoList
+  pure $ FetchCommentsResponse (length res) res

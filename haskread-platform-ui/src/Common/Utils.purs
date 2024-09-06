@@ -328,3 +328,13 @@ toThreadInfo_ thread = do
       , age: toString <$> mAge
       }
   pure threadInfo
+
+getCommentsByThreadID :: 
+      forall m. 
+     MonadStore Action Store m
+  => MonadAff m
+  => Int -> m (Maybe (PaginatedArray NestedComment))
+getCommentsByThreadID threadID = do
+    let method = Get
+    mJson <- mkRequest { endpoint : Comments threadID, method}
+    decode nestedCommentsCodec mJson

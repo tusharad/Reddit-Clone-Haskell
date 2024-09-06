@@ -3,24 +3,31 @@ module Page.ViewThread where
 import Prelude
 import Halogen as H
 import Halogen.HTML as HH
-import Common.Types (Profile,ThreadInfo)
+import Common.Types (Profile,ThreadInfo,PaginatedArray,NestedComment)
 import Data.Maybe (Maybe(..))
 import Network.RemoteData (RemoteData(..), fromMaybe)
 import Effect.Aff.Class (class MonadAff)
 import Halogen.Store.Connect (connect)
 import Halogen.Store.Select (selectEq)
-import Capability.Resource (class ManageThreads,getThread)
+import Capability.Resource ( 
+      class ManageThreads
+    , getThread
+    , class ManageComments
+    , getCommentsByThreadID
+  )
 import Halogen.Store.Monad (class MonadStore)
 import Store as Store
 import Undefined (undefined)
 import Common.Utils (toThreadInfo_)
 import Effect.Class (liftEffect)
+import Data.Newtype (unwrap)
 
 type Input = { threadID :: Int }
 
 type State = {
     currentUser :: Maybe Profile
   , thread :: RemoteData String ThreadInfo
+  , nestedComments :: RemoteData String (PaginatedArray NestedComment)
   , threadID :: Int
  }
 
@@ -31,6 +38,7 @@ data Action = Initialize
 component :: forall query output m.
     MonadAff m =>
     ManageThreads m =>
+    ManageComments m =>
     MonadStore Store.Action Store.Store m =>
     H.Component query Input output m
 component = connect (selectEq _.currentUser) $ H.mkComponent {
@@ -46,6 +54,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
                thread: NotAsked
              , currentUser 
              , threadID : threadID
+             , nestedComments : NotAsked
             }
 
   handleAction :: forall slots. Action -> H.HalogenM State Action slots output m Unit
@@ -67,11 +76,36 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
                   H.modify_ _ { thread = Failure "Get thread info failed" }
         
         LoadComments threadID -> do
-            -- H.modify_ _ {  }
-            undefined
+            H.modify_ _ { nestedComments = Loading }
+            mNestedComments <- getCommentsByThreadID threadID
+            H.modify_ _ { nestedComments = fromMaybe mNestedComments }
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
-  render { currentUser } = 
+  render { thread, nestedComments } = 
       HH.div_ [
         HH.text "View Thread"
+        , threadView thread
+        , commentList nestedComments
       ]
+
+  threadView :: forall props act. RemoteData String ThreadInfo -> HH.HTML props act
+  threadView = 
+      case _ of
+          NotAsked -> HH.div_ []
+          Loading -> HH.div_ [ HH.text "Loading..." ]
+          Failure _ -> HH.div_ [ HH.text "failed to load Thread" ]
+          Success t -> HH.div_ [ 
+                    HH.text t.title,
+                    HH.text $ show t.threadIDForThreadInfo]
+
+  commentList :: forall props act. RemoteData String (PaginatedArray NestedComment) ->
+                    HH.HTML props act
+  commentList =
+      case _ of
+        NotAsked -> HH.div_ []
+        Loading -> HH.div_ [ HH.text "Loading..." ]
+        Failure _ -> HH.div_ [ HH.text "failed to load comments" ]
+        Success cs -> HH.div_ [
+           HH.text $ show $ (\c -> (show (unwrap c).mainComment)) `map` cs.body
+        ]
+

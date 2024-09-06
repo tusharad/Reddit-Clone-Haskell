@@ -5,7 +5,12 @@ module AppM
 
 import Prelude
 
-import Capability.Resource (class ManageThreads, class ManageUser, class Navigate)
+import Capability.Resource (
+    class ManageThreads
+  , class ManageUser
+  , class Navigate
+  , class ManageComments
+  )
 import Common.Types (Endpoint(..), RequestMethod(..), threadsCodec)
 import Common.Types as Route
 import Common.Utils
@@ -21,6 +26,7 @@ import Common.Utils
   , deleteUser
   , getThread
   , updateThread
+  , getCommentsByThreadID
   )
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
@@ -58,6 +64,7 @@ instance threadHalogenM :: ManageThreads AppM where
   getThreads = do
     mjson <- mkRequest { endpoint: Threads, method: Get }
     decode threadsCodec mjson
+
   createThread = createThread
   deleteThread = deleteThread
   getThread = getThread
@@ -69,3 +76,6 @@ instance manageUserAppM :: ManageUser AppM where
   verifyOtp = verifyOtp
   changePassword = changePassword
   deleteUser = deleteUser
+
+instance commentsHalogenM :: ManageComments AppM where
+    getCommentsByThreadID = getCommentsByThreadID 

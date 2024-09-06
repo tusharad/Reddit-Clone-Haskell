@@ -120,9 +120,5 @@ fetchAllThreadsH = do
   threadInfoList <- queryWrapper fetchThreadInfoQ
   return $ FetchAllThreadsResponse (length threadInfoList) threadInfoList
 
-fetchThreadH :: (MonadUnliftIO m) => ThreadID -> AppM m ThreadInfo
-fetchThreadH threadID0 = do
-  mThreadRead <- queryWrapper $ fetchThreadByIDQ threadID0
-  case mThreadRead of
-    Nothing -> throw400Err "Thread not found"
-    Just threadRead0 -> pure $ threadToThreadInfo threadRead0
+fetchThreadH :: ThreadID -> AppM m ThreadInfo
+fetchThreadH _ = undefined -- TODO: Add fetch thread query by threadID
