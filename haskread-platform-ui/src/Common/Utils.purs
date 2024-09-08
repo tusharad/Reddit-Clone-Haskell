@@ -1,5 +1,7 @@
 module Common.Utils where
 
+import Common.Types
+import Data.JSDate
 import Prelude
 
 import Affjax (printError)
@@ -7,33 +9,31 @@ import Affjax.RequestBody as RB
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as RF
 import Affjax.Web (request, Request)
-import Common.Types -- (BaseURL(..), Token(..), RequestOptions, RequestMethod(..), endpointCodec,Profile)
 import Data.Argonaut.Core (Json)
 import Data.Bifunctor (rmap, lmap)
+import Data.Codec as Codec
 import Data.Codec.Argonaut (JsonCodec, JsonDecodeError, printJsonDecodeError)
 import Data.Codec.Argonaut as CA
+import Data.Codec.Argonaut.Record as CAR
 import Data.Either (Either(..), hush)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
+import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
+import Effect (Effect)
+import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
+import Halogen.HTML as HH
+import Halogen.HTML.Properties as HP
 import Halogen.Store.Monad (class MonadStore, getStore, updateStore)
 import Routing.Duplex (print)
 import Store (Store, Action(..))
+import Undefined (undefined)
+import Web.HTML (window)
 import Web.HTML.Window (localStorage)
 import Web.Storage.Storage (getItem, removeItem, setItem)
-import Effect (Effect)
-import Effect.Aff (Aff)
-import Web.HTML (window)
-import Data.Codec as Codec
-import Data.Codec.Argonaut.Record as CAR
-import Halogen.HTML as HH
-import Halogen.HTML.Properties as HP
-import Undefined (undefined)
-import Data.JSDate
-import Data.Traversable (traverse)
 
 mkRequest
   :: forall m
@@ -338,3 +338,13 @@ getCommentsByThreadID threadID = do
     let method = Get
     mJson <- mkRequest { endpoint : Comments threadID, method}
     decode nestedCommentsCodec mJson
+
+getCommunities ::
+  forall m.
+  MonadStore Action Store m
+  => MonadAff m
+  => m (Maybe (PaginatedArray Community))
+getCommunities = do
+  let method = Get
+  mJson <- mkRequest { endpoint: Community, method }
+  decode communitiesCodec mJson

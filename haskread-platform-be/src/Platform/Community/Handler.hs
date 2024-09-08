@@ -6,6 +6,7 @@ module Platform.Community.Handler
   ( communityCreateH,
     communityUpdateH,
     communityDeleteH,
+    fetchCommunitiesH,
   )
 where
 
@@ -14,11 +15,11 @@ import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.List (nub)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
-import Platform.Community.DB
-import Platform.Community.Types
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Utils
+import Platform.Community.DB
+import Platform.Community.Types
 import Platform.DB.Model
 import Servant.Auth.Server (AuthResult (..))
 import UnliftIO
@@ -57,11 +58,12 @@ addCommunity CommunityCreateReqBody {..} = do
 
 checkIfCommunityNameExists :: (MonadUnliftIO m) => T.Text -> AppM m ()
 checkIfCommunityNameExists cName = do
-  eRes :: Either SomeException (Maybe CommunityRead) <- 
-            try $ fetchCommunityByNameQ cName
+  eRes :: Either SomeException (Maybe CommunityRead) <-
+    try $ fetchCommunityByNameQ cName
   case eRes of
     Left e -> throw400Err $ BSL.pack $ show e
-    Right mCommunity -> when (isJust mCommunity) $ 
+    Right mCommunity ->
+      when (isJust mCommunity) $
         throw400Err "Community name already exists!"
 
 checkDescriptionNotEmpty :: (MonadUnliftIO m) => T.Text -> AppM m ()
@@ -154,3 +156,8 @@ communityDeleteH (Authenticated _) communityID = do
     Just _ -> do
       deleteCommunity communityID
 communityDeleteH _ _ = throw401Err "Please login first"
+
+fetchCommunitiesH :: (MonadUnliftIO m) => AppM m FetchCommunitiesResponse
+fetchCommunitiesH = do
+  communityList <- queryWrapper fetchCommunitiesQ
+  pure $ FetchCommunitiesResponse communityList (length communityList)

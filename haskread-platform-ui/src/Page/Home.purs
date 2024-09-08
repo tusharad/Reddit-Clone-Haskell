@@ -2,7 +2,7 @@ module Page.Home where
 
 import Prelude
 
-import Capability.Resource (class ManageThreads, getThreads, class Navigate, navigate)
+import Capability.Resource (class ManageThreads, getThreads, class Navigate, navigate,class ManageCommunity)
 import Common.Types (PaginatedArray, Thread, Profile, MyRoute(..), ThreadInfo)
 import Data.Array (mapWithIndex)
 import Data.Foldable (length)
@@ -25,6 +25,7 @@ import Halogen.HTML.Properties as HP
 
 import Component.Header as Header
 import Component.Footer as Footer
+import Component.CommunityList as CommunityList
 
 type State =
   { threads :: RemoteData String (PaginatedArray ThreadInfo)
@@ -34,7 +35,7 @@ type State =
 data Action = Initialize | LoadThreads | GoToLogin
 
 type OpaqueSlot slot = forall query. H.Slot query Void slot
-type ChildSlots = ( header :: OpaqueSlot Unit, footer :: OpaqueSlot Unit )
+type ChildSlots = ( header :: OpaqueSlot Unit, footer :: OpaqueSlot Unit, communityList :: OpaqueSlot Unit )
 
 component
   :: forall query output m
@@ -42,6 +43,7 @@ component
   => Navigate m
   => MonadStore Store.Action Store.Store m
   => ManageThreads m
+  => ManageCommunity m
   => H.Component query Unit output m
 component = connect (selectEq _.currentUser) $ H.mkComponent
   { initialState
@@ -65,6 +67,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
     , HH.button [ HE.onClick \_ -> GoToLogin ] [ HH.text "Go to login" ]
     , HH.br_
     , threadList state.threads
+    , HH.slot_ (Proxy :: _ "communityList") unit CommunityList.component unit
     , HH.slot_ (Proxy :: _ "footer") unit Footer.component unit
     ]
 
@@ -113,7 +116,9 @@ threadPreview _ thread =
         , HH.text $ Maybe.fromMaybe "" thread.description]
     , HH.br_
     , HH.text $ show $ Maybe.fromMaybe 0 thread.upvoteCount
+    , HH.br_
     , HH.text $ show $ Maybe.fromMaybe 0 thread.downvoteCount
+    , HH.br_
     , HH.text $ show $ Maybe.fromMaybe 0 thread.commentCount
     , HH.br_
     , HH.text $ Maybe.fromMaybe "aasdsa" thread.age

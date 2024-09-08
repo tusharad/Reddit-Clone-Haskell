@@ -2,39 +2,32 @@ module Component.Router where
 
 import Prelude
 
+import Capability.Resource (class ManageComments, class ManageCommunity, class ManageThreads, class ManageUser, class Navigate, navigate)
+import Common.Types (myRoute, MyRoute(..), Profile)
+import Data.Either (Either(..))
+import Data.Foldable (elem)
+import Data.Maybe (Maybe(..), isNothing)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class.Console (log)
 import Halogen as H
 import Halogen.HTML as HH
-import Common.Types (myRoute, MyRoute(..), Profile)
-import Data.Maybe (Maybe(..), isNothing)
-import Data.Foldable (elem)
-import Routing.Duplex as RD
-import Data.Either (Either(..))
-import Effect.Class.Console (log)
-import Effect.Class (class MonadEffect, liftEffect)
-import Capability.Resource (
-    class ManageThreads
-    , class ManageUser
-    , class Navigate
-    , class ManageComments
-    , navigate
-    )
-import Effect.Aff.Class (class MonadAff)
-import Routing.Hash (getHash)
-import Type.Proxy (Proxy(..))
 import Halogen.Store.Connect (Connected, connect)
-import Halogen.Store.Select (selectEq)
-import Store as Store
 import Halogen.Store.Monad (class MonadStore)
--- Pages
+import Halogen.Store.Select (selectEq)
+import Page.ChangePassword as ChangePassword
+import Page.CreateThread as CreateThread
+import Page.DeleteUser as DeleteUser
 import Page.Home as Home
 import Page.Login as Login
-import Page.Register as Register
 import Page.OTP as OTP
-import Page.CreateThread as CreateThread
-import Page.ChangePassword as ChangePassword
-import Page.DeleteUser as DeleteUser
+import Page.Register as Register
 import Page.UpdateThread as UpdateThread
 import Page.ViewThread as ViewThread
+import Routing.Duplex as RD
+import Routing.Hash (getHash)
+import Store as Store
+import Type.Proxy (Proxy(..))
 
 data Action
   = Initialize
@@ -69,6 +62,7 @@ component
   => MonadAff m
   => ManageUser m
   => ManageComments m
+  => ManageCommunity m
   => MonadEffect m
   => H.Component Query Unit Void m
 component = connect (selectEq _.currentUser) $ H.mkComponent

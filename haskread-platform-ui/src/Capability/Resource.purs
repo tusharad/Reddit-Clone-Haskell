@@ -14,6 +14,7 @@ import Common.Types
   , UpdateThreadFields
   , MyRoute
   , NestedComment
+  , Community
   )
 import Data.Maybe (Maybe)
 import Data.Either (Either)
@@ -64,3 +65,8 @@ instance manageCommentsHalogenM :: ManageComments m
     => ManageComments (HalogenM st act slots msg m) where
   getCommentsByThreadID = lift <<< getCommentsByThreadID
 
+class Monad m <= ManageCommunity m where
+  getCommunities :: m (Maybe (PaginatedArray Community))
+
+instance manageCommunityHalogenM :: ManageCommunity m => ManageCommunity (HalogenM st act slots msg m) where
+  getCommunities = lift getCommunities

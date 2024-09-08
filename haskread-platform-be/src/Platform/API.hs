@@ -63,6 +63,7 @@ mainServer =
     :<|> fetchAllThreadsH
     :<|> fetchThreadH
     :<|> fetchCommentsByThreadH
+    :<|> fetchCommunitiesH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -95,6 +96,7 @@ type MainAPI auths =
     :<|> FetchAllThreadsAPI
     :<|> FetchThreadAPI
     :<|> FetchCommentsByThreadAPI
+    :<|> FetchCommunitiesAPI
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -380,3 +382,9 @@ type FetchCommentsByThreadAPI =
     :> "comment"
     :> Capture "ThreadID" ThreadID
     :> Get '[JSON] FetchCommentsResponse
+
+type FetchCommunitiesAPI =
+  "api"
+    :> "v1"
+    :> "community"
+    :> Get '[JSON] FetchCommunitiesResponse

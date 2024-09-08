@@ -1,37 +1,41 @@
 module Common.Types
   ( BaseURL(..)
+  , ChangePasswordFields
+  , CommentInfo(..)
+  , CreateThreadFields
+  , DeleteUserFields
   , Endpoint(..)
+  , LoginFields
   , MyRoute(..)
+  , NestedComment(..)
+  , OtpFields
   , PaginatedArray
+  , Profile
+  , RegisterFields
   , RequestMethod(..)
   , RequestOptions
   , Thread
+  , ThreadInfo(..)
+  , ThreadRep
   , Token(..)
+  , Community(..)
+  , CommunityRep
+  , UpdateThreadFields
+  , changePasswordCodec
+  , createThreadCodec
+  , deleteUserCodec
   , endpointCodec
+  , loginCodec
   , myRoute
+  , nestedCommentsCodec
+  , registerCodec
   , threadCodec
   , threadsCodec
-  , profileCodec
-  , Profile
-  , LoginFields
-  , RegisterFields
-  , loginCodec
-  , registerCodec
-  , OtpFields
-  , CreateThreadFields
-  , createThreadCodec
-  , changePasswordCodec
-  , ChangePasswordFields
-  , DeleteUserFields
-  , deleteUserCodec
   , updateThreadCodec
-  , UpdateThreadFields
-  , ThreadRep
-  , ThreadInfo(..)
-  , CommentInfo(..)
-  , NestedComment(..)
-  , nestedCommentsCodec
-  ) where
+  , profileCodec
+  , communitiesCodec
+  )
+  where
 
 import Prelude hiding ((/))
 
@@ -68,6 +72,7 @@ data Endpoint
   | UpdateThread0
   | GetThreadByID0 Int
   | Comments Int
+  | Community
 
 derive instance genericEndpoint :: Generic Endpoint _
 
@@ -85,6 +90,7 @@ endpointCodec = root $ sum
   , "UpdateThread0": "api" / "v1" / "user" / "thread" / "update" / noArgs
   , "GetThreadByID0": "api" / "v1" / "thread" / (int segment)
   , "Comments" : "api" / "v1" / "thread" / "comment" / (int segment)
+  , "Community" : "api" / "v1" / "community" / noArgs
   }
 
 data RequestMethod
@@ -219,6 +225,40 @@ newtype NestedComment = NestedComment {
  }
 
 derive instance newtypeNestedComment ∷ Newtype NestedComment _
+
+type CommunityRep row = (
+  communityID :: Int,
+  communityName :: String
+  | row
+)
+
+type Community = { | CommunityRep () }
+type CommunityInfo = { 
+  | CommunityRep 
+  ( communityCreatedAt :: String
+  , communityDescription :: String
+  --TODO: , communityLabelList 
+  ) 
+  }
+
+communityCodec :: JsonCodec Community
+communityCodec =
+  CAR.object "comunity" {
+    communityID : CA.int,
+    communityName : CA.string
+  }
+
+communitiesCodec :: JsonCodec (PaginatedArray Community) 
+communitiesCodec = 
+    CAM.renameField "communities" "body"
+        >~> CAM.renameField "communityCount" "total"
+        >~> codec
+  where
+    codec =
+        CAR.object "Paginated Communities"
+            { body : CA.array communityCodec
+             , total: CA.int
+            }
 
 profileCodec :: JsonCodec Profile
 profileCodec =

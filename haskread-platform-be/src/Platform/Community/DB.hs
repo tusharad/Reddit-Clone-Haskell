@@ -1,10 +1,12 @@
-module Platform.Community.DB (
-    fetchCommunityByNameQ
-  , addCommunityQ
-  , fetchCommunityByIDQ
-  , updateCommunityQ
-  , deleteCommunityQ
- ) where
+module Platform.Community.DB
+  ( fetchCommunityByNameQ,
+    addCommunityQ,
+    fetchCommunityByIDQ,
+    updateCommunityQ,
+    deleteCommunityQ,
+    fetchCommunitiesQ,
+  )
+where
 
 import Data.Text (Text)
 import Orville.PostgreSQL
@@ -12,8 +14,7 @@ import Platform.DB.Marshaller
 import Platform.DB.Model
 import Platform.DB.Table
 
-
-fetchCommunityByNameQ :: (MonadOrville m) => Text ->  m (Maybe CommunityRead)
+fetchCommunityByNameQ :: (MonadOrville m) => Text -> m (Maybe CommunityRead)
 fetchCommunityByNameQ cName = findFirstEntityBy communityTable whereCommunityNameIs
   where
     whereCommunityNameIs = where_ $ communityNameField .== cName
@@ -29,3 +30,6 @@ updateCommunityQ = updateEntity communityTable
 
 deleteCommunityQ :: (MonadOrville m) => CommunityID -> m ()
 deleteCommunityQ = deleteEntity communityTable
+
+fetchCommunitiesQ :: (MonadOrville m) => m [CommunityRead]
+fetchCommunitiesQ = findEntitiesBy communityTable emptySelectOptions

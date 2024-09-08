@@ -7,6 +7,7 @@ module Platform.Community.Types
     CommunityUpdateReqBody (..),
     CommunityUpdateResponse (..),
     CommunityDeleteResponse (..),
+    FetchCommunitiesResponse (..),
   )
 where
 
@@ -42,5 +43,11 @@ newtype CommunityUpdateResponse = CommunityUpdateResponse
 
 newtype CommunityDeleteResponse = CommunityDeleteResponse
   { communityDeleteResponseMsg :: Text
+  }
+  deriving (Generic, Show, Eq, ToJSON)
+
+data FetchCommunitiesResponse = FetchCommunitiesResponse
+  { communities :: [CommunityRead],
+    communityCount :: Int
   }
   deriving (Generic, Show, Eq, ToJSON)

@@ -47,8 +47,8 @@ extra-deps:
 ## OAuth2
 - git: https://github.com/facebook/Haxl.git
   commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
-- git: https://github.com/flipstone/orville
-  commit: 38f42e06032e31f5ed81b447853b756aecb08209
+- git: https://github.com/tusharad/orville
+  commit: 7a3f82ee70373204bf69727e7cf6784f08914993
   subdirs:
    - orville-postgresql
 # - acme-missiles-0.3

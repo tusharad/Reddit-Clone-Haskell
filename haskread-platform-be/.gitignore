@@ -1,6 +1,5 @@
 .stack-work/
 *~
-/file-upload
 .dockermnt/
 .logs/
 dev_logs.txt

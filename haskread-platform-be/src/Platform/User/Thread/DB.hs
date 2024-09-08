@@ -5,6 +5,7 @@ module Platform.User.Thread.DB
     deleteThreadQ,
     fetchAllThreadsQ,
     fetchThreadInfoQ,
+    fetchThreadInfoByIDQ,
   )
 where
 
@@ -17,6 +18,7 @@ import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
 import Platform.DB.Marshaller
 import Platform.DB.Model
 import Platform.DB.Table
+import Platform.Orville.Helper
 
 fetchThreadByIDQ :: (MonadOrville m) => ThreadID -> m (Maybe ThreadRead)
 fetchThreadByIDQ = findEntity threadTable
@@ -67,18 +69,34 @@ FROM   THREAD t
               ON t.thread_id = s.thread_id;
 -}
 
+whereThreadIdIs :: ThreadID -> WhereClause
+whereThreadIdIs (ThreadID tID) =
+  whereClause $
+    columnReference (fieldColumnName (Just (stringToAliasName "t")) threadIDField)
+      `equals` valueExpression (SqlValue.fromInt32 tID)
+
+fetchThreadInfoByIDQ :: (MonadOrville m) => ThreadID -> m (Maybe ThreadInfo)
+fetchThreadInfoByIDQ tID = do
+  res <-
+    executeAndDecode
+      SelectQuery
+      (fetchThreadInfoExpr (Just $ whereThreadIdIs tID))
+      (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)
+  case res of
+    [] -> pure Nothing
+    (x : _) -> pure $ Just x
+
 fetchThreadInfoQ :: (MonadOrville m) => m [ThreadInfo]
 fetchThreadInfoQ =
   executeAndDecode
     SelectQuery
-    fetchThreadInfoExpr
+    (fetchThreadInfoExpr Nothing)
     (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)
 
-fetchThreadInfoExpr :: QueryExpr
-fetchThreadInfoExpr =
-  queryExpr selectClause_ selectedColumns (Just fromTable)
+fetchThreadInfoExpr :: Maybe WhereClause -> QueryExpr
+fetchThreadInfoExpr wClause =
+  queryExpr selectClauseDefault selectedColumns (Just (fromTable wClause))
   where
-    selectClause_ = selectClause (selectExpr Nothing)
     selectedColumns =
       selectColumns
         [ fieldColumnName (Just (stringToAliasName "t")) threadIDField,
@@ -112,7 +130,7 @@ fetchThreadInfoExpr =
     voteCountTable =
       subQueryAsFromItemExpr (stringToAliasExpr "s") voteCountExpr
     voteCountExpr =
-      queryExpr selectClause_ voteCountSelectList (Just fromVoteThreadTable)
+      queryExpr selectClauseDefault voteCountSelectList (Just fromVoteThreadTable)
     fromVoteThreadTable =
       tableExpr
         (tableFromItem (tableName threadVoteTable))
@@ -164,7 +182,7 @@ fetchThreadInfoExpr =
     commentCountFieldExpr =
       countColumn (fieldColumnName Nothing threadIDField)
     commentCountExpr =
-      queryExpr selectClause_ commentCountSelectList (Just fromCommentTable)
+      queryExpr selectClauseDefault commentCountSelectList (Just fromCommentTable)
     fromCommentTable =
       tableExpr
         (tableFromItem (tableName commentTable))
@@ -181,13 +199,9 @@ fetchThreadInfoExpr =
         joinExpr leftJoinType voteCountTable (joinOnConstraint threadIDConstraint),
         joinExpr leftJoinType commentCountTable (joinOnConstraint commentConstraint)
       ]
-    fromTable =
-      tableExpr
+    fromTable wClause =
+      mkTableExpr
         (threadTableName `appendJoinFromItem` joinList)
-        Nothing
-        Nothing
-        Nothing
-        Nothing
-        Nothing
-        Nothing
-        Nothing
+        defaultClauses
+          { _whereClause = wClause
+          }

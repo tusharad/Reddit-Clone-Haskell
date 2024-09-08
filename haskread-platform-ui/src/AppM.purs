@@ -5,29 +5,10 @@ module AppM
 
 import Prelude
 
-import Capability.Resource (
-    class ManageThreads
-  , class ManageUser
-  , class Navigate
-  , class ManageComments
-  )
+import Capability.Resource (class ManageComments, class ManageCommunity, class ManageThreads, class ManageUser, class Navigate)
 import Common.Types (Endpoint(..), RequestMethod(..), threadsCodec)
 import Common.Types as Route
-import Common.Utils
-  ( mkRequest
-  , decode
-  , authenticate
-  , login
-  , register
-  , verifyOtp
-  , createThread
-  , changePassword
-  , deleteThread
-  , deleteUser
-  , getThread
-  , updateThread
-  , getCommentsByThreadID
-  )
+import Common.Utils (mkRequest, decode, authenticate, login, register, verifyOtp, createThread, changePassword, deleteThread, deleteUser, getThread, updateThread, getCommentsByThreadID, getCommunities)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -79,3 +60,6 @@ instance manageUserAppM :: ManageUser AppM where
 
 instance commentsHalogenM :: ManageComments AppM where
     getCommentsByThreadID = getCommentsByThreadID 
+
+instance communityHalogenM :: ManageCommunity AppM where
+  getCommunities = getCommunities

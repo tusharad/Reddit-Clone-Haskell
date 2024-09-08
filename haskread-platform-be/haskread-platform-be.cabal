@@ -51,6 +51,7 @@ library
       Platform.Handler
       Platform.Haxl.DataSource
       Platform.Log
+      Platform.Orville.Helper
       Platform.User.DB
       Platform.User.Handler
       Platform.User.Thread.DB
