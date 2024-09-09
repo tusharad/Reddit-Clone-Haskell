@@ -1,27 +1,28 @@
 module Page.UpdateThread where
 
 import Prelude
-import Halogen as H
-import Halogen.HTML as HH
-import Effect.Aff.Class (class MonadAff)
-import Data.Maybe (Maybe(..),isNothing)
+
 import Capability.Resource (class ManageThreads, getThread, updateThread, class Navigate, navigate)
 import Common.Types (MyRoute(..), Thread, Profile)
-import Network.RemoteData (RemoteData(..), fromMaybe)
-import Common.Utils (whenElem)
+import Common.Utils (defaultPagination, whenElem)
+import Data.Either (Either(..), isLeft, fromLeft)
+import Data.Int (fromString)
+import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe as Maybe
+import Data.String (length)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Class.Console (log)
+import Halogen as H
+import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Effect.Class.Console (log)
-import Data.Either (Either(..), isLeft, fromLeft)
-import Web.Event.Event as Event
-import Web.Event.Event (Event)
-import Data.String (length)
-import Data.Maybe as Maybe
-import Data.Int (fromString)
 import Halogen.Store.Connect (connect)
-import Halogen.Store.Select (selectEq)
-import Store as Store
 import Halogen.Store.Monad (class MonadStore)
+import Halogen.Store.Select (selectEq)
+import Network.RemoteData (RemoteData(..), fromMaybe)
+import Store as Store
+import Web.Event.Event (Event)
+import Web.Event.Event as Event
 
 type Input = { threadID :: Int }
 
@@ -91,10 +92,10 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
           -- check if user is owner of this thread or not.
           mCurrentUser <- H.gets _.currentUser
           case mCurrentUser of
-            Nothing -> navigate Home
+            Nothing -> navigate (Home defaultPagination)
             Just currUser -> do
               when (currUser.userID /= threadInfo.userIDForThreadInfo)
-                (navigate Home)
+                (navigate (Home defaultPagination))
           H.modify_ _
             { threadTitle = threadInfo.title
             , threadDescription = Maybe.fromMaybe "" threadInfo.description
@@ -130,7 +131,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
           updateThread updateThreadFields
       case mRes of
         Nothing -> pure unit
-        Just _ -> navigate Home
+        Just _ -> navigate (Home defaultPagination)
 
   render :: State -> H.ComponentHTML Action _ m
   render st =

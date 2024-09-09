@@ -80,22 +80,22 @@ fetchThreadInfoByIDQ tID = do
   res <-
     executeAndDecode
       SelectQuery
-      (fetchThreadInfoExpr (Just $ whereThreadIdIs tID))
+      (fetchThreadInfoExpr (Just $ whereThreadIdIs tID) Nothing Nothing)
       (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)
   case res of
     [] -> pure Nothing
     (x : _) -> pure $ Just x
 
-fetchThreadInfoQ :: (MonadOrville m) => m [ThreadInfo]
-fetchThreadInfoQ =
+fetchThreadInfoQ :: (MonadOrville m) => Int -> Int -> m [ThreadInfo]
+fetchThreadInfoQ limit offset =
   executeAndDecode
     SelectQuery
-    (fetchThreadInfoExpr Nothing)
+    (fetchThreadInfoExpr Nothing (Just (limitExpr limit)) (Just (offsetExpr offset)))
     (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)
 
-fetchThreadInfoExpr :: Maybe WhereClause -> QueryExpr
-fetchThreadInfoExpr wClause =
-  queryExpr selectClauseDefault selectedColumns (Just (fromTable wClause))
+fetchThreadInfoExpr :: Maybe WhereClause -> Maybe LimitExpr -> Maybe OffsetExpr -> QueryExpr
+fetchThreadInfoExpr wClause lClause oClause =
+  queryExpr selectClauseDefault selectedColumns (Just (fromTable wClause lClause oClause))
   where
     selectedColumns =
       selectColumns
@@ -199,9 +199,11 @@ fetchThreadInfoExpr wClause =
         joinExpr leftJoinType voteCountTable (joinOnConstraint threadIDConstraint),
         joinExpr leftJoinType commentCountTable (joinOnConstraint commentConstraint)
       ]
-    fromTable wClause =
+    fromTable wClause lClause oClause =
       mkTableExpr
         (threadTableName `appendJoinFromItem` joinList)
         defaultClauses
-          { _whereClause = wClause
+          { _whereClause = wClause,
+          _limitExpr = lClause,
+          _offSetExpr = oClause
           }

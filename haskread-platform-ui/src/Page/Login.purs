@@ -1,19 +1,20 @@
 module Page.Login where
 
 import Prelude
-import Halogen as H
-import Halogen.HTML as HH
-import Effect.Aff.Class (class MonadAff)
-import Data.Maybe (Maybe(..))
+
 import Capability.Resource (class ManageUser, loginUser, class Navigate, navigate)
 import Common.Types (MyRoute(..))
-import Common.Utils (safeHref, whenElem)
+import Common.Utils (defaultPagination, safeHref, whenElem)
+import Data.Either (Either(..), isLeft)
+import Data.Maybe (Maybe(..))
+import Effect.Aff.Class (class MonadAff)
+import Effect.Class.Console (log)
+import Halogen as H
+import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Web.Event.Event as Event
 import Web.Event.Event (Event)
-import Data.Either (Either(..), isLeft)
-import Effect.Class.Console (log)
+import Web.Event.Event as Event
 
 type Input = { redirect :: Boolean }
 
@@ -74,7 +75,7 @@ component = H.mkComponent
           loginUser loginFields
       case mRes of
         Nothing -> pure unit
-        Just _ -> navigate Home
+        Just _ -> navigate (Home defaultPagination)
 
   render :: State -> H.ComponentHTML Action () m
   render st =

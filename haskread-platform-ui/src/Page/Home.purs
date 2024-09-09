@@ -4,7 +4,8 @@ import Prelude
 
 import Bulma.Elements.Button as B
 import Capability.Resource (class ManageThreads, getThreads, class Navigate, navigate, class ManageCommunity)
-import Common.Types (PaginatedArray, Thread, Profile, MyRoute(..), ThreadInfo)
+import Common.BulmaUtils as BU
+import Common.Types (MyRoute(..), PaginatedArray, Profile, Thread, ThreadInfo, Pagination)
 import Common.Utils (stringToDate, toThreadInfo, safeHref)
 import Component.CommunityList as CommunityList
 import Component.Footer as Footer
@@ -24,11 +25,15 @@ import Halogen.Store.Select (selectEq)
 import Network.RemoteData (RemoteData(..), fromMaybe)
 import Store as Store
 import Type.Proxy (Proxy(..))
-import Common.BulmaUtils as BU
+
+type Input = {
+  pagination_ :: Pagination
+}
 
 type State =
   { threads :: RemoteData String (PaginatedArray ThreadInfo)
   , currentUser :: Maybe Profile
+  , pagination_ :: Pagination
   }
 
 data Action = Initialize | LoadThreads | GoToLogin
@@ -43,7 +48,7 @@ component
   => MonadStore Store.Action Store.Store m
   => ManageThreads m
   => ManageCommunity m
-  => H.Component query Unit output m
+  => H.Component query Input output m
 component = connect (selectEq _.currentUser) $ H.mkComponent
   { initialState
   , render
@@ -53,7 +58,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
       }
   }
   where
-  initialState { context: currentUser } = { threads: NotAsked, currentUser }
+  initialState { context: currentUser,input: { pagination_ } } = { threads: NotAsked, currentUser,pagination_ }
 
   render :: State -> H.ComponentHTML Action ChildSlots m
   render state = HH.div_

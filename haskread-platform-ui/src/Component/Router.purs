@@ -2,8 +2,13 @@ module Component.Router where
 
 import Prelude
 
+import Bulma.Common as B
+import Bulma.Components.Navbar as B
+import Bulma.Layout.Layout as B
 import Capability.Resource (class ManageComments, class ManageCommunity, class ManageThreads, class ManageUser, class Navigate, navigate)
-import Common.Types (myRoute, MyRoute(..), Profile)
+import Common.BulmaUtils as BU
+import Common.Types (myRoute, MyRoute(..), Profile, Pagination)
+import Common.Utils (defaultPagination)
 import Data.Either (Either(..))
 import Data.Foldable (elem)
 import Data.Maybe (Maybe(..), isNothing)
@@ -28,11 +33,6 @@ import Routing.Duplex as RD
 import Routing.Hash (getHash)
 import Store as Store
 import Type.Proxy (Proxy(..))
--- Bulma
-import Bulma.Components.Navbar as B
-import Bulma.Common as B
-import Common.BulmaUtils as BU
-import Bulma.Layout.Layout as B
 
 data Action
   = Initialize
@@ -90,7 +90,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
     Initialize -> do
       url <- liftEffect getHash
       case RD.parse myRoute url of
-        Left e -> (log $ "err" <> show e) *> navigate Home
+        Left e -> (log $ "err" <> show e) *> navigate (Home defaultPagination)
         Right r -> navigate r
     Receive { context: currentUser } -> do
       H.modify_ _ { currentUser = currentUser }
@@ -108,7 +108,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
     HH.div [ BU.classNames [B.container,B.hasNavbarFixedTop] ] [
     case route of
       Just r -> case r of
-        Home -> HH.slot_ (Proxy :: _ "home") unit Home.component unit
+        Home p -> HH.slot_ (Proxy :: _ "home") unit Home.component { pagination_ : p}
         Login -> HH.slot_ (Proxy :: _ "login") unit Login.component { redirect: true }
         Register ->
           HH.slot_ (Proxy :: _ "register") unit Register.component { redirect: true }

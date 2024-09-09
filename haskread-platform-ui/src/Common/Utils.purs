@@ -348,3 +348,8 @@ getCommunities = do
   let method = Get
   mJson <- mkRequest { endpoint: Community, method }
   decode communitiesCodec mJson
+
+defaultPagination :: Pagination
+defaultPagination = { limit : Just 10
+  , offset : Just 0
+  }

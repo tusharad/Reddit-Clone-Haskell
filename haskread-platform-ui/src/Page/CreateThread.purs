@@ -1,21 +1,22 @@
 module Page.CreateThread where
 
 import Prelude
-import Halogen as H
-import Halogen.HTML as HH
-import Effect.Aff.Class (class MonadAff)
+
 import Capability.Resource (class ManageThreads, createThread, class Navigate, navigate)
 import Common.Types (MyRoute(..))
-import Common.Utils (whenElem)
+import Common.Utils (defaultPagination, whenElem)
+import Data.Either (Either(..), isLeft, fromLeft)
+import Data.Int (fromString)
+import Data.Maybe (Maybe(..), isNothing, fromMaybe)
+import Data.String (length)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Class.Console (log)
+import Halogen as H
+import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Effect.Class.Console (log)
-import Data.Either (Either(..), isLeft, fromLeft)
-import Web.Event.Event as Event
 import Web.Event.Event (Event)
-import Data.String (length)
-import Data.Maybe (Maybe(..), isNothing, fromMaybe)
-import Data.Int (fromString)
+import Web.Event.Event as Event
 
 type State =
   { threadTitle :: String
@@ -89,7 +90,7 @@ component = H.mkComponent
           createThread createThreadFields
       case mRes of
         Nothing -> pure unit
-        Just _ -> navigate Home
+        Just _ -> navigate (Home defaultPagination)
 
   render :: State -> H.ComponentHTML Action _ m
   render st =

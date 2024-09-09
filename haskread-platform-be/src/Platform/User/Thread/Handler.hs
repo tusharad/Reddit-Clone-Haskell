@@ -13,7 +13,7 @@ where
 
 import Control.Monad (void, when)
 import qualified Data.ByteString.Lazy.Char8 as BSL
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing,fromMaybe)
 import qualified Data.Text as T
 import Platform.Auth.Types
 import Platform.Common.AppM
@@ -115,9 +115,13 @@ deleteThreadH (Authenticated UserInfo {..}) threadID = do
     Right _ -> return $ DeleteThreadResponse "Thread deleted successfully!"
 deleteThreadH _ _ = throw401Err "Please login first"
 
-fetchAllThreadsH :: (MonadUnliftIO m) => AppM m FetchAllThreadsResponse
-fetchAllThreadsH = do
-  threadInfoList <- queryWrapper fetchThreadInfoQ
+fetchAllThreadsH :: 
+    (MonadUnliftIO m) =>
+    (Maybe Int) -> (Maybe Int) ->
+    AppM m FetchAllThreadsResponse
+fetchAllThreadsH mLimit mOffSet = do
+  threadInfoList <- queryWrapper (
+    fetchThreadInfoQ (fromMaybe 10 mLimit) (fromMaybe 0 mOffSet))
   return $ FetchAllThreadsResponse (length threadInfoList) threadInfoList
 
 fetchThreadH :: (MonadUnliftIO m) => ThreadID -> AppM m ThreadInfo

@@ -1,21 +1,22 @@
 module Page.OTP where
 
 import Prelude
-import Halogen as H
-import Halogen.HTML as HH
-import Effect.Aff.Class (class MonadAff)
-import Data.Maybe (Maybe(..), isNothing, fromMaybe)
+
 import Capability.Resource (class ManageUser, verifyOtp, class Navigate, navigate)
 import Common.Types (MyRoute(..))
-import Common.Utils (safeHref, whenElem)
+import Common.Utils (defaultPagination, safeHref, whenElem)
+import Data.Either (Either(..), isLeft, hush)
+import Data.Int (fromString)
+import Data.Maybe (Maybe(..), isNothing, fromMaybe)
+import Data.String (length)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Class.Console (log)
+import Halogen as H
+import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Web.Event.Event as Event
 import Web.Event.Event (Event)
-import Data.Either (Either(..), isLeft, hush)
-import Effect.Class.Console (log)
-import Data.String (length)
-import Data.Int (fromString)
+import Web.Event.Event as Event
 
 type Input = { userID :: Int }
 
@@ -75,7 +76,7 @@ component = H.mkComponent
           pure $ hush res
       case mRes of
         Nothing -> pure unit
-        Just _ -> navigate Home
+        Just _ -> navigate (Home defaultPagination)
 
   render :: State -> H.ComponentHTML Action () m
   render st =

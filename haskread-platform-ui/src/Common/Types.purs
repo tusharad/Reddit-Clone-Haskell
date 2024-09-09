@@ -34,6 +34,7 @@ module Common.Types
   , updateThreadCodec
   , profileCodec
   , communitiesCodec
+  , Pagination(..)
   )
   where
 
@@ -50,7 +51,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
 import Data.Profunctor (wrapIso)
-import Routing.Duplex (RouteDuplex', path, root, int, segment)
+import Routing.Duplex (RouteDuplex', path, root, int, segment,optional, string)
 import Routing.Duplex.Generic (noArgs, sum)
 import Routing.Duplex.Generic as G
 import Routing.Duplex.Generic.Syntax ((/), (?))
@@ -104,7 +105,7 @@ type RequestOptions =
   }
 
 data MyRoute
-  = Home
+  = Home Pagination
   | Login
   | Register
   | OTP Int
@@ -123,9 +124,17 @@ derive instance eqToken :: Eq Token
 instance showToken :: Show Token where
   show (Token _) = "TOKEN"
 
+type Pagination = {
+  limit :: Maybe Int
+  , offset :: Maybe Int
+}
+
 myRoute :: RouteDuplex' MyRoute
 myRoute = root $ G.sum
-  { "Home": G.noArgs
+  { "Home": "Home" ? { 
+        offset: optional <<< int
+      , limit: optional <<< int
+      }
   , "Login": path "login" G.noArgs
   , "Register": path "register" G.noArgs
   , "OTP": "otp" / (int segment)
