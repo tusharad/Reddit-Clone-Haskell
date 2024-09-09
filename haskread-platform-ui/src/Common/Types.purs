@@ -39,7 +39,6 @@ module Common.Types
 
 import Prelude hiding ((/))
 
-import Undefined (undefined)
 import Data.Argonaut.Core (Json)
 import Data.Codec ((>~>))
 import Data.Codec.Argonaut (JsonCodec)
@@ -49,13 +48,13 @@ import Data.Codec.Argonaut.Migration as CAM
 import Data.Codec.Argonaut.Record as CAR
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe)
+import Data.Newtype (class Newtype)
+import Data.Profunctor (wrapIso)
 import Routing.Duplex (RouteDuplex', path, root, int, segment)
 import Routing.Duplex.Generic (noArgs, sum)
 import Routing.Duplex.Generic as G
-import Routing.Duplex.Generic.Syntax ((/))
--- import Control.Lazy (fix)
-import Data.Newtype (class Newtype)
-import Data.Profunctor (wrapIso)
+import Routing.Duplex.Generic.Syntax ((/), (?))
+import Undefined (undefined)
 
 newtype BaseURL = BaseURL String
 

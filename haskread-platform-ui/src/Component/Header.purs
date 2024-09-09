@@ -17,6 +17,13 @@ import Web.Event.Event (Event)
 import Web.Event.Event as Event
 import Common.Utils (whenElem)
 
+-- Bulma
+import Bulma.Components.Navbar as B
+import Bulma.Common as B
+import Common.BulmaUtils as BU
+import Bulma.Layout.Layout as B
+import Bulma.CSS.Spacing as B
+
 type State = {
         currentUser :: Maybe Profile
       , searchError :: Maybe String
@@ -70,7 +77,13 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
 
     render :: State -> H.ComponentHTML Action () m
     render { currentUser,searchError,searchInput } = do
-        HH.div_ [
+        HH.nav [
+            BU.classNames [
+                B.navbar,
+                B.isFixedTop,
+                B.px6
+            ]
+        ] [
             logoAndTitle,
             searchBar searchError searchInput,
             case currentUser of

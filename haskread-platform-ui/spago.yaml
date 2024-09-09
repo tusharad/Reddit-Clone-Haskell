@@ -18,10 +18,13 @@ package:
     - web-html
     - web-storage
     - js-date
+    - bulma
   test:
     main: Test.Main
     dependencies: []
 workspace:
   packageSet:
     registry: 57.1.0
-  extraPackages: {}
+  extraPackages:
+    bulma:
+      path: /home/user/Documents/github/purescript-bulma

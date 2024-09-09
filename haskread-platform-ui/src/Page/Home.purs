@@ -2,8 +2,13 @@ module Page.Home where
 
 import Prelude
 
-import Capability.Resource (class ManageThreads, getThreads, class Navigate, navigate,class ManageCommunity)
+import Bulma.Elements.Button as B
+import Capability.Resource (class ManageThreads, getThreads, class Navigate, navigate, class ManageCommunity)
 import Common.Types (PaginatedArray, Thread, Profile, MyRoute(..), ThreadInfo)
+import Common.Utils (stringToDate, toThreadInfo, safeHref)
+import Component.CommunityList as CommunityList
+import Component.Footer as Footer
+import Component.Header as Header
 import Data.Array (mapWithIndex)
 import Data.Foldable (length)
 import Data.Maybe (Maybe(..))
@@ -18,14 +23,8 @@ import Halogen.Store.Monad (class MonadStore)
 import Halogen.Store.Select (selectEq)
 import Network.RemoteData (RemoteData(..), fromMaybe)
 import Store as Store
-import Undefined (undefined)
-import Common.Utils (stringToDate, toThreadInfo, safeHref)
 import Type.Proxy (Proxy(..))
-import Halogen.HTML.Properties as HP
-
-import Component.Header as Header
-import Component.Footer as Footer
-import Component.CommunityList as CommunityList
+import Common.BulmaUtils as BU
 
 type State =
   { threads :: RemoteData String (PaginatedArray ThreadInfo)
@@ -64,7 +63,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
     , HH.br_
     , HH.text $ "user: " <> show state.currentUser
     , HH.br_
-    , HH.button [ HE.onClick \_ -> GoToLogin ] [ HH.text "Go to login" ]
+    , HH.button [BU.className B.button, HE.onClick \_ -> GoToLogin ] [ HH.text "Go to login" ]
     , HH.br_
     , threadList state.threads
     , HH.slot_ (Proxy :: _ "communityList") unit CommunityList.component unit

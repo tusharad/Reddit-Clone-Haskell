@@ -28,6 +28,11 @@ import Routing.Duplex as RD
 import Routing.Hash (getHash)
 import Store as Store
 import Type.Proxy (Proxy(..))
+-- Bulma
+import Bulma.Components.Navbar as B
+import Bulma.Common as B
+import Common.BulmaUtils as BU
+import Bulma.Layout.Layout as B
 
 data Action
   = Initialize
@@ -99,29 +104,32 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
       pure (Just a)
 
   render :: State -> H.ComponentHTML Action ChildSlots m
-  render { route } = case route of
-    Just r -> case r of
-      Home -> HH.slot_ (Proxy :: _ "home") unit Home.component unit
-      Login -> HH.slot_ (Proxy :: _ "login") unit Login.component { redirect: true }
-      Register ->
-        HH.slot_ (Proxy :: _ "register") unit Register.component { redirect: true }
-      OTP uID -> HH.slot_ (Proxy :: _ "otp") unit OTP.component { userID: uID }
-      CreateThread ->
-        HH.slot_
-          (Proxy :: _ "createThread")
-          unit
-          CreateThread.component
-          unit
-      ChangePassword ->
-        HH.slot_ (Proxy :: _ "changePassword") unit ChangePassword.component unit
-      DeleteUser ->
-        HH.slot_ (Proxy :: _ "deleteUser") unit DeleteUser.component unit
-      UpdateThread threadID ->
-        HH.slot_
-          (Proxy :: _ "updateThread")
-          unit
-          UpdateThread.component
-          { threadID: threadID }
-      ViewThread threadID -> HH.slot_ (Proxy :: _ "viewThread") unit 
-                                ViewThread.component { threadID : threadID }
-    Nothing -> HH.div_ [ HH.text "page not found!" ]
+  render { route } =
+    HH.div [ BU.classNames [B.container,B.hasNavbarFixedTop] ] [
+    case route of
+      Just r -> case r of
+        Home -> HH.slot_ (Proxy :: _ "home") unit Home.component unit
+        Login -> HH.slot_ (Proxy :: _ "login") unit Login.component { redirect: true }
+        Register ->
+          HH.slot_ (Proxy :: _ "register") unit Register.component { redirect: true }
+        OTP uID -> HH.slot_ (Proxy :: _ "otp") unit OTP.component { userID: uID }
+        CreateThread ->
+          HH.slot_
+            (Proxy :: _ "createThread")
+            unit
+            CreateThread.component
+            unit
+        ChangePassword ->
+          HH.slot_ (Proxy :: _ "changePassword") unit ChangePassword.component unit
+        DeleteUser ->
+          HH.slot_ (Proxy :: _ "deleteUser") unit DeleteUser.component unit
+        UpdateThread threadID ->
+          HH.slot_
+            (Proxy :: _ "updateThread")
+            unit
+            UpdateThread.component
+            { threadID: threadID }
+        ViewThread threadID -> HH.slot_ (Proxy :: _ "viewThread") unit 
+                                  ViewThread.component { threadID : threadID }
+      Nothing -> HH.div_ [ HH.text "page not found!" ]
+    ]
