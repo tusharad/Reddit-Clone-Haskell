@@ -1,18 +1,18 @@
-module Common.BulmaUtils where
+module Utils.Bulma where
 
 import Prelude
 import Bulma.Common as B
 import Halogen.HTML.Properties as HP
 import Halogen (ClassName(..))
 
-className
+class_
   :: forall r i. B.ClassName
   -> HP.IProp ( "class" :: String | r) i
-className =
+class_ =
     HP.class_ <<< ClassName <<< B.runClassName
 
-classNames
+classes_
   :: forall r i. Array B.ClassName
   -> HP.IProp ( "class" :: String | r) i
-classNames =
+classes_ =
   HP.class_ <<< ClassName <<< B.runClassNames

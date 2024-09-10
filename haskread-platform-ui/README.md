@@ -21,3 +21,11 @@ The UI of HaskRead application.
 - [x] Delete User
 - [x] Home Page
 - [x] OTP page
+
+### Dependencies
+
+- [Purescript-bulma](https://github.com/tusharad/purescript-bulma)
+
+### TODO:
+
+- There shall be a checkhealth function that checks if the server is up and running.

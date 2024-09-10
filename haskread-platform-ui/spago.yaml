@@ -27,5 +27,6 @@ workspace:
     registry: 57.1.0
   extraPackages:
     bulma:
-      git: https://github.com/tusharad/purescript-bulma/
-      ref: 8b1c922562cc158ae65b6ac376d83254bb460d89
+      path: /home/user/Documents/github/purescript-bulma
+      # git: https://github.com/tusharad/purescript-bulma/
+      # ref: 8b1c922562cc158ae65b6ac376d83254bb460d89

@@ -5,28 +5,28 @@ import Prelude
 import Bulma.CSS.Spacing as B
 import Bulma.Common as B
 import Bulma.Components.Navbar as B
-import Bulma.Form.General as B
-import Bulma.Modifiers.Typography as B
 import Bulma.Elements.Button as Button
+import Bulma.Form.Core as B
 import Bulma.Modifiers.Helpers as B
+import Bulma.Modifiers.Typography as B
 import Capability.Resource (class Navigate, navigate)
-import Common.BulmaUtils as BU
+import Utils.Bulma (class_,classes_)
 import Common.Types (Profile, MyRoute(..))
 import Common.Utils (defaultPagination, whenElem)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
-import Halogen.HTML.Core as HC
+import Halogen.HTML.Core (AttrName(..)) as HC
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Halogen.Store.Connect (connect)
 import Halogen.Store.Monad (class MonadStore)
 import Halogen.Store.Select (selectEq)
 import Store as Store
-import Undefined (undefined)
 import Web.Event.Event (Event)
 import Web.Event.Event as Event
+-- import Web.HTML.Common (ClassName(..)) as HC
 
 type State =
   { currentUser :: Maybe Profile
@@ -85,7 +85,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
   render :: State -> H.ComponentHTML Action () m
   render { currentUser, searchError, searchInput } = do
     HH.nav
-      [ BU.classNames
+      [ classes_
           [ B.navbar
           , B.isFixedTop
           , B.px6
@@ -95,29 +95,39 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
       [ logoAndTitle
       , searchBar searchError searchInput
       , loginSignupButtons currentUser
-      --   case currentUser of
-      --       Nothing -> loginRegisterButtons
-      --       Just currUser -> profileButton currUser
       ]
 
   loginSignupButtons currUser =
-    HH.div [ HP.id "navbarBasicExample", BU.className B.navbarMenu ]
-      [ HH.div [ BU.className B.navbarEnd ]
-          [ HH.div [ BU.className B.navbarItem ]
-              [ HH.div [ BU.className Button.buttons ]
-                  [ HH.a
-                      [ HE.onClick \_ -> GoToLogin
-                      , BU.classNames [ Button.button, B.isPrimary ]
+    HH.div [ HP.id "navbarBasicExample", class_ B.navbarMenu ]
+      [ HH.div [ class_ B.navbarEnd ]
+          [ HH.div [ class_ B.navbarItem ]
+              [ case currUser of
+                  Nothing ->
+                    HH.div [ class_ Button.buttons ]
+                      [ HH.a
+                          [ HE.onClick \_ -> GoToLogin
+                          , classes_ [ Button.button, B.isPrimary ]
+                          ]
+                          [ HH.text "Login" ]
+                      , HH.a
+                          [ HE.onClick \_ -> GoToRegister
+                          , classes_ [ Button.button, Button.isLight ]
+                          ]
+                          [ HH.text "Sign up" ]
                       ]
-                      [ HH.text "Login" ]
-                  ]
+                  Just cUser ->
+                    HH.div [ classes_ [ Button.button, B.isWarning ] ]
+                      [ HH.a [ HE.onClick \_ -> GoToMyProfile, class_ B.px2 ]
+                          [ HH.text cUser.userName ]
+                      ]
+              -- TODO: figure with image link
               ]
           ]
       ]
 
   navbarBurger = HH.a
     [ HP.attr (HC.AttrName "area-label") "Close"
-    , BU.className B.navbarBurger
+    , class_ B.navbarBurger
     , HP.attr (HC.AttrName "area-label") "menu"
     , HP.attr (HC.AttrName "area-expanded") "false"
     , HP.attr (HC.AttrName "data-target") "navbarBasicExample"
@@ -128,37 +138,31 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
     , HH.span [ HP.attr (HC.AttrName "area-hidden") "true" ] []
     ]
 
-  logoAndTitle = HH.div [ BU.className B.navbarBrand ]
-    [ HH.a [ HE.onClick \_ -> GoToHome, BU.className B.navbarItem ]
-        [ HH.p [ BU.classNames [ B.hasWeight B.Bold ] ] [ HH.text "HaskRead" ] ]
+  logoAndTitle = HH.div [ class_ B.navbarBrand ]
+    [ HH.a [ HE.onClick \_ -> GoToHome, class_ B.navbarItem ]
+        [ HH.p [ classes_ [ B.hasWeight B.Bold ] ] [ HH.text "HaskRead" ] ]
     , navbarBurger
     ]
 
   searchBar searchError searchInput = HH.div
-    [ BU.className B.navbarItem ]
-    [ HH.div [ BU.classNames [ B.field, B.hasAddons ] ]
-        [ HH.form
-            [ HE.onSubmit HandleSearch ]
-            [ whenElem (isJust searchError)
-                (\_ -> HH.div_ [ HH.text (fromMaybe "" searchError) ])
-            , HH.div [ BU.className B.control ]
-                [ HH.input
-                    [ HP.placeholder "Search threads, community, users etc."
-                    , HP.type_ HP.InputText
-                    , HE.onValueInput SetSearchInput
-                    , HP.value searchInput
-                    ]
+    [ class_ B.navbarItem ]
+    [ HH.form
+        [ HE.onSubmit HandleSearch, classes_ [ B.field, B.hasAddons ] ]
+        [ whenElem (isJust searchError)
+            (\_ -> HH.div_ [ HH.text (fromMaybe "" searchError) ])
+        , HH.div [ class_ B.control ]
+            [ HH.input
+                [ HP.placeholder "Search threads, community, users etc."
+                , HP.type_ HP.InputText
+                , HE.onValueInput SetSearchInput
+                , HP.value searchInput
+                , class_ B.input
                 ]
-            , HH.div [ BU.className B.control ] [ HH.button [ HP.type_ HP.ButtonSubmit ] [ HH.text "Search" ] ]
             ]
+        , HH.div [ class_ B.control ]
+         [ HH.button
+           [ HP.type_ HP.ButtonSubmit, classes_ [Button.button,B.isInfo] ]
+            [ HH.i [HP.classes [HH.ClassName "bx bx-search bx-tada"],
+                    HP.style "line-height:1.5"] [] ] ]
         ]
-    ]
-
-  loginRegisterButtons = HH.div_
-    [ HH.button [ HE.onClick \_ -> GoToLogin ] [ HH.text "Login" ]
-    , HH.button [ HE.onClick \_ -> GoToRegister ] [ HH.text "Register" ]
-    ]
-
-  profileButton currUser = HH.div_
-    [ HH.button [ HE.onClick \_ -> GoToMyProfile ] [ HH.text currUser.userName ]
     ]
