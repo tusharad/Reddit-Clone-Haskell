@@ -1,10 +1,12 @@
 module Common.Utils where
 
 import Common.Types
-import Data.JSDate
+import Data.JSDate 
 import Prelude
 
 import Affjax (printError)
+import Data.Tuple
+import Data.Int (toNumber)
 import Affjax.RequestBody as RB
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as RF
@@ -301,8 +303,27 @@ updateThread fields = do
 stringToDate :: String -> Effect (Maybe JSDate)
 stringToDate str = do
   jsDate <- parse str
-  if (isValid jsDate) then (pure $ Just jsDate)
+  if (isValid jsDate) then do 
+      pure $ Just jsDate
   else (pure Nothing)
+
+timeAgo :: JSDate -> Effect String
+timeAgo givenDate = do
+    currDate <- now
+    let diffSeconds = ((getTime currDate) - (getTime givenDate)) / (toNumber 1000)
+    let intervals = [ 
+           Tuple "Years" 31536000
+         , Tuple "month" 2592000
+         , Tuple "week" 604800
+         , Tuple "day" 86400
+         , Tuple "hour" 3600
+         , Tuple "minute" 60
+         , Tuple "second" 1
+         ]
+    go diffSeconds intervals
+  where
+    go _ _ = pure "Just Now" -- TODO
+    
 
 toThreadInfo :: PaginatedArray Thread -> Effect (PaginatedArray ThreadInfo)
 toThreadInfo threadList = do

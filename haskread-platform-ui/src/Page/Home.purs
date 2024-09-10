@@ -2,14 +2,22 @@ module Page.Home where
 
 import Prelude
 
+import Bulma.CSS.Spacing as B
+import Bulma.Columns.Columns as B
+import Bulma.Columns.Size as B
+import Bulma.Components.Tabs as B
 import Bulma.Elements.Button as B
+import Bulma.Form.Common as B
+import Bulma.Form.General as B
+import Bulma.Modifiers.Typography as B
+import Bulma.Elements.Elements as B
 import Capability.Resource (class ManageThreads, getThreads, class Navigate, navigate, class ManageCommunity)
-import Common.BulmaUtils as BU
 import Common.Types (MyRoute(..), PaginatedArray, Profile, Thread, ThreadInfo, Pagination)
 import Common.Utils (stringToDate, toThreadInfo, safeHref)
 import Component.CommunityList as CommunityList
 import Component.Footer as Footer
 import Component.Header as Header
+import Component.ThreadView as ThreadView
 import Data.Array (mapWithIndex)
 import Data.Foldable (length)
 import Data.Maybe (Maybe(..))
@@ -25,10 +33,12 @@ import Halogen.Store.Select (selectEq)
 import Network.RemoteData (RemoteData(..), fromMaybe)
 import Store as Store
 import Type.Proxy (Proxy(..))
+import Halogen.HTML.Properties as HP
+import Utils.Bulma (class_, classes_)
 
-type Input = {
-  pagination_ :: Pagination
-}
+type Input =
+  { pagination_ :: Pagination
+  }
 
 type State =
   { threads :: RemoteData String (PaginatedArray ThreadInfo)
@@ -39,7 +49,7 @@ type State =
 data Action = Initialize | LoadThreads | GoToLogin
 
 type OpaqueSlot slot = forall query. H.Slot query Void slot
-type ChildSlots = ( header :: OpaqueSlot Unit, footer :: OpaqueSlot Unit, communityList :: OpaqueSlot Unit )
+type ChildSlots = (header :: OpaqueSlot Unit, footer :: OpaqueSlot Unit, communityList :: OpaqueSlot Unit, threadView :: OpaqueSlot Unit)
 
 component
   :: forall query output m
@@ -58,20 +68,55 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
       }
   }
   where
-  initialState { context: currentUser,input: { pagination_ } } = { threads: NotAsked, currentUser,pagination_ }
+  initialState { context: currentUser, input: { pagination_ } } =
+    { threads: NotAsked, currentUser, pagination_ }
+
+  someFunc textVal iconVal = HH.li [ class_ B.isActive ]
+    [ HH.a_
+        [ HH.span [ classes_ [ B.icon, B.isSmall ] ]
+            [ HH.i [ HP.class_ $ HH.ClassName iconVal ] [] ]
+        , HH.span_ [ HH.text textVal ]
+        ]
+    ]
 
   render :: State -> H.ComponentHTML Action ChildSlots m
   render state = HH.div_
-    [ 
-      HH.slot_ (Proxy :: _ "header") unit Header.component unit
-    , HH.text "Home Pages :)"
-    , HH.br_
-    , HH.text $ "user: " <> show state.currentUser
-    , HH.br_
-    , HH.button [BU.className B.button, HE.onClick \_ -> GoToLogin ] [ HH.text "Go to login" ]
-    , HH.br_
-    , threadList state.threads
-    , HH.slot_ (Proxy :: _ "communityList") unit CommunityList.component unit
+    [ HH.slot_ (Proxy :: _ "header") unit Header.component unit
+    -- , HH.text "Home Pages :)"
+    -- , HH.br_
+    -- , HH.text $ "user: " <> show state.currentUser
+    -- , HH.br_
+    , HH.div [ classes_ [ B.columns, B.is8, B.py5 ] ]
+        [ HH.div [ class_ B.column ]
+            [ HH.p [ classes_ [ B.isSize3, B.hasTextCentered, B.pb4 ] ] [ HH.text "Threads" ]
+            , HH.div [ classes_ [ B.tabs, B.isCentered, B.isRounded ] ]
+                [ HH.ul_
+                    [ someFunc "Top Voted" "bx bxs-objects-vertical-top"
+                    , someFunc "Trending" "bx bx-trending-up"
+                    , someFunc "New" "bx bx-polygon"
+                    , someFunc "Following" "bx bx-run"
+                    ]
+                ]
+            , case state.threads of
+                NotAsked -> HH.text "Threads not loaded yet..."
+                Loading -> HH.text "Loading..."
+                Failure err -> HH.text ("Error loading threads: " <> err)
+                Success { body } | length body == 0 -> HH.text "No threads are here...yet!"
+                Success threads -> do
+                  HH.div_
+                    ( ( \thread ->
+                          HH.slot_
+                            (Proxy :: _ "threadView")
+                            unit
+                            ThreadView.component
+                            { thread: thread }
+                      )
+                        `map` threads.body
+                    )
+            ]
+        ]
+
+    -- , HH.slot_ (Proxy :: _ "communityList") unit CommunityList.component unit
     , HH.slot_ (Proxy :: _ "footer") unit Footer.component unit
     ]
 
@@ -106,24 +151,9 @@ threadList = case _ of
   Success { body } | length body == 0 ->
     HH.text "No threads are here...yet!"
   Success threads -> do
+
     HH.div_ (threadPreview `mapWithIndex` threads.body)
 
 threadPreview :: forall props act. Int -> ThreadInfo -> HH.HTML props act
 threadPreview _ thread =
-  HH.div_
-    [ 
-     HH.text thread.userNameForThreadInfo
-    , HH.text thread.communityNameForThreadInfo
-    , HH.a [ safeHref (ViewThread thread.threadIDForThreadInfo) ] [
-         HH.text thread.title
-        , HH.br_
-        , HH.text $ Maybe.fromMaybe "" thread.description]
-    , HH.br_
-    , HH.text $ show $ Maybe.fromMaybe 0 thread.upvoteCount
-    , HH.br_
-    , HH.text $ show $ Maybe.fromMaybe 0 thread.downvoteCount
-    , HH.br_
-    , HH.text $ show $ Maybe.fromMaybe 0 thread.commentCount
-    , HH.br_
-    , HH.text $ Maybe.fromMaybe "aasdsa" thread.age
-    ]
+  HH.div_ []

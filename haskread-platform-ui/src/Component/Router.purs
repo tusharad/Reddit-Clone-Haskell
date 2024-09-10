@@ -6,7 +6,7 @@ import Bulma.Common as B
 import Bulma.Components.Navbar as B
 import Bulma.Layout.Layout as B
 import Capability.Resource (class ManageComments, class ManageCommunity, class ManageThreads, class ManageUser, class Navigate, navigate)
-import Common.BulmaUtils as BU
+import Utils.Bulma (class_,classes_)
 import Common.Types (myRoute, MyRoute(..), Profile, Pagination)
 import Common.Utils (defaultPagination)
 import Data.Either (Either(..))
@@ -105,7 +105,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
 
   render :: State -> H.ComponentHTML Action ChildSlots m
   render { route } =
-    HH.div [ BU.classNames [B.container,B.hasNavbarFixedTop] ] [
+    HH.div [ classes_ [B.container,B.hasNavbarFixedTop] ] [
     case route of
       Just r -> case r of
         Home p -> HH.slot_ (Proxy :: _ "home") unit Home.component { pagination_ : p}
