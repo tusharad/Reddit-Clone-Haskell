@@ -5,12 +5,14 @@ import Prelude
 import Bulma.CSS.Spacing as B
 import Bulma.Columns.Columns as B
 import Bulma.Columns.Size as B
+import Bulma.Components.Pagination as B
 import Bulma.Components.Tabs as B
 import Bulma.Elements.Button as B
+import Bulma.Elements.Elements as B
 import Bulma.Form.Common as B
+import Bulma.Layout.Layout as B
 import Bulma.Form.General as B
 import Bulma.Modifiers.Typography as B
-import Bulma.Elements.Elements as B
 import Capability.Resource (class ManageThreads, getThreads, class Navigate, navigate, class ManageCommunity)
 import Common.Types (MyRoute(..), PaginatedArray, Profile, Thread, ThreadInfo, Pagination)
 import Common.Utils (stringToDate, toThreadInfo, safeHref)
@@ -26,14 +28,15 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Class (liftEffect)
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.HTML.Core (AttrName(..)) as HC
 import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties as HP
 import Halogen.Store.Connect (connect)
 import Halogen.Store.Monad (class MonadStore)
 import Halogen.Store.Select (selectEq)
 import Network.RemoteData (RemoteData(..), fromMaybe)
 import Store as Store
 import Type.Proxy (Proxy(..))
-import Halogen.HTML.Properties as HP
 import Utils.Bulma (class_, classes_)
 
 type Input =
@@ -80,7 +83,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
     ]
 
   render :: State -> H.ComponentHTML Action ChildSlots m
-  render state = HH.div_
+  render state = HH.div [class_ B.container]
     [ HH.slot_ (Proxy :: _ "header") unit Header.component unit
     -- , HH.text "Home Pages :)"
     -- , HH.br_
@@ -113,10 +116,10 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
                       )
                         `map` threads.body
                     )
+            , paginationView
             ]
+          , HH.slot_ (Proxy :: _ "communityList") unit CommunityList.component unit
         ]
-
-    -- , HH.slot_ (Proxy :: _ "communityList") unit CommunityList.component unit
     , HH.slot_ (Proxy :: _ "footer") unit Footer.component unit
     ]
 
@@ -157,3 +160,20 @@ threadList = case _ of
 threadPreview :: forall props act. Int -> ThreadInfo -> HH.HTML props act
 threadPreview _ thread =
   HH.div_ []
+
+paginationView :: forall props act. HH.HTML props act
+paginationView = do
+  HH.nav [classes_ [B.pagination,B.isRounded]] [
+    HH.a [class_ B.paginationPrevious] [HH.text "Previous"]
+  , HH.a [class_ B.paginationNext] [HH.text "Next"]
+  , HH.ul [class_ B.paginationList] [
+    HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 1"] [HH.text "1"]]
+   , HH.li_ [HH.span [class_ B.paginationEllipsis] [HH.text "&hellip;"]]
+   , HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 45"] [HH.text "45"]]
+   , HH.li_ [HH.a [classes_ [B.paginationLink,B.isCurrent]
+                          , HP.attr (HC.AttrName "area-label") "Go to page 46"] [HH.text "46"]]
+  , HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 1"] [HH.text "47"]]
+   , HH.li_ [HH.span [class_ B.paginationEllipsis] [HH.text "&hellip;"]]
+   , HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 45"] [HH.text "86"]]
+  ]
+  ]

@@ -19,6 +19,7 @@ package:
     - web-storage
     - js-date
     - bulma
+    - arrays
   test:
     main: Test.Main
     dependencies: []

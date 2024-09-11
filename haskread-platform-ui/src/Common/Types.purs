@@ -169,7 +169,7 @@ type ThreadRep row =
 
 type Thread = { | ThreadRep () }
 
-type ThreadInfo = { | ThreadRep (age :: Maybe String) }
+type ThreadInfo = { | ThreadRep (age :: String) }
 
 type Profile =
   { userID :: Int

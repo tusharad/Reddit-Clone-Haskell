@@ -1,17 +1,17 @@
 module Common.Utils where
 
 import Common.Types
-import Data.JSDate 
+import Data.JSDate
+import Data.Tuple
 import Prelude
 
 import Affjax (printError)
-import Data.Tuple
-import Data.Int (toNumber)
 import Affjax.RequestBody as RB
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.ResponseFormat as RF
 import Affjax.Web (request, Request)
 import Data.Argonaut.Core (Json)
+import Data.Array (head, tail)
 import Data.Bifunctor (rmap, lmap)
 import Data.Codec as Codec
 import Data.Codec.Argonaut (JsonCodec, JsonDecodeError, printJsonDecodeError)
@@ -19,7 +19,9 @@ import Data.Codec.Argonaut as CA
 import Data.Codec.Argonaut.Record as CAR
 import Data.Either (Either(..), hush)
 import Data.HTTP.Method (Method(..))
+import Data.Int (floor, fromNumber, toNumber)
 import Data.Maybe (Maybe(..))
+import Data.Maybe (fromMaybe, maybe)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -312,18 +314,24 @@ timeAgo givenDate = do
     currDate <- now
     let diffSeconds = ((getTime currDate) - (getTime givenDate)) / (toNumber 1000)
     let intervals = [ 
-           Tuple "Years" 31536000
-         , Tuple "month" 2592000
-         , Tuple "week" 604800
-         , Tuple "day" 86400
-         , Tuple "hour" 3600
-         , Tuple "minute" 60
-         , Tuple "second" 1
+           Tuple "Years" 31536000.0
+         , Tuple "month" 2592000.0
+         , Tuple "week" 604800.0
+         , Tuple "day" 86400.0
+         , Tuple "hour" 3600.0
+         , Tuple "minute" 60.0
+         , Tuple "second" 1.0
          ]
     go diffSeconds intervals
   where
-    go _ _ = pure "Just Now" -- TODO
-    
+    go :: Number -> Array (Tuple String Number) -> Effect String
+    go _ [] = pure "Just Now"
+    go diffSeconds intervals = do
+      let (Tuple intervalName intervalSeconds) = fromMaybe (Tuple "" 0.0) $ head intervals
+          res = floor $ diffSeconds / intervalSeconds
+      if (res >= 1) then 
+        pure (show res <> " " <> intervalName <> if res > 1 then "s" else "" <> " ago") 
+      else go diffSeconds (fromMaybe [] $ tail intervals)
 
 toThreadInfo :: PaginatedArray Thread -> Effect (PaginatedArray ThreadInfo)
 toThreadInfo threadList = do
@@ -333,6 +341,9 @@ toThreadInfo threadList = do
 toThreadInfo_ :: Thread -> Effect ThreadInfo
 toThreadInfo_ thread = do
   mAge <- stringToDate thread.createdAtForThreadInfo
+  ageRes <- case mAge of
+      Nothing -> pure "???"
+      Just age -> timeAgo age
   let
     threadInfo =
       { title: thread.title
@@ -346,7 +357,7 @@ toThreadInfo_ thread = do
       , upvoteCount: thread.upvoteCount
       , userNameForThreadInfo: thread.userNameForThreadInfo
       , commentCount: thread.commentCount
-      , age: toString <$> mAge
+      , age: ageRes
       }
   pure threadInfo
 

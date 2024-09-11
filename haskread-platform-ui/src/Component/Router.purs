@@ -105,7 +105,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
 
   render :: State -> H.ComponentHTML Action ChildSlots m
   render { route } =
-    HH.div [ classes_ [B.container,B.hasNavbarFixedTop] ] [
+    HH.div [ classes_ [B.container] ] [
     case route of
       Just r -> case r of
         Home p -> HH.slot_ (Proxy :: _ "home") unit Home.component { pagination_ : p}
