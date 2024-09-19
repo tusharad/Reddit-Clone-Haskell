@@ -2,9 +2,21 @@ module Page.Login where
 
 import Prelude
 
+import Bulma.CSS.Spacing (pt4, py6)
+import Bulma.Columns (column, columns, isHalf)
+import Bulma.Common (isFullwidth)
+import Bulma.Elements.Button (button)
+import Bulma.Elements.Elements (box)
+import Bulma.Form.General (IconAlignment(..)) as Bulma
+import Bulma.Form.General (IconAlignment, control, field, hasIconAlignment, isCentered, label)
+import Bulma.Form.Input (input)
+import Bulma.Modifiers.Helpers (isPrimary)
+import Bulma.Modifiers.Typography (hasTextCentered, hasTextWeightSemiBold, isSize4)
 import Capability.Resource (class ManageUser, loginUser, class Navigate, navigate)
 import Common.Types (MyRoute(..))
 import Common.Utils (defaultPagination, safeHref, whenElem)
+import Component.Footer as Footer
+import Component.Header as Header
 import Data.Either (Either(..), isLeft)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
@@ -12,11 +24,19 @@ import Effect.Class.Console (log)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties (classes)
 import Halogen.HTML.Properties as HP
+import Halogen.Store.Monad (class MonadStore)
+import Store as Store
+import Type.Proxy (Proxy(..))
+import Utils.Bulma (class_, classes_)
 import Web.Event.Event (Event)
 import Web.Event.Event as Event
 
 type Input = { redirect :: Boolean }
+
+type OpaqueSlot slot = forall query. H.Slot query Void slot
+type ChildSlots = (header :: OpaqueSlot Unit, footer :: OpaqueSlot Unit, communityList :: OpaqueSlot Unit, threadView :: OpaqueSlot Unit)
 
 data Action
   = SetEmail String
@@ -40,6 +60,7 @@ component
    . MonadAff m
   => Navigate m
   => ManageUser m
+  => MonadStore Store.Action Store.Store m
   => H.Component query Input output m
 component = H.mkComponent
   { initialState
@@ -77,8 +98,64 @@ component = H.mkComponent
         Nothing -> pure unit
         Just _ -> navigate (Home defaultPagination)
 
-  render :: State -> H.ComponentHTML Action () m
+  render :: State -> H.ComponentHTML Action ChildSlots m
   render st =
+    HH.div_
+      [ HH.slot_ (Proxy :: _ "header") unit Header.component unit
+      , HH.div [ classes_ [ columns, isCentered, py6 ] ]
+          [ HH.div [ classes_ [ column, isHalf ] ]
+              [ HH.div [ class_ box ]
+                  [ HH.p [ classes_ [ isSize4, hasTextCentered, hasTextWeightSemiBold ] ] [ HH.text "Login to Haskread" ]
+                  , HH.form [ HE.onSubmit HandleSubmit ]
+                      [ whenElem (isLeft st.loginError) \_ ->
+                          HH.div
+                            []
+                            [ HH.text "Email or password is invalid" ]
+                      , HH.div [ class_ field ]
+                          [ HH.label [ class_ label ] [ HH.text "Email" ]
+                          , HH.div [ classes_ [ control, hasIconAlignment Bulma.IconLeft ] ]
+                              [ HH.input
+                                  [ class_ input
+                                  , HP.type_ HP.InputText
+                                  , HP.placeholder "Enter your email"
+                                  , HE.onValueInput SetEmail
+                                  , HP.value st.email
+                                  ]
+                              , HH.span [ HP.class_ $ HH.ClassName "icon is-small is-left" ]
+                                  [ HH.i [ HP.class_ $ HH.ClassName "bx bx-envelope" ] []
+                                  ]
+                              ]
+                          ]
+                      , HH.div [ class_ field ]
+                          [ HH.label [ class_ label ] [ HH.text "Password" ]
+                          , HH.div [ classes_ [ control, hasIconAlignment Bulma.IconLeft ] ]
+                              [ HH.input
+                                  [ class_ input
+                                  , HP.type_ HP.InputPassword
+                                  , HP.placeholder "Enter your password"
+                                  , HE.onValueInput SetPassword
+                                  , HP.value st.password
+                                  ]
+                              , HH.span [ HP.class_ $ HH.ClassName "icon is-small is-left" ]
+                                  [ HH.i [ HP.class_ $ HH.ClassName "bx bx-lock" ] []
+                                  ]
+                              ]
+                          ]
+                      , HH.div [ class_ field ]
+                          [ HH.div [ class_ control ]
+                              [ HH.button [ classes_ [ button, isPrimary, isFullwidth ] ]
+                                  [ HH.strong_ [ HH.text "Login" ]
+                                  ]
+                              ]
+                          ]
+                      ]
+                  , HH.p [ classes_ [ hasTextCentered, pt4 ] ] [ HH.text "Don't have an account?", HH.a [ HP.href "/signup" ] [ HH.text "sign up" ] ]
+                  ]
+              ]
+          ]
+      , HH.slot_ (Proxy :: _ "footer") unit Footer.component unit
+      ]
+{-
     HH.div_
       [ HH.h1
           []
@@ -114,3 +191,5 @@ component = H.mkComponent
               ]
           ]
       ]
+
+-}

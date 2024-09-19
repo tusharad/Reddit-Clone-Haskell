@@ -4,7 +4,7 @@ import Prelude
 
 import Bulma.CSS.Spacing as B
 import Bulma.Columns.Columns as B
-import Bulma.Columns.Size as B
+import Bulma.Columns.Size hiding (isSmall) as B
 import Bulma.Components.Pagination as B
 import Bulma.Components.Tabs as B
 import Bulma.Elements.Button as B
@@ -163,17 +163,20 @@ threadPreview _ thread =
 
 paginationView :: forall props act. HH.HTML props act
 paginationView = do
-  HH.nav [classes_ [B.pagination,B.isRounded]] [
+  HH.nav [classes_ [B.pagination, B.isRounded, B.pt4]
+        , HP.attr (HC.AttrName "area-label") "pagination"
+        , HP.attr (HC.AttrName "role") "navigation"
+    ] [
     HH.a [class_ B.paginationPrevious] [HH.text "Previous"]
   , HH.a [class_ B.paginationNext] [HH.text "Next"]
   , HH.ul [class_ B.paginationList] [
     HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 1"] [HH.text "1"]]
-   , HH.li_ [HH.span [class_ B.paginationEllipsis] [HH.text "&hellip;"]]
+   , HH.li_ [HH.span [class_ B.paginationEllipsis] [HH.text "..."]]
    , HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 45"] [HH.text "45"]]
    , HH.li_ [HH.a [classes_ [B.paginationLink,B.isCurrent]
                           , HP.attr (HC.AttrName "area-label") "Go to page 46"] [HH.text "46"]]
   , HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 1"] [HH.text "47"]]
-   , HH.li_ [HH.span [class_ B.paginationEllipsis] [HH.text "&hellip;"]]
+   , HH.li_ [HH.span [class_ B.paginationEllipsis] [HH.text "..."]]
    , HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 45"] [HH.text "86"]]
   ]
   ]

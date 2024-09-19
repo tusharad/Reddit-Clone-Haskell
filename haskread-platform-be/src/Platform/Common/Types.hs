@@ -55,7 +55,6 @@ data Env = Env
     mailAPIToken :: Text,
     mailFromEmail :: Text,
     oauth2Config :: OAuth2Config,
-    jwtSecretKey_ :: Text,
     tokenExpiryTime :: Natural
   }
   deriving (Generic, FromDhall, Show)

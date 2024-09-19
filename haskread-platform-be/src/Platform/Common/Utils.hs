@@ -155,7 +155,7 @@ readEnv envFilePath = do
       case ePool of
         Left e -> pure $ Left $ toException e
         Right pool -> do
-          let jwtSecretKey = fromSecret $ T.encodeUtf8 jwtSecretKey_
+          jwtSecretKey <- generateKey
           loggerSet_ <- newFileLoggerSet defaultBufSize logFilePath
           sem <- newQSem 10 -- 10 threads
           let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool

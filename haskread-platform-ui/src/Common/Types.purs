@@ -2,6 +2,8 @@ module Common.Types
   ( BaseURL(..)
   , ChangePasswordFields
   , CommentInfo(..)
+  , Community(..)
+  , CommunityRep
   , CreateThreadFields
   , DeleteUserFields
   , Endpoint(..)
@@ -10,6 +12,7 @@ module Common.Types
   , NestedComment(..)
   , OtpFields
   , PaginatedArray
+  , Pagination(..)
   , Profile
   , RegisterFields
   , RequestMethod(..)
@@ -18,23 +21,20 @@ module Common.Types
   , ThreadInfo(..)
   , ThreadRep
   , Token(..)
-  , Community(..)
-  , CommunityRep
   , UpdateThreadFields
   , changePasswordCodec
+  , communitiesCodec
   , createThreadCodec
   , deleteUserCodec
   , endpointCodec
   , loginCodec
   , myRoute
   , nestedCommentsCodec
+  , profileCodec
   , registerCodec
   , threadCodec
   , threadsCodec
   , updateThreadCodec
-  , profileCodec
-  , communitiesCodec
-  , Pagination(..)
   )
   where
 
