@@ -20,7 +20,6 @@ let Env = {
     mailAPIToken : Text,
     mailFromEmail : Text,
     oauth2Config : OAuth2Config,
-    jwtSecretKey_ : Text,
     tokenExpiryTime : Natural -- Seconds
 }
 
@@ -47,7 +46,6 @@ let env : Env = {
     mailAPIToken = env:MailAPIToken as Text,
     mailFromEmail = env:MailFromEmail as Text,
     oauth2Config = oauth2Config,
-    jwtSecretKey_ = env:HaskReadJwtSecret as Text,
     tokenExpiryTime = 120
 }
 
