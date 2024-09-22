@@ -60,7 +60,7 @@ import Undefined (undefined)
 newtype BaseURL = BaseURL String
 
 data Endpoint
-  = Threads
+  = Threads Pagination
   | UserByToken
   | Login0
   | Register0
@@ -78,7 +78,9 @@ derive instance genericEndpoint :: Generic Endpoint _
 
 endpointCodec :: RouteDuplex' Endpoint
 endpointCodec = root $ sum
-  { "Threads": "api" / "v1" / "thread" / "all" / noArgs
+  { "Threads": "api" / "v1" / "thread" / "all" ? {
+    limit : int, offset : int
+  }
   , "UserByToken": "api" / "v1" / "user" / "profile" / noArgs
   , "Login0": "api" / "v1" / "user" / "auth" / "login" / noArgs
   , "Register0": "api" / "v1" / "user" / "auth" / "register" / noArgs
@@ -125,15 +127,15 @@ instance showToken :: Show Token where
   show (Token _) = "TOKEN"
 
 type Pagination = {
-  limit :: Maybe Int
-  , offset :: Maybe Int
+  limit :: Int
+  , offset :: Int
 }
 
 myRoute :: RouteDuplex' MyRoute
 myRoute = root $ G.sum
   { "Home": "Home" ? { 
-        offset: optional <<< int
-      , limit: optional <<< int
+        offset: int
+      , limit: int
       }
   , "Login": path "login" G.noArgs
   , "Register": path "register" G.noArgs

@@ -10,6 +10,7 @@ import Bulma.Elements.Elements as B
 import Bulma.Elements.Title as B
 import Bulma.Layout.Layout as B
 import Bulma.Modifiers.Typography as B
+import Common.Utils (safeHref)
 import Data.Maybe (fromMaybe)
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
@@ -40,8 +41,8 @@ component = H.mkComponent
           [ class_ B.cardHeader ]
           [ HH.div
               [ class_ B.mediaContent ]
-              [ HH.p
-                  [ class_ B.cardHeaderTitle ]
+              [ HH.a
+                  [ class_ B.cardHeaderTitle, safeHref $ ViewThread t.threadIDForThreadInfo ]
                   [ HH.text t.title ]
               ]
           , HH.a
@@ -51,7 +52,7 @@ component = H.mkComponent
               ]
           ]
       , HH.div [ classes_ [ B.cardContent, B.pt1 ] ]
-          [ HH.div [ class_ B.content ]
+          [ HH.a [ class_ B.content, safeHref $ ViewThread t.threadIDForThreadInfo ]
               [ HH.text $ fromMaybe "" t.description
               ]
           ]

@@ -10,12 +10,12 @@ import Bulma.Components.Tabs as B
 import Bulma.Elements.Button as B
 import Bulma.Elements.Elements as B
 import Bulma.Form.Common as B
-import Bulma.Layout.Layout as B
 import Bulma.Form.General as B
+import Bulma.Layout.Layout as B
 import Bulma.Modifiers.Typography as B
-import Capability.Resource (class ManageThreads, getThreads, class Navigate, navigate, class ManageCommunity)
+import Capability.Resource (class ManageCommunity, class ManageThreads, class Navigate, getThreads, navigate)
 import Common.Types (MyRoute(..), PaginatedArray, Profile, Thread, ThreadInfo, Pagination)
-import Common.Utils (stringToDate, toThreadInfo, safeHref)
+import Common.Utils (safeHref, stringToDate, toThreadInfo)
 import Component.CommunityList as CommunityList
 import Component.Footer as Footer
 import Component.Header as Header
@@ -49,7 +49,7 @@ type State =
   , pagination_ :: Pagination
   }
 
-data Action = Initialize | LoadThreads | GoToLogin
+data Action = Initialize | LoadThreads | GoToLogin | ChangePagination Int Int
 
 type OpaqueSlot slot = forall query. H.Slot query Void slot
 type ChildSlots = (header :: OpaqueSlot Unit, footer :: OpaqueSlot Unit, communityList :: OpaqueSlot Unit, threadView :: OpaqueSlot Unit)
@@ -74,7 +74,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
   initialState { context: currentUser, input: { pagination_ } } =
     { threads: NotAsked, currentUser, pagination_ }
 
-  someFunc textVal iconVal = HH.li [ class_ B.isActive ]
+  tabCSS textVal iconVal = HH.li [ class_ B.isActive ]
     [ HH.a_
         [ HH.span [ classes_ [ B.icon, B.isSmall ] ]
             [ HH.i [ HP.class_ $ HH.ClassName iconVal ] [] ]
@@ -83,21 +83,17 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
     ]
 
   render :: State -> H.ComponentHTML Action ChildSlots m
-  render state = HH.div [class_ B.container]
+  render state = HH.div [ class_ B.container ]
     [ HH.slot_ (Proxy :: _ "header") unit Header.component unit
-    -- , HH.text "Home Pages :)"
-    -- , HH.br_
-    -- , HH.text $ "user: " <> show state.currentUser
-    -- , HH.br_
     , HH.div [ classes_ [ B.columns, B.is8, B.py5 ] ]
         [ HH.div [ class_ B.column ]
             [ HH.p [ classes_ [ B.isSize3, B.hasTextCentered, B.pb4 ] ] [ HH.text "Threads" ]
             , HH.div [ classes_ [ B.tabs, B.isCentered, B.isRounded ] ]
                 [ HH.ul_
-                    [ someFunc "Top Voted" "bx bxs-objects-vertical-top"
-                    , someFunc "Trending" "bx bx-trending-up"
-                    , someFunc "New" "bx bx-polygon"
-                    , someFunc "Following" "bx bx-run"
+                    [ tabCSS "Top Voted" "bx bxs-objects-vertical-top"
+                    , tabCSS "Trending" "bx bx-trending-up"
+                    , tabCSS "New" "bx bx-polygon"
+                    , tabCSS "Following" "bx bx-run"
                     ]
                 ]
             , case state.threads of
@@ -116,9 +112,9 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
                       )
                         `map` threads.body
                     )
-            , paginationView
+            , paginationView state.pagination_ 10
             ]
-          , HH.slot_ (Proxy :: _ "communityList") unit CommunityList.component unit
+        , HH.slot_ (Proxy :: _ "communityList") unit CommunityList.component unit
         ]
     , HH.slot_ (Proxy :: _ "footer") unit Footer.component unit
     ]
@@ -130,53 +126,45 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
 
     LoadThreads -> do
       _ <- H.modify_ _ { threads = Loading }
-      mThreadList <- getThreads
+      s <- H.get
+      mThreadList <- getThreads s.pagination_
       case mThreadList of
         Nothing ->
-          H.modify_ _ { threads = Failure "asdas" }
+          H.modify_ _ { threads = Failure "failed to load threads." }
         Just threadList -> do
           threadInfoList <- liftEffect $ toThreadInfo threadList
           H.modify_ _ { threads = fromMaybe (Just threadInfoList) }
 
     GoToLogin -> navigate Login
+    ChangePagination limit offset -> do
+        navigate $ Home { limit, offset } 
+        _ <- H.modify_ _ { pagination_ = { limit, offset } } 
+        void $ H.fork $ handleAction LoadThreads
 
-threadList
-  :: forall props act
-   . RemoteData String (PaginatedArray ThreadInfo)
-  -> HH.HTML props act
-threadList = case _ of
-  NotAsked ->
-    HH.text "Threads not loaded yet..."
-  Loading ->
-    HH.text "Loading..."
-  Failure err ->
-    HH.text ("Error loading threads: " <> err)
-  Success { body } | length body == 0 ->
-    HH.text "No threads are here...yet!"
-  Success threads -> do
-
-    HH.div_ (threadPreview `mapWithIndex` threads.body)
-
-threadPreview :: forall props act. Int -> ThreadInfo -> HH.HTML props act
-threadPreview _ thread =
-  HH.div_ []
-
-paginationView :: forall props act. HH.HTML props act
-paginationView = do
-  HH.nav [classes_ [B.pagination, B.isRounded, B.pt4]
-        , HP.attr (HC.AttrName "area-label") "pagination"
-        , HP.attr (HC.AttrName "role") "navigation"
-    ] [
-    HH.a [class_ B.paginationPrevious] [HH.text "Previous"]
-  , HH.a [class_ B.paginationNext] [HH.text "Next"]
-  , HH.ul [class_ B.paginationList] [
-    HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 1"] [HH.text "1"]]
-   , HH.li_ [HH.span [class_ B.paginationEllipsis] [HH.text "..."]]
-   , HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 45"] [HH.text "45"]]
-   , HH.li_ [HH.a [classes_ [B.paginationLink,B.isCurrent]
-                          , HP.attr (HC.AttrName "area-label") "Go to page 46"] [HH.text "46"]]
-  , HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 1"] [HH.text "47"]]
-   , HH.li_ [HH.span [class_ B.paginationEllipsis] [HH.text "..."]]
-   , HH.li_ [HH.a [class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 45"] [HH.text "86"]]
-  ]
-  ]
+paginationView :: Pagination -> Int -> forall props act. HH.HTML props Action
+paginationView { offset } _ = do
+  let nextOffset = offset + 10 --TODO: Need to find a when to disable next button.
+  let prevOffset = if (offset - 10 > 0) then offset - 10 else 0
+  HH.nav
+    [ classes_ [ B.pagination, B.isRounded, B.pt4 ]
+    , HP.attr (HC.AttrName "area-label") "pagination"
+    , HP.attr (HC.AttrName "role") "navigation"
+    ]
+    [ HH.a [ class_ B.paginationPrevious, HE.onClick \_ -> ChangePagination 10 prevOffset ] [ HH.text "Previous" ]
+    , HH.a [ class_ B.paginationNext, HE.onClick \_ -> ChangePagination 10 nextOffset ] [ HH.text "Next" ]
+    , HH.ul [ class_ B.paginationList ]
+        [ HH.li_ [ HH.a [ class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 1" ] [ HH.text "1" ] ]
+        , HH.li_ [ HH.span [ class_ B.paginationEllipsis ] [ HH.text "..." ] ]
+        , HH.li_ [ HH.a [ class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 45" ] [ HH.text "45" ] ]
+        , HH.li_
+            [ HH.a
+                [ classes_ [ B.paginationLink, B.isCurrent ]
+                , HP.attr (HC.AttrName "area-label") "Go to page 46"
+                ]
+                [ HH.text "46" ]
+            ]
+        , HH.li_ [ HH.a [ class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 1" ] [ HH.text "47" ] ]
+        , HH.li_ [ HH.span [ class_ B.paginationEllipsis ] [ HH.text "..." ] ]
+        , HH.li_ [ HH.a [ class_ B.paginationLink, HP.attr (HC.AttrName "area-label") "Go to page 45" ] [ HH.text "86" ] ]
+        ]
+    ]

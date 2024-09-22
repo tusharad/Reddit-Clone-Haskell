@@ -42,8 +42,8 @@ instance navigateHalogenM :: Navigate AppM where
     liftEffect <<< setHash <<< print Route.myRoute
 
 instance threadHalogenM :: ManageThreads AppM where
-  getThreads = do
-    mjson <- mkRequest { endpoint: Threads, method: Get }
+  getThreads p = do
+    mjson <- mkRequest { endpoint: Threads p, method: Get }
     decode threadsCodec mjson
 
   createThread = createThread

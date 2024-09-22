@@ -75,7 +75,8 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
       GoToMyProfile -> navigate $ Home defaultPagination -- TODO: Add myProfile page and add here
       SetSearchInput searchInput ->
         H.modify_ _ { searchInput = searchInput }
-      GoToHome -> navigate $ Home defaultPagination
+      GoToHome -> do 
+        navigate $ Home defaultPagination
       HandleSearch event -> do
         H.liftEffect $ Event.preventDefault event
         -- _ <- H.get

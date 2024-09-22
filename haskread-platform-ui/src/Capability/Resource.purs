@@ -1,35 +1,21 @@
 module Capability.Resource where
 
-import Halogen (HalogenM, lift)
-import Common.Types
-  ( PaginatedArray
-  , Thread
-  , LoginFields
-  , Profile
-  , RegisterFields
-  , OtpFields
-  , CreateThreadFields
-  , ChangePasswordFields
-  , DeleteUserFields
-  , UpdateThreadFields
-  , MyRoute
-  , NestedComment
-  , Community
-  )
-import Data.Maybe (Maybe)
-import Data.Either (Either)
-
 import Prelude
 
+import Common.Types (ChangePasswordFields, Community, CreateThreadFields, DeleteUserFields, LoginFields, MyRoute, NestedComment, OtpFields, PaginatedArray, Profile, RegisterFields, Thread, UpdateThreadFields, Pagination)
+import Data.Either (Either)
+import Data.Maybe (Maybe)
+import Halogen (HalogenM, lift)
+
 class Monad m <= ManageThreads m where
-  getThreads :: m (Maybe (PaginatedArray Thread))
+  getThreads :: Pagination -> m (Maybe (PaginatedArray Thread))
   createThread :: CreateThreadFields -> m (Maybe String)
   deleteThread :: Int -> m (Maybe String)
   getThread :: Int -> m (Maybe Thread)
   updateThread :: UpdateThreadFields -> m (Maybe String)
 
 instance manageThreadHalogenM :: ManageThreads m => ManageThreads (HalogenM st act slots msg m) where
-  getThreads = lift getThreads
+  getThreads = lift <<< getThreads
   createThread = lift <<< createThread
   deleteThread = lift <<< deleteThread
   getThread = lift <<< getThread

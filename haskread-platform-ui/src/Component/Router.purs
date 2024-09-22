@@ -99,9 +99,8 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
   handleQuery = case _ of
     Navigate dest a -> do
       { currentUser } <- H.get
-      unless (isNothing currentUser && dest `elem` authRoute)
-        (H.modify_ _ { route = Just dest })
-      pure (Just a)
+      unless (isNothing currentUser && dest `elem` authRoute) $ H.modify_ _ { route = Just dest }
+      pure $ Just a
 
   render :: State -> H.ComponentHTML Action ChildSlots m
   render { route } =

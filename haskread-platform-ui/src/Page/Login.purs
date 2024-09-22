@@ -12,7 +12,7 @@ import Bulma.Form.General (IconAlignment, control, field, hasIconAlignment, isCe
 import Bulma.Form.Input (input)
 import Bulma.Modifiers.Helpers (isPrimary)
 import Bulma.Modifiers.Typography (hasTextCentered, hasTextWeightSemiBold, isSize4)
-import Capability.Resource (class ManageUser, loginUser, class Navigate, navigate)
+import Capability.Resource (class ManageUser, class Navigate, loginUser, navigate)
 import Common.Types (MyRoute(..))
 import Common.Utils (defaultPagination, safeHref, whenElem)
 import Component.Footer as Footer
@@ -23,6 +23,7 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.HTML.Events (onClick)
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties (classes)
 import Halogen.HTML.Properties as HP
@@ -42,6 +43,7 @@ data Action
   = SetEmail String
   | SetPassword String
   | HandleSubmit Event
+  | GoToSignup
 
 type State =
   { email :: String
@@ -80,6 +82,7 @@ component = H.mkComponent
   handleAction = case _ of
     SetEmail email -> H.modify_ _ { email = email }
     SetPassword password -> H.modify_ _ { password = password }
+    GoToSignup -> navigate Register
     HandleSubmit event -> do
       H.liftEffect $ Event.preventDefault event
       st <- H.get
@@ -116,7 +119,7 @@ component = H.mkComponent
                           , HH.div [ classes_ [ control, hasIconAlignment Bulma.IconLeft ] ]
                               [ HH.input
                                   [ class_ input
-                                  , HP.type_ HP.InputText
+                                  , HP.type_ HP.InputEmail
                                   , HP.placeholder "Enter your email"
                                   , HE.onValueInput SetEmail
                                   , HP.value st.email
@@ -149,7 +152,7 @@ component = H.mkComponent
                               ]
                           ]
                       ]
-                  , HH.p [ classes_ [ hasTextCentered, pt4 ] ] [ HH.text "Don't have an account?", HH.a [ HP.href "/signup" ] [ HH.text "sign up" ] ]
+                  , HH.p [ classes_ [ hasTextCentered, pt4 ] ] [ HH.text "Don't have an account? ", HH.a [ onClick \_ -> GoToSignup ] [ HH.text "sign up" ] ]
                   ]
               ]
           ]
