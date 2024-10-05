@@ -22,6 +22,7 @@ import Data.Array (mapWithIndex)
 import Data.Foldable (length)
 import Data.Maybe (Maybe(..), isJust)
 import Effect.Aff.Class (class MonadAff)
+import Effect.Class.Console (log)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
@@ -36,15 +37,17 @@ type State = {
       communities :: RemoteData String (PaginatedArray Community)
     }
 
-data Action = Initialize | LoadCommunities | GoToCommunityPage Int
+data Action = Initialize | LoadCommunities | GoToCommunityPage Int | Click Int
+
+data Output = Clicked Int
 
 component 
-    :: forall query output m
+    :: forall query m
     .MonadAff m
     => Navigate m
     => ManageCommunity m
     => MonadStore Store.Action Store.Store m
-    => H.Component query Unit output m
+    => H.Component query Unit Output m
 component = H.mkComponent
   { initialState
   , render
@@ -59,9 +62,11 @@ component = H.mkComponent
             communities : NotAsked
         }
 
-    handleAction :: forall slots. Action -> H.HalogenM State Action slots output m Unit
+    handleAction :: forall slots. Action -> H.HalogenM State Action slots Output m Unit
     handleAction = 
         case _ of
+            Click cId -> do
+               H.raise (Clicked cId)
             Initialize -> do
                -- nothing here right now!
                void $ H.fork $ handleAction LoadCommunities
@@ -74,6 +79,7 @@ component = H.mkComponent
                     Just communityList -> do
                         H.modify_ _ { communities = fromMaybe (Just communityList) }
             GoToCommunityPage cId -> do
+               void $ H.fork $ handleAction (Click cId)
                navigate $ Home { limit: 10, offset: 0, communityId: Just cId }
     
     render :: State -> H.ComponentHTML Action () m

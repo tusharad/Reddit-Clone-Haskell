@@ -117,11 +117,13 @@ deleteThreadH _ _ = throw401Err "Please login first"
 
 fetchAllThreadsH :: 
     (MonadUnliftIO m) =>
-    (Maybe Int) -> (Maybe Int) ->
+    Maybe Int -> 
+    Maybe Int ->
+    Maybe Int ->
     AppM m FetchAllThreadsResponse
-fetchAllThreadsH mLimit mOffSet = do
+fetchAllThreadsH mLimit mOffSet mCommunityId = do
   threadInfoList <- queryWrapper (
-    fetchThreadInfoQ (fromMaybe 10 mLimit) (fromMaybe 0 mOffSet))
+    fetchThreadInfoQ (fromMaybe 10 mLimit) (fromMaybe 0 mOffSet) mCommunityId)
   return $ FetchAllThreadsResponse (length threadInfoList) threadInfoList
 
 fetchThreadH :: (MonadUnliftIO m) => ThreadID -> AppM m ThreadInfo

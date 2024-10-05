@@ -31,3 +31,5 @@ TODO:
 - [ ] There shall be a view-user page with, without id, own users profile and with id other's profile.
 - [ ] Fix CSS of footer page
 - [ ] Add more options to Home so it can more filters such as communityID, sortBy.
+- [ ] Add error message during login and register page
+- [ ] Create Post form 

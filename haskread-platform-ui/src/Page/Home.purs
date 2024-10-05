@@ -27,6 +27,7 @@ import Data.Maybe as Maybe
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (liftEffect)
 import Halogen as H
+import Effect.Class.Console (log)
 import Halogen.HTML as HH
 import Halogen.HTML.Core (AttrName(..)) as HC
 import Halogen.HTML.Events as HE
@@ -49,10 +50,15 @@ type State =
   , homeOps :: HomeOps
   }
 
-data Action = Initialize | LoadThreads | GoToLogin | ChangePagination Int Int (Maybe Int)
+data Action = Initialize 
+    | LoadThreads | GoToLogin | ChangePagination Int Int (Maybe Int) | HandleCommunityList CommunityList.Output
 
 type OpaqueSlot slot = forall query. H.Slot query Void slot
-type ChildSlots = (header :: OpaqueSlot Unit, footer :: OpaqueSlot Unit, communityList :: OpaqueSlot Unit, threadView :: OpaqueSlot Unit)
+type ChildSlots = (
+        header :: OpaqueSlot Unit
+        , footer :: OpaqueSlot Unit
+        , communityList :: forall query. H.Slot query CommunityList.Output Unit
+        , threadView :: OpaqueSlot Unit)
 
 component
   :: forall query output m
@@ -114,7 +120,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
                     )
             , paginationView state.homeOps 10
             ]
-        , HH.slot_ (Proxy :: _ "communityList") unit CommunityList.component unit
+        , HH.slot (Proxy :: _ "communityList") unit CommunityList.component unit HandleCommunityList 
         ]
     , HH.slot_ (Proxy :: _ "footer") unit Footer.component unit
     ]
@@ -140,6 +146,11 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
         navigate $ Home { limit, offset, communityId } 
         _ <- H.modify_ _ { homeOps = { limit, offset, communityId } } 
         void $ H.fork $ handleAction LoadThreads
+    HandleCommunityList op -> do
+        case op of
+            CommunityList.Clicked n -> do
+               H.modify_ _ { homeOps = { offset: 0, limit: 10, communityId: Just n } }
+               void $ H.fork $ handleAction LoadThreads
 
 paginationView :: HomeOps -> Int -> forall props act. HH.HTML props Action
 paginationView { offset, communityId } _ = do

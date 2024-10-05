@@ -39,7 +39,12 @@ type State = {
  }
 
 type OpaqueSlot slot = forall query. H.Slot query Void slot
-type ChildSlots = (header :: OpaqueSlot Unit, footer :: OpaqueSlot Unit, communityList :: OpaqueSlot Unit, threadView :: OpaqueSlot Unit)
+type ChildSlots = (
+      header :: OpaqueSlot Unit
+    , footer :: OpaqueSlot Unit
+    , communityList :: forall query. H.Slot query CommunityList.Output Unit
+    , threadView :: OpaqueSlot Unit
+    )
 
 
 data Action = Initialize

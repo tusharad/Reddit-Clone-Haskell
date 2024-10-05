@@ -86,11 +86,18 @@ fetchThreadInfoByIDQ tID = do
     [] -> pure Nothing
     (x : _) -> pure $ Just x
 
-fetchThreadInfoQ :: (MonadOrville m) => Int -> Int -> m [ThreadInfo]
-fetchThreadInfoQ limit offset =
+mkWhereClauseForCommunityId :: Maybe Int -> Maybe WhereClause
+mkWhereClauseForCommunityId Nothing = Nothing
+mkWhereClauseForCommunityId (Just cId) = 
+ Just $ whereClause $
+    columnReference (fieldColumnName (Just (stringToAliasName "t")) communityIDField)
+      `equals` valueExpression (SqlValue.fromInt32 $ fromIntegral cId)
+
+fetchThreadInfoQ :: (MonadOrville m) => Int -> Int -> Maybe Int -> m [ThreadInfo]
+fetchThreadInfoQ limit offset mCommunityId =
   executeAndDecode
     SelectQuery
-    (fetchThreadInfoExpr Nothing (Just (limitExpr limit)) (Just (offsetExpr offset)))
+    (fetchThreadInfoExpr (mkWhereClauseForCommunityId mCommunityId) (Just (limitExpr limit)) (Just (offsetExpr offset)))
     (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)
 
 fetchThreadInfoExpr :: Maybe WhereClause -> Maybe LimitExpr -> Maybe OffsetExpr -> QueryExpr

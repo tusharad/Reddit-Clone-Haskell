@@ -368,6 +368,7 @@ type FetchAllThreadsAPI =
     :> "all"
     :> QueryParam "limit" Int
     :> QueryParam "offset" Int
+    :> QueryParam "communityId" Int
     :> Get '[JSON] FetchAllThreadsResponse
 
 type FetchThreadAPI =
