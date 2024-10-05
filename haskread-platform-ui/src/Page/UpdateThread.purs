@@ -4,7 +4,7 @@ import Prelude
 
 import Capability.Resource (class ManageThreads, getThread, updateThread, class Navigate, navigate)
 import Common.Types (MyRoute(..), Thread, Profile)
-import Common.Utils (defaultPagination, whenElem)
+import Common.Utils (defaultHomeOps, whenElem)
 import Data.Either (Either(..), isLeft, fromLeft)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), isNothing)
@@ -92,10 +92,10 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
           -- check if user is owner of this thread or not.
           mCurrentUser <- H.gets _.currentUser
           case mCurrentUser of
-            Nothing -> navigate (Home defaultPagination)
+            Nothing -> navigate (Home defaultHomeOps)
             Just currUser -> do
               when (currUser.userID /= threadInfo.userIDForThreadInfo)
-                (navigate (Home defaultPagination))
+                (navigate (Home defaultHomeOps))
           H.modify_ _
             { threadTitle = threadInfo.title
             , threadDescription = Maybe.fromMaybe "" threadInfo.description
@@ -131,7 +131,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
           updateThread updateThreadFields
       case mRes of
         Nothing -> pure unit
-        Just _ -> navigate (Home defaultPagination)
+        Just _ -> navigate (Home defaultHomeOps)
 
   render :: State -> H.ComponentHTML Action _ m
   render st =

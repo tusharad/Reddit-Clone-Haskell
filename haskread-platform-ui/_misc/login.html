@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Adding Bulma CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <!-- Box Icons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <title>HaskRead - Login</title>
+</head>
+
+<body class="has-navbar-fixed-top">
+    <div id="main" class="container">
+        <div id="main-body" class="container">
+            <!-- Navbar -->
+            <nav class="navbar is-fixed-top px-6 has-shadow" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    <a class="navbar-item" href="/">
+                        <p class="is-size-3 has-text-weight-bold">HaskRead</p>
+                    </a>
+                    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+                        data-target="navbarBasicExample">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+            </nav>
+            <!-- End of navbar -->
+
+            <!-- Login Form -->
+            <div class="columns is-centered py-6">
+                <div class="column is-half">
+                    <div class="box">
+                        <p class="is-size-4 has-text-centered has-text-weight-semibold">Login to HaskRead</p>
+                        <form action="/login" method="POST">
+                            <div class="field">
+                                <label class="label">Email</label>
+                                <div class="control has-icons-left">
+                                    <input class="input" type="email" placeholder="Enter your email" required>
+                                    <span class="icon is-small is-left">
+                                        <i class='bx bx-envelope'></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Password</label>
+                                <div class="control has-icons-left">
+                                    <input class="input" type="password" placeholder="Enter your password" required>
+                                    <span class="icon is-small is-left">
+                                        <i class='bx bx-lock'></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="checkbox">
+                                    <input type="checkbox">
+                                    Remember me
+                                </label>
+                            </div>
+
+                            <div class="field">
+                                <div class="control">
+                                    <button class="button is-primary is-fullwidth">
+                                        <strong>Login</strong>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <p class="has-text-centered pt-4">Don't have an account? <a href="/signup">Sign up</a></p>
+                    </div>
+                </div>
+            </div>
+            <!-- End of Login Form -->
+
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="content has-text-centered">
+                    <p>
+                        <strong>HaskRead</strong> by <a href="https://www.linkedin.com/in/tushar-adhatrao/">Tushar
+                            Adhatrao</a>.
+                        The source code is licensed
+                        <a href="https://opensource.org/license/mit">MIT</a>.
+                    </p>
+                </div>
+            </footer>
+        </div>
+    </div>
+</body>
+
+</html>

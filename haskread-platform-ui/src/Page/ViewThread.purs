@@ -2,7 +2,8 @@ module Page.ViewThread where
 
 import Prelude
 
-import Capability.Resource (class ManageComments, class ManageThreads, class Navigate, getCommentsByThreadID, getThread)
+import Capability.Resource (class ManageComments, class ManageThreads, class Navigate, getCommentsByThreadID, getThread, class ManageCommunity)
+import Bulma.Modifiers.Typography as B
 import Common.Types (Profile, ThreadInfo, PaginatedArray, NestedComment)
 import Common.Utils (toThreadInfo_)
 import Component.Footer as Footer
@@ -21,6 +22,12 @@ import Store as Store
 import Type.Proxy (Proxy(..))
 import Undefined (undefined)
 import Component.ThreadView as ThreadView
+import Utils.Bulma (class_, classes_)
+import Bulma.Columns.Columns as B
+import Bulma.Columns.Size hiding (isSmall) as B
+import Bulma.CSS.Spacing as B
+import Bulma.Layout.Layout as B
+import Component.CommunityList as CommunityList
 
 type Input = { threadID :: Int }
 
@@ -44,6 +51,7 @@ component :: forall query output m.
     ManageThreads m =>
     ManageComments m =>
     Navigate m =>
+  ManageCommunity m => 
     MonadStore Store.Action Store.Store m =>
     H.Component query Input output m
 component = connect (selectEq _.currentUser) $ H.mkComponent {
@@ -87,21 +95,25 @@ component = connect (selectEq _.currentUser) $ H.mkComponent {
 
   render :: State -> H.ComponentHTML Action ChildSlots m
   render { thread, nestedComments } = 
-      HH.div_ [
-        HH.slot_ (Proxy :: _ "header") unit Header.component unit
-        , HH.text "View Thread"
-        , case thread of
-            NotAsked -> HH.div_ []
-            Loading -> HH.div_ [ HH.text "Loading..." ]
-            Failure _ -> HH.div_ [ HH.text "failed to load Thread" ]
-            Success t -> HH.div_ [ 
-                    HH.text t.title,
-                    HH.text $ show t.threadIDForThreadInfo,
-                    HH.slot_ (Proxy :: _ "threadView") unit ThreadView.component { thread: t }
+      HH.div [ class_ B.container ]
+    [ 
+
+      HH.slot_ (Proxy :: _ "header") unit Header.component unit
+    , HH.div [ classes_ [ B.columns, B.is8, B.py5 ] ]
+        [ HH.div [ class_ B.column ]
+            [ HH.p [ classes_ [ B.isSize3, B.hasTextCentered, B.pb4 ] ] [ HH.text "Thread" ]
+           , case thread of
+                NotAsked -> HH.div_ []
+                Loading -> HH.div_ [ HH.text "Loading..." ]
+                Failure _ -> HH.div_ [ HH.text "failed to load Thread" ]
+                Success t -> do
+                  HH.div_ [ HH.slot_ (Proxy :: _ "threadView") unit ThreadView.component { thread: t } ]
             ]
-        , commentList nestedComments
-        , HH.slot_ (Proxy :: _ "footer") unit Footer.component unit
-      ]
+        , HH.slot_ (Proxy :: _ "communityList") unit CommunityList.component unit
+        ]
+    , HH.slot_ (Proxy :: _ "footer") unit Footer.component unit
+    ]
+
 
   commentList :: forall props act. RemoteData String (PaginatedArray NestedComment) ->
                     HH.HTML props act

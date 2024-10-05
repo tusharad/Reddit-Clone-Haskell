@@ -382,6 +382,14 @@ getCommunities = do
   decode communitiesCodec mJson
 
 defaultPagination :: Pagination
-defaultPagination = { limit : 10
+defaultPagination = { 
+    limit : 10
   , offset : 0
   }
+
+defaultHomeOps :: HomeOps
+defaultHomeOps = {
+      limit : 10
+    , offset : 0
+    , communityId : Nothing
+}

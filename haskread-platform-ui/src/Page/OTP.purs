@@ -4,7 +4,7 @@ import Prelude
 
 import Capability.Resource (class ManageUser, verifyOtp, class Navigate, navigate)
 import Common.Types (MyRoute(..))
-import Common.Utils (defaultPagination, safeHref, whenElem)
+import Common.Utils (defaultHomeOps, safeHref, whenElem)
 import Data.Either (Either(..), isLeft, hush)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), isNothing, fromMaybe)
@@ -76,7 +76,7 @@ component = H.mkComponent
           pure $ hush res
       case mRes of
         Nothing -> pure unit
-        Just _ -> navigate (Home defaultPagination)
+        Just _ -> navigate (Home defaultHomeOps)
 
   render :: State -> H.ComponentHTML Action () m
   render st =

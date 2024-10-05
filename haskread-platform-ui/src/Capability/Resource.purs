@@ -2,13 +2,13 @@ module Capability.Resource where
 
 import Prelude
 
-import Common.Types (ChangePasswordFields, Community, CreateThreadFields, DeleteUserFields, LoginFields, MyRoute, NestedComment, OtpFields, PaginatedArray, Profile, RegisterFields, Thread, UpdateThreadFields, Pagination)
+import Common.Types 
 import Data.Either (Either)
 import Data.Maybe (Maybe)
 import Halogen (HalogenM, lift)
 
 class Monad m <= ManageThreads m where
-  getThreads :: Pagination -> m (Maybe (PaginatedArray Thread))
+  getThreads :: HomeOps -> m (Maybe (PaginatedArray Thread))
   createThread :: CreateThreadFields -> m (Maybe String)
   deleteThread :: Int -> m (Maybe String)
   getThread :: Int -> m (Maybe Thread)

@@ -14,7 +14,7 @@ import Bulma.Modifiers.Helpers (isPrimary)
 import Bulma.Modifiers.Typography (hasTextCentered, hasTextWeightSemiBold, isSize4)
 import Capability.Resource (class ManageUser, class Navigate, loginUser, navigate)
 import Common.Types (MyRoute(..))
-import Common.Utils (defaultPagination, safeHref, whenElem)
+import Common.Utils (defaultHomeOps, safeHref, whenElem)
 import Component.Footer as Footer
 import Component.Header as Header
 import Data.Either (Either(..), isLeft)
@@ -99,7 +99,7 @@ component = H.mkComponent
           loginUser loginFields
       case mRes of
         Nothing -> pure unit
-        Just _ -> navigate (Home defaultPagination)
+        Just _ -> navigate (Home defaultHomeOps)
 
   render :: State -> H.ComponentHTML Action ChildSlots m
   render st =

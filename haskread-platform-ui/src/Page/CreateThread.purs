@@ -4,7 +4,7 @@ import Prelude
 
 import Capability.Resource (class ManageThreads, createThread, class Navigate, navigate)
 import Common.Types (MyRoute(..))
-import Common.Utils (defaultPagination, whenElem)
+import Common.Utils (defaultHomeOps, whenElem)
 import Data.Either (Either(..), isLeft, fromLeft)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), isNothing, fromMaybe)
@@ -90,7 +90,7 @@ component = H.mkComponent
           createThread createThreadFields
       case mRes of
         Nothing -> pure unit
-        Just _ -> navigate (Home defaultPagination)
+        Just _ -> navigate (Home defaultHomeOps )
 
   render :: State -> H.ComponentHTML Action _ m
   render st =

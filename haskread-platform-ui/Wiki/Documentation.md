@@ -19,13 +19,15 @@
 TODO:
 
 - [x] Add links on post with postID.
-- Add link for community side bar, upon clikcking, posts with communityID=<id> will appear.
-- Pagination buttons.
-- Adding continue with google button.
-- Adding CSS to signup page.
+- [x] Add link for community side bar, upon clikcking, posts with communityID=<id> will appear.
+- [x] Pagination buttons.
+- [ ] Adding continue with google button.
+- [x] Adding CSS to signup page.
 - Showing whether user has liked the given post or not.
-- Search page (Same as home page)
-- Top voted (should be a dropdown menu, with top from last hours, last week etc.)
-- New, following, treding tabs.
-- Adding CSS to view thread page.
-- There shall be a view-user page with, without id, own users profile and with id other's profile.
+- [ ] Search page (Same as home page)
+- [ ] Top voted (should be a dropdown menu, with top from last hours, last week etc.)
+- [ ] Funtional New, following, treding tabs.
+- [x] Adding CSS to view thread page.
+- [ ] There shall be a view-user page with, without id, own users profile and with id other's profile.
+- [ ] Fix CSS of footer page
+- [ ] Add more options to Home so it can more filters such as communityID, sortBy.

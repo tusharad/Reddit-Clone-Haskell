@@ -12,7 +12,7 @@ import Bulma.Modifiers.Typography as B
 import Capability.Resource (class Navigate, navigate)
 import Utils.Bulma (class_,classes_)
 import Common.Types (Profile, MyRoute(..))
-import Common.Utils (defaultPagination, whenElem)
+import Common.Utils (defaultHomeOps, whenElem)
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
@@ -72,16 +72,15 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
         pure unit
       GoToLogin -> navigate Login
       GoToRegister -> navigate Register
-      GoToMyProfile -> navigate $ Home defaultPagination -- TODO: Add myProfile page and add here
+      GoToMyProfile -> navigate $ Home defaultHomeOps -- TODO: Add myProfile page and add here
       SetSearchInput searchInput ->
         H.modify_ _ { searchInput = searchInput }
-      GoToHome -> do 
-        navigate $ Home defaultPagination
+      GoToHome -> do navigate $ Home defaultHomeOps
       HandleSearch event -> do
         H.liftEffect $ Event.preventDefault event
         -- _ <- H.get
         -- TODO: Add Search page and API
-        navigate $ Home defaultPagination
+        navigate $ Home defaultHomeOps
 
   render :: State -> H.ComponentHTML Action () m
   render { currentUser, searchError, searchInput } = do

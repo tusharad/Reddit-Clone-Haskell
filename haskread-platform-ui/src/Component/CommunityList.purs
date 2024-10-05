@@ -36,7 +36,7 @@ type State = {
       communities :: RemoteData String (PaginatedArray Community)
     }
 
-data Action = Initialize | LoadCommunities
+data Action = Initialize | LoadCommunities | GoToCommunityPage Int
 
 component 
     :: forall query output m
@@ -73,6 +73,8 @@ component = H.mkComponent
                     Nothing -> H.modify_ _ { communities = Failure "asdas" }
                     Just communityList -> do
                         H.modify_ _ { communities = fromMaybe (Just communityList) }
+            GoToCommunityPage cId -> do
+               navigate $ Home { limit: 10, offset: 0, communityId: Just cId }
     
     render :: State -> H.ComponentHTML Action () m
     render { communities, communityError } = do
@@ -89,9 +91,9 @@ component = H.mkComponent
             ]
           ]
         ]
-    viewCommunityList :: forall props act
+    viewCommunityList :: forall props 
         . RemoteData String (PaginatedArray Community)
-        -> HH.HTML props act
+        -> HH.HTML props Action
     viewCommunityList = case _ of
         NotAsked ->
           HH.text "Communities not loaded yet..."
@@ -106,9 +108,13 @@ component = H.mkComponent
                 communityPreview `mapWithIndex` communityList.body
                 )
 
-    communityPreview :: forall props act. Int -> Community -> HH.HTML props act
+    communityPreview :: forall props act. Int -> Community -> HH.HTML props Action
     communityPreview _ community =
         HH.div_ [
-          HH.li_ [HH.a [] [HH.text community.communityName]]
+          HH.li_ [
+            HH.a
+                [ HE.onClick \_ -> GoToCommunityPage community.communityID ] 
+                [ HH.text community.communityName ]
+            ]
         , HH.hr [class_ B.navbarDivider, HP.style "border-bottom: solid;"]
         ]

@@ -8,7 +8,7 @@ import Bulma.Layout.Layout as B
 import Capability.Resource (class ManageComments, class ManageCommunity, class ManageThreads, class ManageUser, class Navigate, navigate)
 import Utils.Bulma (class_,classes_)
 import Common.Types (myRoute, MyRoute(..), Profile, Pagination)
-import Common.Utils (defaultPagination)
+import Common.Utils (defaultHomeOps)
 import Data.Either (Either(..))
 import Data.Foldable (elem)
 import Data.Maybe (Maybe(..), isNothing)
@@ -90,7 +90,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
     Initialize -> do
       url <- liftEffect getHash
       case RD.parse myRoute url of
-        Left e -> (log $ "err" <> show e) *> navigate (Home defaultPagination)
+        Left e -> (log $ "err" <> show e) *> navigate (Home defaultHomeOps)
         Right r -> navigate r
     Receive { context: currentUser } -> do
       H.modify_ _ { currentUser = currentUser }
@@ -107,7 +107,7 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
     HH.div [ classes_ [B.container] ] [
     case route of
       Just r -> case r of
-        Home p -> HH.slot_ (Proxy :: _ "home") unit Home.component { pagination_ : p}
+        Home p -> HH.slot_ (Proxy :: _ "home") unit Home.component { homeOps: p}
         Login -> HH.slot_ (Proxy :: _ "login") unit Login.component { redirect: true }
         Register ->
           HH.slot_ (Proxy :: _ "register") unit Register.component { redirect: true }

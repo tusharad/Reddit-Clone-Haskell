@@ -4,7 +4,7 @@ import Prelude
 
 import Capability.Resource (class ManageUser, changePassword, class Navigate, navigate)
 import Common.Types (MyRoute(..))
-import Common.Utils (defaultPagination, whenElem)
+import Common.Utils (defaultHomeOps, whenElem)
 import Data.Either (Either(..), isLeft, fromLeft)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
@@ -88,7 +88,7 @@ component = H.mkComponent
           changePassword changePasswordFields
       case mRes of
         Nothing -> pure unit
-        Just _ -> navigate (Home defaultPagination)
+        Just _ -> navigate (Home defaultHomeOps)
 
   render :: State -> H.ComponentHTML Action _ m
   render st =

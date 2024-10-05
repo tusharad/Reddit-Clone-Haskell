@@ -21,6 +21,7 @@ module Common.Types
   , ThreadInfo(..)
   , ThreadRep
   , Token(..)
+  , HomeOps(..)
   , UpdateThreadFields
   , changePasswordCodec
   , communitiesCodec
@@ -60,7 +61,7 @@ import Undefined (undefined)
 newtype BaseURL = BaseURL String
 
 data Endpoint
-  = Threads Pagination
+  = Threads HomeOps
   | UserByToken
   | Login0
   | Register0
@@ -79,7 +80,7 @@ derive instance genericEndpoint :: Generic Endpoint _
 endpointCodec :: RouteDuplex' Endpoint
 endpointCodec = root $ sum
   { "Threads": "api" / "v1" / "thread" / "all" ? {
-    limit : int, offset : int
+  limit : int, offset : int, communityId: optional <<< int
   }
   , "UserByToken": "api" / "v1" / "user" / "profile" / noArgs
   , "Login0": "api" / "v1" / "user" / "auth" / "login" / noArgs
@@ -107,7 +108,7 @@ type RequestOptions =
   }
 
 data MyRoute
-  = Home Pagination
+  = Home HomeOps
   | Login
   | Register
   | OTP Int
@@ -126,6 +127,12 @@ derive instance eqToken :: Eq Token
 instance showToken :: Show Token where
   show (Token _) = "TOKEN"
 
+type HomeOps = {
+    limit :: Int
+   , offset :: Int
+   , communityId :: Maybe Int
+}
+
 type Pagination = {
   limit :: Int
   , offset :: Int
@@ -136,6 +143,7 @@ myRoute = root $ G.sum
   { "Home": "Home" ? { 
         offset: int
       , limit: int
+      , communityId : optional <<< int
       }
   , "Login": path "login" G.noArgs
   , "Register": path "register" G.noArgs
