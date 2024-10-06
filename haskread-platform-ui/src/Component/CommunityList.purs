@@ -80,7 +80,7 @@ component = H.mkComponent
                         H.modify_ _ { communities = fromMaybe (Just communityList) }
             GoToCommunityPage cId -> do
                void $ H.fork $ handleAction (Click cId)
-               navigate $ Home { limit: 10, offset: 0, communityId: Just cId }
+               navigate $ Home { limit: 10, offset: 0, communityId: Just cId, sortBy: Nothing }
     
     render :: State -> H.ComponentHTML Action () m
     render { communities, communityError } = do

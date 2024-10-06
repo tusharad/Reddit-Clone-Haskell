@@ -80,7 +80,10 @@ derive instance genericEndpoint :: Generic Endpoint _
 endpointCodec :: RouteDuplex' Endpoint
 endpointCodec = root $ sum
   { "Threads": "api" / "v1" / "thread" / "all" ? {
-  limit : int, offset : int, communityId: optional <<< int
+    limit : int
+    , offset : int
+    , communityId: optional <<< int
+    , sortBy: optional <<< string
   }
   , "UserByToken": "api" / "v1" / "user" / "profile" / noArgs
   , "Login0": "api" / "v1" / "user" / "auth" / "login" / noArgs
@@ -131,6 +134,7 @@ type HomeOps = {
     limit :: Int
    , offset :: Int
    , communityId :: Maybe Int
+   , sortBy :: Maybe String
 }
 
 type Pagination = {
@@ -144,6 +148,7 @@ myRoute = root $ G.sum
         offset: int
       , limit: int
       , communityId : optional <<< int
+      , sortBy: optional <<< string
       }
   , "Login": path "login" G.noArgs
   , "Register": path "register" G.noArgs

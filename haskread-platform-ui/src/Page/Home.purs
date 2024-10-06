@@ -51,7 +51,7 @@ type State =
   }
 
 data Action = Initialize 
-    | LoadThreads | GoToLogin | ChangePagination Int Int (Maybe Int) | HandleCommunityList CommunityList.Output
+    | LoadThreads | GoToLogin | ChangePagination Int Int | HandleCommunityList CommunityList.Output
 
 type OpaqueSlot slot = forall query. H.Slot query Void slot
 type ChildSlots = (
@@ -96,7 +96,23 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
             [ HH.p [ classes_ [ B.isSize3, B.hasTextCentered, B.pb4 ] ] [ HH.text "Threads" ]
             , HH.div [ classes_ [ B.tabs, B.isCentered, B.isRounded ] ]
                 [ HH.ul_
-                    [ tabCSS "Top Voted" "bx bxs-objects-vertical-top"
+                    [ 
+                      HH.div [HP.class_ $ HH.ClassName "dropdown "] [
+                        HH.div [HP.class_ $ HH.ClassName "dropdown-trigger"] [
+                            HH.button [ HP.attr (HC.AttrName "area-haspopup") "true"
+                                    , HP.attr (HC.AttrName "area-controls") "dropdown-menu"
+                                        ] [HH.span_ [HH.text "Top"]]
+                        , HH.div [HP.class_ $ HH.ClassName "dropdown-menu"
+                                 , HP.id "dropdown-menu"
+                                 , HP.attr (HC.AttrName "role")"menu"] 
+                                 [
+                                    HH.div [ HP.class_ $ HH.ClassName "dropdown-content" ] [
+                                        HH.a [HP.class_ $ HH.ClassName "dropdown-item"] [ HH.text "top of day" ]
+                                    ]
+                                ]
+                        ]
+                      ]
+                                                   -- tabCSS "Top Voted" "bx bxs-objects-vertical-top"
                     , tabCSS "Trending" "bx bx-trending-up"
                     , tabCSS "New" "bx bx-polygon"
                     , tabCSS "Following" "bx bx-run"
@@ -142,14 +158,17 @@ component = connect (selectEq _.currentUser) $ H.mkComponent
           H.modify_ _ { threads = fromMaybe (Just threadInfoList) }
 
     GoToLogin -> navigate Login
-    ChangePagination limit offset communityId -> do
-        navigate $ Home { limit, offset, communityId } 
-        _ <- H.modify_ _ { homeOps = { limit, offset, communityId } } 
+    
+    ChangePagination limit offset -> do
+        { homeOps : h } <- H.get
+        navigate $ Home { limit, offset, communityId : h.communityId, sortBy: Nothing } 
+        _ <- H.modify_ _ { homeOps = { limit, offset, communityId: h.communityId, sortBy: Nothing } } 
         void $ H.fork $ handleAction LoadThreads
+    
     HandleCommunityList op -> do
         case op of
             CommunityList.Clicked n -> do
-               H.modify_ _ { homeOps = { offset: 0, limit: 10, communityId: Just n } }
+               H.modify_ _ { homeOps = { offset: 0, limit: 10, communityId: Just n, sortBy: Nothing } }
                void $ H.fork $ handleAction LoadThreads
 
 paginationView :: HomeOps -> Int -> forall props act. HH.HTML props Action
@@ -163,10 +182,10 @@ paginationView { offset, communityId } _ = do
     ]
     [ HH.a 
         [ class_ B.paginationPrevious
-          , HE.onClick \_ -> ChangePagination 10 (offset-10) communityId ] 
+          , HE.onClick \_ -> ChangePagination 10 (offset-10) ] 
         [ HH.text "Previous" ]
     , HH.a 
         [ class_ B.paginationNext
-        , HE.onClick \_ -> ChangePagination 10 (offset+10) communityId ] 
+        , HE.onClick \_ -> ChangePagination 10 (offset+10) ] 
         [ HH.text "Next" ]
     ]
