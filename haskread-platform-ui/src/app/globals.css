@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: white) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/*
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+*/
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+body {
+            background-color: #F4EEFF;
+        }
+
+        .navbar-bg {
+            background: linear-gradient(90deg, #424874, #DCD6F7);
+        }
+
+        .card-bg {
+            background: linear-gradient(120deg, #DCD6F7, #F4EEFF);
+        }
+
+        .footer-bg {
+            background-color: #424874;
+        }

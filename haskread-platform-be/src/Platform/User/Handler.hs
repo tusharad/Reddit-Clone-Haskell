@@ -79,11 +79,13 @@ userDashboardH (Authenticated UserInfo {..}) = do
   mUser <- fetchUserByID userIDForUserInfo
   case mUser of
     Nothing -> throw400Err "User is invalid!"
-    Just User {userName = uName} -> do
+    Just User {userName = uName, email = e, createdAt = c} -> do
       return
         UserProfileResponse
           { userIDForUPR = coerce userIDForUserInfo,
-            userNameForUPR = uName
+            userNameForUPR = uName,
+            userEmail = e,
+            userCreatedAt = T.pack $ show c 
           }
 userDashboardH _ = throw401Err "Please login first"
 

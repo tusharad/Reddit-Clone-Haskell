@@ -16,6 +16,8 @@ import Orville.PostgreSQL.Expr hiding (tableName)
 import Platform.DB.Marshaller
 import Platform.DB.Model
 import Platform.DB.Table
+import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
+import Platform.Orville.Helper
 
 addCommentQ :: (MonadOrville m) => CommentWrite -> m ()
 addCommentQ = insertEntity commentTable
@@ -48,6 +50,12 @@ fetchCommentsByThreadQ threadID = do
     (fetchCommentsByThreadExpr threadID)
     (annotateSqlMarshallerEmptyAnnotation commentInfoMarshaller)
 
+whereThreadIdIs :: ThreadID -> WhereClause
+whereThreadIdIs (ThreadID tID) =
+  whereClause $
+    columnReference (fieldColumnName (Just (stringToAliasName "c")) threadIDField)
+      `equals` valueExpression (SqlValue.fromInt32 tID)
+
 fetchCommentsByThreadExpr :: ThreadID -> QueryExpr
 fetchCommentsByThreadExpr threadID =
   queryExpr selectClause_ selectedColumns (Just fromTable)
@@ -71,12 +79,6 @@ fetchCommentsByThreadExpr threadID =
     joinList =
       [joinExpr innerJoinType userTableName (joinOnConstraint userIDConstraint)]
     fromTable =
-      tableExpr
+      mkTableExpr
         (commentTableName `appendJoinFromItem` joinList)
-        Nothing
-        Nothing
-        Nothing
-        Nothing
-        Nothing
-        Nothing
-        Nothing
+        defaultClauses { _whereClause = Just $ whereThreadIdIs threadID}

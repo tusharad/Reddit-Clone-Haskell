@@ -54,7 +54,9 @@ data LoginUserResponse = LoginUserResponse
 
 data UserProfileResponse = UserProfileResponse
   { userIDForUPR :: Int32,
-    userNameForUPR :: Text
+    userNameForUPR :: Text,
+    userEmail :: Text,
+    userCreatedAt :: Text
   }
   deriving (Show, Eq, Generic, ToJSON)
 

@@ -1,11 +1,11 @@
 module Platform.User.Thread.DB
-  ( fetchThreadByIDQ,
-    addThreadQ,
-    updateThreadQ,
-    deleteThreadQ,
-    fetchAllThreadsQ,
-    fetchThreadInfoQ,
-    fetchThreadInfoByIDQ,
+  ( fetchThreadByIDQ
+  , addThreadQ
+  , updateThreadQ
+  , deleteThreadQ
+  , fetchAllThreadsQ
+  , fetchThreadInfoQ
+  , fetchThreadInfoByIDQ
   )
 where
 
@@ -86,18 +86,31 @@ fetchThreadInfoByIDQ tID = do
     [] -> pure Nothing
     (x : _) -> pure $ Just x
 
-mkWhereClauseForCommunityId :: Maybe Int -> Maybe WhereClause
-mkWhereClauseForCommunityId Nothing = Nothing
-mkWhereClauseForCommunityId (Just cId) = 
- Just $ whereClause $
-    columnReference (fieldColumnName (Just (stringToAliasName "t")) communityIDField)
-      `equals` valueExpression (SqlValue.fromInt32 $ fromIntegral cId)
+mkWhereClauseForFetchThreadInfo :: Maybe Int -> Maybe Int -> Maybe WhereClause
+mkWhereClauseForFetchThreadInfo Nothing Nothing = Nothing
+mkWhereClauseForFetchThreadInfo (Just cId) Nothing = Just $ whereClause (communityIdExpr cId)
+mkWhereClauseForFetchThreadInfo Nothing (Just uId) = Just $ whereClause (userIdExpr uId)
+mkWhereClauseForFetchThreadInfo (Just cId) (Just uId) = Just $ whereClause (userIdExpr uId .&& communityIdExpr cId)
 
-fetchThreadInfoQ :: (MonadOrville m) => Int -> Int -> Maybe Int -> m [ThreadInfo]
-fetchThreadInfoQ limit offset mCommunityId =
+communityIdExpr :: Int -> BooleanExpr
+communityIdExpr cId =
+  columnReference (fieldColumnName (Just (stringToAliasName "t")) communityIDField)
+    `equals` valueExpression (SqlValue.fromInt32 $ fromIntegral cId)
+
+userIdExpr :: Int -> BooleanExpr
+userIdExpr uId =
+  columnReference (fieldColumnName (Just (stringToAliasName "t")) userIDField)
+    `equals` valueExpression (SqlValue.fromInt32 $ fromIntegral uId)
+
+fetchThreadInfoQ :: (MonadOrville m) => Int -> Int -> Maybe Int -> Maybe Int -> m [ThreadInfo]
+fetchThreadInfoQ limit offset mCommunityId mUserId =
   executeAndDecode
     SelectQuery
-    (fetchThreadInfoExpr (mkWhereClauseForCommunityId mCommunityId) (Just (limitExpr limit)) (Just (offsetExpr offset)))
+    ( fetchThreadInfoExpr
+        (mkWhereClauseForFetchThreadInfo mCommunityId mUserId)
+        (Just (limitExpr limit))
+        (Just (offsetExpr offset))
+    )
     (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)
 
 fetchThreadInfoExpr :: Maybe WhereClause -> Maybe LimitExpr -> Maybe OffsetExpr -> QueryExpr
@@ -106,17 +119,17 @@ fetchThreadInfoExpr wClause lClause oClause =
   where
     selectedColumns =
       selectColumns
-        [ fieldColumnName (Just (stringToAliasName "t")) threadIDField,
-          fieldColumnName (Just (stringToAliasName "t")) threadTitleField,
-          fieldColumnName (Just (stringToAliasName "t")) threadDescriptionField,
-          fieldColumnName (Just (stringToAliasName "t")) createdAtField,
-          fieldColumnName (Just (stringToAliasName "u")) userIDField,
-          fieldColumnName (Just (stringToAliasName "u")) userNameField,
-          fieldColumnName (Just (stringToAliasName "c")) communityIDField,
-          fieldColumnName (Just (stringToAliasName "c")) communityNameField,
-          fieldColumnName Nothing upvoteCountField,
-          fieldColumnName Nothing downvoteCountField,
-          fieldColumnName Nothing commentCountField
+        [ fieldColumnName (Just (stringToAliasName "t")) threadIDField
+        , fieldColumnName (Just (stringToAliasName "t")) threadTitleField
+        , fieldColumnName (Just (stringToAliasName "t")) threadDescriptionField
+        , fieldColumnName (Just (stringToAliasName "t")) createdAtField
+        , fieldColumnName (Just (stringToAliasName "u")) userIDField
+        , fieldColumnName (Just (stringToAliasName "u")) userNameField
+        , fieldColumnName (Just (stringToAliasName "c")) communityIDField
+        , fieldColumnName (Just (stringToAliasName "c")) communityNameField
+        , fieldColumnName Nothing upvoteCountField
+        , fieldColumnName Nothing downvoteCountField
+        , fieldColumnName Nothing commentCountField
         ]
     threadIDColumnName = fieldColumnName Nothing threadIDField
     threadTableName = tableFromItemWithAlias (stringToAliasExpr "t") (tableName threadTable)
@@ -152,9 +165,9 @@ fetchThreadInfoExpr wClause lClause oClause =
       groupByClause (groupByColumnsExpr (threadIDColumnName :| []))
     voteCountSelectList =
       selectDerivedColumns
-        [ deriveColumn $ columnReference (fieldColumnName Nothing threadIDField),
-          deriveColumnAsAlias upvoteCountExpr (stringToAliasExpr "upvote_count"),
-          deriveColumnAsAlias downVoteCountExpr (stringToAliasExpr "downvote_count")
+        [ deriveColumn $ columnReference (fieldColumnName Nothing threadIDField)
+        , deriveColumnAsAlias upvoteCountExpr (stringToAliasExpr "upvote_count")
+        , deriveColumnAsAlias downVoteCountExpr (stringToAliasExpr "downvote_count")
         ]
     upvoteCountExpr =
       count
@@ -181,8 +194,8 @@ fetchThreadInfoExpr wClause lClause oClause =
         `equals` columnReference (fieldColumnName (Just (stringToAliasName "t")) threadIDField)
     commentCountSelectList =
       selectDerivedColumns
-        [ deriveColumn $ columnReference (fieldColumnName Nothing threadIDField),
-          deriveColumnAsAlias commentCountFieldExpr (stringToAliasExpr "comment_count")
+        [ deriveColumn $ columnReference (fieldColumnName Nothing threadIDField)
+        , deriveColumnAsAlias commentCountFieldExpr (stringToAliasExpr "comment_count")
         ]
     commentCountTable =
       subQueryAsFromItemExpr (stringToAliasExpr "comm") commentCountExpr
@@ -201,16 +214,16 @@ fetchThreadInfoExpr wClause lClause oClause =
         Nothing
         Nothing
     joinList =
-      [ joinExpr innerJoinType userTableName (joinOnConstraint userIDConstraint),
-        joinExpr innerJoinType communityTableName (joinOnConstraint communityIDConstraint),
-        joinExpr leftJoinType voteCountTable (joinOnConstraint threadIDConstraint),
-        joinExpr leftJoinType commentCountTable (joinOnConstraint commentConstraint)
+      [ joinExpr innerJoinType userTableName (joinOnConstraint userIDConstraint)
+      , joinExpr innerJoinType communityTableName (joinOnConstraint communityIDConstraint)
+      , joinExpr leftJoinType voteCountTable (joinOnConstraint threadIDConstraint)
+      , joinExpr leftJoinType commentCountTable (joinOnConstraint commentConstraint)
       ]
     fromTable wClause lClause oClause =
       mkTableExpr
         (threadTableName `appendJoinFromItem` joinList)
         defaultClauses
-          { _whereClause = wClause,
-          _limitExpr = lClause,
-          _offSetExpr = oClause
+          { _whereClause = wClause
+          , _limitExpr = lClause
+          , _offSetExpr = oClause
           }

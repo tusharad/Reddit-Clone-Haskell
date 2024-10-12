@@ -67,7 +67,7 @@ toUserWrite RegisterUserBody {..} = do
         userName = userNameForRegister,
         email = emailForRegister,
         userPassword = Just hashedPass,
-        isUserVerified = False,
+        isUserVerified = True, -- Temporary change till new mail api get's added
         createdAt = (),
         updatedAt = ()
       }
@@ -151,13 +151,12 @@ registerUserH userBody@RegisterUserBody {..} = do
     throw400Err "Password must have upper,lower chars"
   userWrite0 <- liftIO $ toUserWrite userBody
   userRead0 <- addUser userWrite0
-  void $ sendOTPForEmailVerify (getUserID userRead0) (email userRead0)
+  -- void $ sendOTPForEmailVerify (getUserID userRead0) (email userRead0)
   return
     RegisterUserResponse
       { registerUserResponseMessage = "User registered successfully",
         userIDForRUR = getUserID userRead0
       }
-  where
 
 loginUserH ::
   (MonadUnliftIO m) =>
