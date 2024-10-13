@@ -5,13 +5,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Platform.Auth.Handler
-  ( registerUserH,
-    loginUserH,
-    adminLoginH,
-    verifyEmailH,
-    resendVerifyEmailH,
-    oauth2LoginH,
-    oauth2CallbackH,
+  ( registerUserH
+  , loginUserH
+  , adminLoginH
+  , verifyEmailH
+  , resendVerifyEmailH
+  , oauth2LoginH
+  , oauth2CallbackH
   )
 where
 
@@ -33,11 +33,12 @@ import GHC.Int (Int32)
 import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
 import qualified Haxl.Core as Haxl
 import Network.HTTP.Conduit (newManager, tlsManagerSettings)
+
 -- import Network.OAuth2.Provider.Google (GoogleUser (..))
 
 import Network.OAuth.OAuth2
-  ( ExchangeToken (ExchangeToken),
-    OAuth2Token (accessToken),
+  ( ExchangeToken (ExchangeToken)
+  , OAuth2Token (accessToken)
   )
 import Network.OAuth2.Experiment
 import Network.OAuth2.Provider (IdpName (Google))
@@ -63,13 +64,13 @@ toUserWrite RegisterUserBody {..} = do
   hashedPass <- MyPassword <$> hashPassword (mkPassword passwordForRegister)
   pure $
     User
-      { userID = (),
-        userName = userNameForRegister,
-        email = emailForRegister,
-        userPassword = Just hashedPass,
-        isUserVerified = True, -- Temporary change till new mail api get's added
-        createdAt = (),
-        updatedAt = ()
+      { userID = ()
+      , userName = userNameForRegister
+      , email = emailForRegister
+      , userPassword = Just hashedPass
+      , isUserVerified = False
+      , createdAt = ()
+      , updatedAt = ()
       }
 
 doesEmailExists :: (MonadUnliftIO m) => Text -> AppM m Bool
@@ -119,13 +120,13 @@ sendOTPForEmailVerify userID0 userEmail0 = do
   otp <- liftIO $ randomRIO (1000, 9999)
   addUEVO
     UserEmailVerifyOTP
-      { userIDForUEVO = userID0,
-        otpForUEVO = otp,
-        createdAtForUEVO = ()
+      { userIDForUEVO = userID0
+      , otpForUEVO = otp
+      , createdAtForUEVO = ()
       }
-  AppConfig {emailAPIToken = apiToken, emailFromEmail = fromEmail} <-
+  AppConfig {emailAPIToken = apiToken} <-
     asks appConfig
-  eRes <- liftIO $ sendVerificationEmail userEmail0 otp apiToken fromEmail
+  eRes <- liftIO $ sendVerificationEmail apiToken userEmail0 otp
   case eRes of
     Left e -> do
       -- upon sending verify email failure, the user record shall be
@@ -151,11 +152,11 @@ registerUserH userBody@RegisterUserBody {..} = do
     throw400Err "Password must have upper,lower chars"
   userWrite0 <- liftIO $ toUserWrite userBody
   userRead0 <- addUser userWrite0
-  -- void $ sendOTPForEmailVerify (getUserID userRead0) (email userRead0)
+  void $ sendOTPForEmailVerify (getUserID userRead0) (email userRead0)
   return
     RegisterUserResponse
-      { registerUserResponseMessage = "User registered successfully",
-        userIDForRUR = getUserID userRead0
+      { registerUserResponseMessage = "User registered successfully"
+      , userIDForRUR = getUserID userRead0
       }
 
 loginUserH ::
@@ -164,8 +165,8 @@ loginUserH ::
   AppM
     m
     ( Headers
-        '[ Header "Set-Cookie" SetCookie,
-           Header "Set-Cookie" SetCookie
+        '[ Header "Set-Cookie" SetCookie
+         , Header "Set-Cookie" SetCookie
          ]
         LoginUserResponse
     )
@@ -185,7 +186,7 @@ loginUserH LoginUserBody {..} = do
               -- If the user is not verified, throw error
               unless (isUserVerified userRead0) (throw400Err "User is not verified")
               -- do login
-              loginUser userRead0
+              loginUser userRead0 False
   where
     findUserByMail = do
       (eMUser :: Either SomeException (Maybe UserRead)) <-
@@ -200,8 +201,8 @@ adminLoginH ::
   AppM
     m
     ( Headers
-        '[ Header "Set-Cookie" SetCookie,
-           Header "Set-Cookie" SetCookie
+        '[ Header "Set-Cookie" SetCookie
+         , Header "Set-Cookie" SetCookie
          ]
         AdminLoginResponse
     )
@@ -239,10 +240,10 @@ adminLoginH AdminLoginBodyReq {..} = do
     findAdminByEmail = do
       MyAppState
         { haxlConfig =
-            HaxlConfig
-              { pgConnectionPool = pool,
-                numOfThreads = sem
-              }
+          HaxlConfig
+            { pgConnectionPool = pool
+            , numOfThreads = sem
+            }
         } <-
         ask
       let st = HaskReadState pool sem
@@ -273,10 +274,10 @@ verifyEmailH userID0 otp0 = do
         Just u -> do
           let userWrite0 =
                 u
-                  { isUserVerified = True, -- Main login
-                    userID = (),
-                    createdAt = (),
-                    updatedAt = ()
+                  { isUserVerified = True -- Main login
+                  , userID = ()
+                  , createdAt = ()
+                  , updatedAt = ()
                   }
           updateUser userID0 userWrite0
 
@@ -303,18 +304,18 @@ mkTestGoogleApp = do
   googleOAuth2Cfg <- googleOauth2Config <$> asks appConfig
   let application =
         AuthorizationCodeApplication
-          { acClientId = ClientId $ TL.fromStrict (clientID googleOAuth2Cfg),
-            acClientSecret = ClientSecret $ TL.fromStrict (clientSecret googleOAuth2Cfg),
-            acAuthorizeState = AuthorizeState ("google." <> randomStateValue),
-            acRedirectUri = [uri|http://localhost:8085/callback|],
-            acScope =
+          { acClientId = ClientId $ TL.fromStrict (clientID googleOAuth2Cfg)
+          , acClientSecret = ClientSecret $ TL.fromStrict (clientSecret googleOAuth2Cfg)
+          , acAuthorizeState = AuthorizeState ("google." <> randomStateValue)
+          , acRedirectUri = [uri|http://localhost:8085/callback|]
+          , acScope =
               Set.fromList
-                [ "https://www.googleapis.com/auth/userinfo.email",
-                  "https://www.googleapis.com/auth/userinfo.profile"
-                ],
-            acName = "haskread-app",
-            acAuthorizeRequestExtraParams = Map.empty,
-            acTokenRequestAuthenticationMethod = ClientSecretBasic
+                [ "https://www.googleapis.com/auth/userinfo.email"
+                , "https://www.googleapis.com/auth/userinfo.profile"
+                ]
+          , acName = "haskread-app"
+          , acAuthorizeRequestExtraParams = Map.empty
+          , acTokenRequestAuthenticationMethod = ClientSecretBasic
           }
       idp = Google.defaultGoogleIdp
   pure IdpApplication {..}
@@ -330,8 +331,8 @@ oauth2CallbackH ::
   AppM
     m
     ( Headers
-        '[ Header "Set-Cookie" SetCookie,
-           Header "Set-Cookie" SetCookie
+        '[ Header "Set-Cookie" SetCookie
+         , Header "Set-Cookie" SetCookie
          ]
         LoginUserResponse
     )
@@ -354,7 +355,7 @@ oauth2CallbackH _ (Just _) (Just codeP) = do
           mUser0 <- fetchUserByEmail gUserEmail
           case mUser0 of
             Nothing -> registerAndLoginUser gUserEmail
-            Just userRead0 -> loginUser userRead0
+            Just userRead0 -> loginUser userRead0 True
   where
     registerAndLoginUser ::
       (MonadUnliftIO m) =>
@@ -362,8 +363,8 @@ oauth2CallbackH _ (Just _) (Just codeP) = do
       AppM
         m
         ( Headers
-            '[ Header "Set-Cookie" SetCookie,
-               Header "Set-Cookie" SetCookie
+            '[ Header "Set-Cookie" SetCookie
+             , Header "Set-Cookie" SetCookie
              ]
             LoginUserResponse
         )
@@ -372,30 +373,31 @@ oauth2CallbackH _ (Just _) (Just codeP) = do
       let randomUserName' = fromRight "not getting value" randomUserName
       let userWrite0 =
             User
-              { userID = (),
-                userName = randomUserName',
-                email = email0,
-                userPassword = Nothing,
-                isUserVerified = True,
-                createdAt = (),
-                updatedAt = ()
+              { userID = ()
+              , userName = randomUserName'
+              , email = email0
+              , userPassword = Nothing
+              , isUserVerified = True
+              , createdAt = ()
+              , updatedAt = ()
               }
       userRead0 <- addUser userWrite0
-      loginUser userRead0
+      loginUser userRead0 True
 oauth2CallbackH _ _ _ = throw401Err "Oauth failed :("
 
 loginUser ::
   (MonadUnliftIO m) =>
   UserRead ->
+  Bool ->
   AppM
     m
     ( Headers
-        '[ Header "Set-Cookie" SetCookie,
-           Header "Set-Cookie" SetCookie
+        '[ Header "Set-Cookie" SetCookie
+         , Header "Set-Cookie" SetCookie
          ]
         LoginUserResponse
     )
-loginUser userRead0 = do
+loginUser userRead0 isOAuth = do
   AppConfig {..} <- asks appConfig
   let userInfo = toUserInfo userRead0
   mLoginAccepted <- liftIO $ acceptLogin cookieSett jwtSett userInfo
@@ -407,13 +409,19 @@ loginUser userRead0 = do
         liftIO $
           makeJWT userInfo jwtSett $
             Just $
-              (fromInteger tokenExpiryTime0) `addUTCTime` now
+              fromInteger tokenExpiryTime0 `addUTCTime` now
       case etoken of
         Left _ -> throwError err401 {errBody = "JWT token creation failed"}
         Right v -> do
-          return $
-            x
-              ( LoginUserResponse
-                  (T.decodeUtf8 $ BSL.toStrict v)
-                  "User loggedIn successfully"
-              )
+          if isOAuth
+            then do
+              let redirectUrl = "http://localhost:3000/oauth2/callback?token=" <> v
+              void $ redirects $ BSL.toStrict redirectUrl
+              return $ x (LoginUserResponse (T.decodeUtf8 $ BSL.toStrict v) "")
+            else
+              return $
+                x
+                  ( LoginUserResponse
+                      (T.decodeUtf8 $ BSL.toStrict v)
+                      "User loggedIn successfully"
+                  )

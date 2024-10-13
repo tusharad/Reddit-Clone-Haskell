@@ -157,8 +157,8 @@ const Home: React.FC = () => {
         <div className="container mx-auto text-center">
           <p className="text-white">
             <strong>HaskRead</strong> by <Link href="https://www.linkedin.com/in/tushar-adhatrao/" className="text-blue-300 hover:underline">Tushar Adhatrao</Link>.
-            The source code is licensed
-            <Link href="https://opensource.org/license/mit" className="text-blue-300 hover:underline">MIT</Link>.
+            The source code is licensed under
+            <Link href="https://opensource.org/license/mit" className="text-blue-300 hover:underline"> MIT</Link>.
           </p>
         </div>
       </footer>

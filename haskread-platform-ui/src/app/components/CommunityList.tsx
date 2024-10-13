@@ -1,5 +1,4 @@
 import React from 'react';
-import { useRouter } from 'next/navigation'
 
 interface CommunityListProps {
     communities: Array<{
@@ -10,10 +9,8 @@ interface CommunityListProps {
 }
 
 const CommunityList: React.FC<CommunityListProps> = ({ communities,setCommunityId }) => {
-    const router = useRouter();
     const goToCommunityId = (communityId : number) => {
         setCommunityId(communityId)
-        router.push(`/?community_id=${communityId}`)
     }
 
     return (
