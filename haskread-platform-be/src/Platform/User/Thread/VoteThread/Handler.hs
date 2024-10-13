@@ -3,8 +3,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Platform.User.Thread.VoteThread.Handler
-  ( voteThreadH,
-    removeVoteThread,
+  ( voteThreadH
+  , removeVoteThread
+  , fetchUserThreadVotesH
   )
 where
 
@@ -66,11 +67,11 @@ addVoteThread userID threadID isUpvote = do
     try $
       addThreadVoteQ $
         ThreadVote
-          { threadVoteUserID = userID,
-            threadVoteThreadID = threadID,
-            threadVote = isUpvote,
-            threadVoteCreatedAt = (),
-            threadVoteUpdatedAt = ()
+          { threadVoteUserID = userID
+          , threadVoteThreadID = threadID
+          , threadVote = isUpvote
+          , threadVoteCreatedAt = ()
+          , threadVoteUpdatedAt = ()
           } -- userID threadID isUpvote
   case eRes of
     Left e -> throw400Err $ BSL.pack $ show e
@@ -82,12 +83,14 @@ updateVoteThread threadID userID isUpvote = do
     try $
       updateThreadVoteQ userID threadID $
         ThreadVote
-          { threadVoteUserID = userID,
-            threadVoteThreadID = threadID,
-            threadVote = isUpvote,
-            threadVoteCreatedAt = (),
-            threadVoteUpdatedAt = ()
+          { threadVoteUserID = userID
+          , threadVoteThreadID = threadID
+          , threadVote = isUpvote
+          , threadVoteCreatedAt = ()
+          , threadVoteUpdatedAt = ()
           }
   case eRes of
     Left e -> throw400Err $ BSL.pack $ show e
     Right _ -> pure $ VoteThreadResponse "Vote udpated successfully!"
+
+fetchUserThreadVotesH = undefined

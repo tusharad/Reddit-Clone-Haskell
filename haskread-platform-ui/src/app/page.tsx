@@ -17,6 +17,7 @@ const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [threadsCount, setThreadsCount] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [newThreadAdded, setNewThreadAdded] = useState(false);
   const searchParams = useSearchParams()
   
   useEffect(() => {
@@ -45,7 +46,7 @@ const Home: React.FC = () => {
     };
 
     fetchData();
-  }, [offset,communityId]);
+  }, [offset, communityId, newThreadAdded]);
 
   const handleNext = () => {
     if (threadsCount >= 10) {
@@ -61,7 +62,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F4EEFF]">
-      <Header setIsLoggedIn={setIsLoggedIn} />
+      <Header setIsLoggedIn={setIsLoggedIn} setNewThreadAdded={setNewThreadAdded} />
       <main className="container mx-auto mt-16 px-6 flex-grow">
         <div className="flex flex-wrap lg:flex-nowrap -mx-4">
           {/* Threads */}
