@@ -42,6 +42,7 @@ module Platform.DB.Model
     ThreadInfo (..),
     CommentInfo (..),
     NestedComment (..),
+    FetchUserThreadVoteInfo(..)
   )
 where
 
@@ -249,3 +250,5 @@ data NestedComment = NestedComment
     children :: [NestedComment]
   }
   deriving (Show, Eq, Generic, ToJSON)
+
+newtype FetchUserThreadVoteInfo = FetchUserThreadVoteInfo [(ThreadInfo, Bool)]

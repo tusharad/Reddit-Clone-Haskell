@@ -5,7 +5,7 @@
 module Platform.User.Thread.VoteThread.Handler
   ( voteThreadH
   , removeVoteThread
-  , fetchUserThreadVotesH
+  , fetchVoteThreadsForUserH
   )
 where
 
@@ -93,4 +93,19 @@ updateVoteThread threadID userID isUpvote = do
     Left e -> throw400Err $ BSL.pack $ show e
     Right _ -> pure $ VoteThreadResponse "Vote udpated successfully!"
 
-fetchUserThreadVotesH = undefined
+fetchVoteThreadsForUserH ::
+  MonadUnliftIO m =>
+  AuthResult UserInfo ->
+  FetchVoteThreadsForUserReq ->
+  AppM m FetchVoteThreadsForUserResponse
+fetchVoteThreadsForUserH
+  (Authenticated UserInfo {..})
+  (FetchVoteThreadsForUserReq threadList) = do
+    -- ThreadList shall not be empty
+    if null threadList then return $ FetchVoteThreadsForUserResponse []
+    else do
+      res <- fetchVoteThreadsByUser userIDForUserInfo threadList
+      pure $
+        FetchVoteThreadsForUserResponse $
+          (\ThreadVote {..} -> (threadVoteThreadID, threadVote)) <$> res
+fetchVoteThreadsForUserH _ _ = throw401Err "Please login first"

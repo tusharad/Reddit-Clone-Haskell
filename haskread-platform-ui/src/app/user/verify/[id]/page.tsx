@@ -21,7 +21,7 @@ export default function UserVerify({ params }: { params: { id: number } }) {
       });
 
       if (response.status === 200) {
-        router.push('/'); // Redirect to the home page on success
+        router.push('/login'); // Redirect to the login page on success
       } else {
         const res = await response.text();
         setError(res || 'Failed to verify OTP');

@@ -3,8 +3,8 @@
 module Platform.User.Thread.VoteThread.Types (
     VoteThreadResponse(..),
     RemoveVoteThreadResponse(..),
-    FetchUserThreadVotesResponse(..),
-    FetchUserThreadVotesReq(..)
+    FetchVoteThreadsForUserReq(..),
+    FetchVoteThreadsForUserResponse(..)
 ) where
 
 import Data.Text (Text)
@@ -20,8 +20,10 @@ newtype VoteThreadResponse = VoteThreadResponse {
     voteThreadResponseMsg :: Text
 } deriving (Show, Eq, Generic, ToJSON)
 
-newtype FetchUserThreadVotesResponse = FetchUserThreadVotesResponse [(ThreadID,Bool)]
+newtype FetchVoteThreadsForUserResponse = FetchVoteThreadsForUserResponse [(ThreadID,Bool)]
     deriving (Show, Eq, Generic, ToJSON)
 
-newtype FetchUserThreadVotesReq = FetchUserThreadVotesReq [ThreadID]
+newtype FetchVoteThreadsForUserReq = FetchVoteThreadsForUserReq {
+  threadListForVotes :: [ThreadID]
+ }
     deriving (Show, Eq, Generic, FromJSON)

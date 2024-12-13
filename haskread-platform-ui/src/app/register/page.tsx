@@ -35,7 +35,7 @@ const Register = () => {
         const res = await response.text();
         setError(res || 'Registration failed');
       } else if (response.ok) {
-        const data = await response.body
+        const data = await response.json();
         router.push(`/user/verify/${data.userIDForRUR}`);
       }
     } catch (error) {

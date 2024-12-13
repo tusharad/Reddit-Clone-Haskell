@@ -12,6 +12,7 @@ import { useSearchParams } from 'next/navigation'
 const Home: React.FC = () => {
   const [threads, setThreads] = useState<any[]>([]);
   const [communities, setCommunities] = useState<any[]>([]);
+  const [currentUserVotes, setCurrentUserVotes] = useState<any[]>([]);
   const [offset, setOffset] = useState(0);
   const [communityId, setCommunityId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,9 +35,42 @@ const Home: React.FC = () => {
 
       const threadRes = await fetch(fetchThreadUrl);
       const communitiesRes = await fetch(`http://localhost:8085/api/v1/community`);
-
+  
       const threadData = await threadRes.json();
       const communitiesData = await communitiesRes.json();
+
+      const token = localStorage.getItem('jwt_token');
+      if (token) {
+        console.log("got token", token)
+        const threadIdList = threadData.threads.map((t) => {
+          return t.threadIDForThreadInfo
+        })
+        try {
+          const response = await fetch('http://localhost:8085/api/v1/user/thread_votes', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              threadListForVotes : threadIdList,
+            }),
+          });
+    
+          if (response.ok) {
+            const data = await response.json();
+            setCurrentUserVotes(data);
+            console.log("got data: ", data);
+          } else {
+            const res = await response.text();
+            console.log(res,'Failed to create thread');
+          }
+        } catch (error) {
+          console.log('An error occurred: ' + error);
+        }
+      } else {
+        console.log("could not find token")
+      }
 
       setThreads(threadData.threads);
       setThreadsCount(threadData.threadsCount);
@@ -59,6 +93,19 @@ const Home: React.FC = () => {
       setOffset((prevOffset) => prevOffset - 10);
     }
   };
+
+  const getUserPostReaction = (threadId : number) => {
+    const currentVotes = currentUserVotes;
+    for (let i = 0; i < currentVotes.length; i++) {
+      if(currentVotes[i][0] == threadId){
+        if(currentVotes[i][1] == true)
+          return 1;
+        else
+          return 2;
+      }
+    }
+    return 0;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F4EEFF]">
@@ -118,6 +165,7 @@ const Home: React.FC = () => {
                   downvoteCount={thread.downvoteCount}
                   commentCount={thread.commentCount}
                   threadIDForThreadInfo={thread.threadIDForThreadInfo}
+                  userPostReaction={getUserPostReaction(thread.threadIDForThreadInfo)}
                 />
               ))
             )}

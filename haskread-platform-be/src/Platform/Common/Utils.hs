@@ -29,7 +29,6 @@ import Data.Char
 import Data.Password.Bcrypt
 import Data.String.Interpolate
 import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
 import Data.Time.Clock
 import Dhall
 import Network.HTTP.Req as Req
@@ -171,11 +170,14 @@ readEnv envFilePath = do
                     jwtSett = jwtSett,
                     cookieSett =
                       defaultCookieSettings
+                      {-
                         { cookieMaxAge =
                             Just $
                               secondsToDiffTime $
                                 fromIntegral tokenExpiryTime
-                        },
+                        }
+                        -}
+                        ,
                     tokenExpiryTime0 = fromIntegral tokenExpiryTime
                   }
               appST =

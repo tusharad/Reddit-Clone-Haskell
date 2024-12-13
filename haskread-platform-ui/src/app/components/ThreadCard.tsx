@@ -1,8 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faComment, faShare, faThumbsDown } from '@fortawesome/free-solid-svg-icons'
-import { faThumbsUp as f2 } from '@fortawesome/free-regular-svg-icons'
+import { faComment, faShare, faThumbsDown as solidThumbsDown, faThumbsUp as solidThumbsUp } from '@fortawesome/free-solid-svg-icons'
+import { faThumbsUp as regularThumbsup, faThumbsDown as regularThumbsDown } from '@fortawesome/free-regular-svg-icons'
 
 interface ThreadCardProps {
     title: string;
@@ -14,6 +14,21 @@ interface ThreadCardProps {
     downvoteCount?: number;
     commentCount?: number;
     threadIDForThreadInfo: number;
+    userPostReaction: number;
+}
+
+const getUpIcon = (val : number) => {
+    if (val == 1)
+        return solidThumbsUp
+    else
+        return regularThumbsup
+}
+
+const getDownIcon = (val : number) => {
+    if (val == 2)
+        return solidThumbsDown
+    else
+        return regularThumbsDown
 }
 
 const ThreadCard: React.FC<ThreadCardProps> = ({
@@ -26,6 +41,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
     downvoteCount,
     commentCount,
     threadIDForThreadInfo,
+    userPostReaction,
 }) => {
     
     return (
@@ -57,11 +73,11 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
             <div className="flex justify-between items-center p-4 border-t">
                 <div className="flex space-x-2 items-center">
                     <button className="flex items-center space-x-1 hover:text-blue-500">
-                        <FontAwesomeIcon icon={ f2 } />
+                        <FontAwesomeIcon icon={ getUpIcon(userPostReaction) } />
                         <span>{upvoteCount || 0}</span>
                     </button>
                     <button className="flex items-center space-x-1 hover:text-red-500">
-                        <FontAwesomeIcon icon={faThumbsDown} />
+                        <FontAwesomeIcon icon={ getDownIcon(userPostReaction) } />
                         <span>{downvoteCount || 0}</span>
                     </button>
                     <span className="flex items-center space-x-1 ">

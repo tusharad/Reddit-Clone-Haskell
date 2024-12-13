@@ -6,7 +6,6 @@ import Control.Exception
 import qualified Data.ByteString.Lazy as BSL
 import Data.Either (isRight)
 import Network.HTTP.Types
-import qualified Orville.PostgreSQL as O
 import Servant
 import Servant.Auth.Server
 import Test.Tasty

@@ -1,14 +1,23 @@
 module Platform.User.Thread.VoteThread.DB
-  ( fetchThreadVoteQ,
-    addThreadVoteQ,
-    updateThreadVoteQ,
-    deleteThreadVoteQ,
+  ( fetchThreadVoteQ
+  , addThreadVoteQ
+  , updateThreadVoteQ
+  , deleteThreadVoteQ
+  , fetchVoteThreadsByUser
   )
 where
 
+import Data.Coerce (coerce)
+import Data.List.NonEmpty
 import Orville.PostgreSQL
+import Orville.PostgreSQL.Expr
+import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
+import Platform.Common.AppM (AppM)
+import Platform.Common.Utils (queryWrapper)
+import Platform.DB.Marshaller (threadIDField, userIDField)
 import Platform.DB.Model
 import Platform.DB.Table
+import UnliftIO
 
 fetchThreadVoteQ :: (MonadOrville m) => UserID -> ThreadID -> m (Maybe ThreadVoteRead)
 fetchThreadVoteQ uID tID = findEntity threadVoteTable (ThreadVoteID uID tID)
@@ -21,3 +30,26 @@ updateThreadVoteQ uID tID = updateEntity threadVoteTable (ThreadVoteID uID tID)
 
 deleteThreadVoteQ :: (MonadOrville m) => UserID -> ThreadID -> m ()
 deleteThreadVoteQ uID tID = deleteEntity threadVoteTable (ThreadVoteID uID tID)
+
+fetchVoteThreadsByUser ::
+  MonadUnliftIO m =>
+  UserID ->
+  [ThreadID] ->
+  AppM m [ThreadVoteRead]
+fetchVoteThreadsByUser u t =
+  queryWrapper $
+    findEntitiesBy
+      threadVoteTable
+      ( where_
+          ( fieldColumnReference userIDField
+              `equals` valueExpression
+                (SqlValue.fromInt32 $ coerce u)
+              .&& valueIn
+                (fieldColumnReference threadIDField)
+                (fromList (valueExpression . SqlValue.fromInt32 . coerce <$> t))
+          )
+      )
+
+{-
+select *from vote_thread where user_id = 22 and thread_id in (10,11,12);
+-}
