@@ -43,8 +43,8 @@ Will try to follow best practices and idiomatic Haskell and PureScript as much a
 - [x] Downvote Thread
 - [x] Upvote Comment
 - [x] Downvote Comment
-- [ ] Send Email verification mail
-- [ ] OAuth
+- [x] Send Email verification mail
+- [x] OAuth
 - [ ] Adding Indices
 - [ ] Adding Haxl
 - [ ] Search Thread

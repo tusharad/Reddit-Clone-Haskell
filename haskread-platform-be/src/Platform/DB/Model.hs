@@ -241,7 +241,9 @@ data CommentInfo = CommentInfo
     userNameForCommentInfo :: Text,
     threadIDForCommentInfo :: ThreadID,
     createdAtForCommentInfo :: UTCTime,
-    parentCommentIDForCommentInfo :: Maybe CommentID
+    parentCommentIDForCommentInfo :: Maybe CommentID,
+    commentUpvoteCount :: Maybe Int32,
+    commentDownvoteCount :: Maybe Int32
   }
   deriving (Show, Eq, Generic, ToJSON)
 

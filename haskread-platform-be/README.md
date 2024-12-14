@@ -61,3 +61,7 @@ $ make startTest
 
 Note:
  - For running tests, the application uses `testEnv.dhall`.
+
+## TODO
+
+- Removing jwt tokens from browser's local storage once they are expired.

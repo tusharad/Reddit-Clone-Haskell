@@ -22,7 +22,8 @@ import Servant (FromHttpApiData)
 
 data CreateCommentReqBody = CreateCommentReqBody
   { threadIDForCommentCreate :: ThreadID,
-    commentContentForCreate :: Text
+    commentContentForCreate :: Text,
+    parentCommentID :: Maybe CommentID
   }
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 

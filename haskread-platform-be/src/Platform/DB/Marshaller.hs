@@ -118,8 +118,8 @@ commentIDField = coerceField $ serialField "comment_id"
 commentContentField :: FieldDefinition NotNull Text
 commentContentField = boundedTextField "comment_content" 255
 
-parentCommentIDField :: FieldDefinition NotNull CommentID
-parentCommentIDField = coerceField $ integerField "parent_comment_id"
+parentCommentIDField :: FieldDefinition Nullable (Maybe CommentID)
+parentCommentIDField = nullableField $ coerceField $ integerField "parent_comment_id"
 
 isVerifiedField :: FieldDefinition NotNull Bool
 isVerifiedField = setDefaultValue (booleanDefault False) $ booleanField "is_verified"
@@ -246,7 +246,7 @@ commentMarshaller =
     <*> marshallField (\Comment {..} -> userIDForComment) userIDField
     <*> marshallField (\Comment {..} -> threadIDForComment) threadIDField
     <*> marshallField (\Comment {..} -> commentContent) commentContentField
-    <*> marshallField (\Comment {..} -> parentCommentID) (nullableField parentCommentIDField)
+    <*> marshallField (\Comment {..} -> parentCommentID) parentCommentIDField
     <*> marshallReadOnly (marshallField (\Comment {..} -> createdAtForComment) createdAtField)
     <*> marshallReadOnly (marshallField (\Comment {..} -> updatedAtForComment) updatedAtField)
 
@@ -262,7 +262,9 @@ commentInfoMarshaller =
     <*> marshallField (\CommentInfo {..} -> userNameForCommentInfo) userNameField
     <*> marshallField (\CommentInfo {..} -> threadIDForCommentInfo) threadIDField
     <*> marshallField (\CommentInfo {..} -> createdAtForCommentInfo) createdAtField
-    <*> marshallField (\CommentInfo {..} -> parentCommentIDForCommentInfo) (nullableField parentCommentIDField)
+    <*> marshallField (\CommentInfo {..} -> parentCommentIDForCommentInfo) parentCommentIDField
+    <*> marshallField (\CommentInfo {..} -> commentUpvoteCount) (nullableField upvoteCountField)
+    <*> marshallField (\CommentInfo {..} -> commentDownvoteCount) (nullableField downvoteCountField)
 
 -- -- CommentVote Model
 commentVoteMarshaller ::

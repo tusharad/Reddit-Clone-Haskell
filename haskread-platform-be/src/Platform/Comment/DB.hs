@@ -1,23 +1,24 @@
 module Platform.Comment.DB
-  ( addCommentQ,
-    fetchCommentByIDQ,
-    deleteCommentQ,
-    updateCommentQ,
-    fetchCommentVoteQ,
-    addCommentVoteQ,
-    deleteCommentVoteQ,
-    updateCommentVoteQ,
-    fetchCommentsByThreadQ,
+  ( addCommentQ
+  , fetchCommentByIDQ
+  , deleteCommentQ
+  , updateCommentQ
+  , fetchCommentVoteQ
+  , addCommentVoteQ
+  , deleteCommentVoteQ
+  , updateCommentVoteQ
+  , fetchCommentsByThreadQ
   )
 where
 
 import Orville.PostgreSQL
 import Orville.PostgreSQL.Expr hiding (tableName)
+import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
 import Platform.DB.Marshaller
 import Platform.DB.Model
 import Platform.DB.Table
-import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
 import Platform.Orville.Helper
+import Data.List.NonEmpty
 
 addCommentQ :: (MonadOrville m) => CommentWrite -> m ()
 addCommentQ = insertEntity commentTable
@@ -63,22 +64,71 @@ fetchCommentsByThreadExpr threadID =
     selectClause_ = selectClause (selectExpr Nothing)
     selectedColumns =
       selectColumns
-        [ fieldColumnName (Just (stringToAliasName "c")) commentIDField,
-          fieldColumnName (Just (stringToAliasName "c")) commentContentField,
-          fieldColumnName (Just (stringToAliasName "c")) userIDField,
-          fieldColumnName (Just (stringToAliasName "u")) userNameField,
-          fieldColumnName (Just (stringToAliasName "c")) threadIDField,
-          fieldColumnName (Just (stringToAliasName "c")) createdAtField,
-          fieldColumnName (Just (stringToAliasName "c")) parentCommentIDField
+        [ fieldColumnName (Just (stringToAliasName "c")) commentIDField
+        , fieldColumnName (Just (stringToAliasName "c")) commentContentField
+        , fieldColumnName (Just (stringToAliasName "c")) userIDField
+        , fieldColumnName (Just (stringToAliasName "u")) userNameField
+        , fieldColumnName (Just (stringToAliasName "c")) threadIDField
+        , fieldColumnName (Just (stringToAliasName "c")) createdAtField
+        , fieldColumnName (Just (stringToAliasName "c")) parentCommentIDField
+        , fieldColumnName Nothing upvoteCountField
+        , fieldColumnName Nothing downvoteCountField
         ]
     commentTableName = tableFromItemWithAlias (stringToAliasExpr "c") (tableName commentTable)
     userTableName = tableFromItemWithAlias (stringToAliasExpr "u") (tableName userTable)
     userIDConstraint =
       columnReference (fieldColumnName (Just (stringToAliasName "u")) userIDField)
         `equals` columnReference (fieldColumnName (Just (stringToAliasName "c")) userIDField)
+    commentIdConstraint =
+      columnReference (fieldColumnName (Just (stringToAliasName "c")) commentIDField)
+        `equals` columnReference (fieldColumnName (Just (stringToAliasName "v")) commentIDField)
+    voteCountTable =
+      subQueryAsFromItemExpr (stringToAliasExpr "v") voteCountExpr
+    voteCountExpr =
+      queryExpr selectClauseDefault voteCountSelectList (Just fromVoteCommentTable)
+    groupByCommentID =
+      groupByClause (groupByColumnsExpr (fieldColumnName Nothing commentIDField :| []))
+    voteCountSelectList =
+      selectDerivedColumns
+        [ deriveColumn $ columnReference (fieldColumnName Nothing commentIDField)
+        , deriveColumnAsAlias upvoteCountExpr (stringToAliasExpr "upvote_count")
+        , deriveColumnAsAlias downVoteCountExpr (stringToAliasExpr "downvote_count")
+        ]
+    upvoteCountExpr =
+      count
+        ( caseExpr
+            ( whenExpr
+                (voteField `fieldEquals` True)
+                (valueExpression (SqlValue.fromInt 1))
+                :| []
+            )
+            (Just (valueExpression SqlValue.sqlNull))
+        )
+    downVoteCountExpr =
+      count
+        ( caseExpr
+            ( whenExpr
+                (voteField `fieldEquals` False)
+                (valueExpression (SqlValue.fromInt 1))
+                :| []
+            )
+            (Just (valueExpression SqlValue.sqlNull))
+        )
+    fromVoteCommentTable =
+      tableExpr
+        (tableFromItem (tableName commentVoteTable))
+        Nothing
+        (Just groupByCommentID)
+        Nothing
+        Nothing
+        Nothing
+        Nothing
+        Nothing
     joinList =
-      [joinExpr innerJoinType userTableName (joinOnConstraint userIDConstraint)]
+      [ joinExpr innerJoinType userTableName (joinOnConstraint userIDConstraint)
+       , joinExpr leftJoinType voteCountTable (joinOnConstraint commentIdConstraint)
+      ]
     fromTable =
       mkTableExpr
         (commentTableName `appendJoinFromItem` joinList)
-        defaultClauses { _whereClause = Just $ whereThreadIdIs threadID}
+        defaultClauses {_whereClause = Just $ whereThreadIdIs threadID}

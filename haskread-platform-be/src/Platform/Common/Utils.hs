@@ -29,7 +29,6 @@ import Data.Char
 import Data.Password.Bcrypt
 import Data.String.Interpolate
 import qualified Data.Text as T
-import Data.Time.Clock
 import Dhall
 import Network.HTTP.Req as Req
 import qualified Orville.PostgreSQL as O

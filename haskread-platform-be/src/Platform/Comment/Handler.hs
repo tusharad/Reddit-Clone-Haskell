@@ -48,15 +48,16 @@ addComment ::
   UserID ->
   ThreadID ->
   T.Text ->
+  Maybe CommentID ->
   AppM m CreateCommentResponse
-addComment userID threadID comment = do
+addComment userID threadID comment mParentCommentID = do
   let commentWrite =
         Comment
           { commentID = (),
             userIDForComment = userID,
             threadIDForComment = threadID,
             commentContent = comment,
-            parentCommentID = Nothing,
+            parentCommentID = mParentCommentID,
             createdAtForComment = (),
             updatedAtForComment = ()
           }
@@ -87,7 +88,7 @@ createCommentH ::
 createCommentH (Authenticated UserInfo {..}) CreateCommentReqBody {..} = do
   checkIfThreadExists threadIDForCommentCreate
   sanityCheckCommentContent commentContentForCreate
-  addComment userIDForUserInfo threadIDForCommentCreate commentContentForCreate
+  addComment userIDForUserInfo threadIDForCommentCreate commentContentForCreate parentCommentID
 createCommentH _ _ = throw401Err "Please login first"
 
 deleteCommentH ::
