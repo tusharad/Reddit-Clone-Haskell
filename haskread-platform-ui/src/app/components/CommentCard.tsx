@@ -11,9 +11,11 @@ interface CommentProps {
         userNameForCommentInfo: string;
         commentUpvoteCount?: number;
         commentDownvoteCount?: number;
+        userIDForCommentInfo: number;
     };
     setCommentIdForReply: (commentId: number) => void;
     setIsModalOpen: (isModalOpen: boolean) => void;
+    currentUserId: number | null;
 }
 
 interface CurrUserCommentVotes {
@@ -25,11 +27,37 @@ const CommentCard: React.FC<CommentProps> = ({
     mainComment,
     setCommentIdForReply,
     setIsModalOpen,
+    currentUserId,
 }) => {
     const [upvoteCount, setUpvoteCount] = useState(0);
     const [downvoteCount, setDownvoteCount] = useState(0);
     const [upvoteIcon, setUpvoteIcon] = useState(regularThumbsUp);
     const [downvoteIcon, setDownvoteIcon] = useState(regularThumbsDown);
+
+    const deleteComment = async () => {
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            console.log('User is not authenticated');
+            return;
+        }
+        try {
+            const response = await fetch(`http://localhost:8085/api/v1/user/comment/delete/${mainComment.commentIDForCommentInfo}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                router.push('/');
+            } else {
+                console.log(await response.text());
+            }
+        } catch (error) {
+            console.log('An error occurred: ' + error);
+        }
+    }
 
     const getCommentsReaction = async (cId: number): Promise<CurrUserCommentVotes[]> => {
         const token = localStorage.getItem('jwt_token');
@@ -134,6 +162,7 @@ const CommentCard: React.FC<CommentProps> = ({
             <div className="flex justify-between">
                 <span className="font-semibold text-gray-500">{mainComment.userNameForCommentInfo} </span>
                 <span className="text-sm text-gray-500">{new Date(mainComment.createdAtForCommentInfo).toLocaleDateString()}</span>
+
             </div>
             <p className="mt-2 text-gray-900">{mainComment.commentContentForCommentInfo}</p>
             <div className="flex mt-2 text-sm space-x-2">
@@ -153,6 +182,11 @@ const CommentCard: React.FC<CommentProps> = ({
                     <FontAwesomeIcon icon={downvoteIcon} />
                     {downvoteCount}
                 </button>
+                {currentUserId && currentUserId == mainComment.userIDForCommentInfo ? (
+                    <button className='text-sm hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1'
+                        onClick={() => deleteComment()}>delete</button>
+                ) : null}
+
             </div>
         </div>
     );

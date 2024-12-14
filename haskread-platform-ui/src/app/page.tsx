@@ -17,7 +17,7 @@ const Home: React.FC = () => {
   const [communityId, setCommunityId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [threadsCount, setThreadsCount] = useState(0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<number | null>(null); // null means user is not logged in
   const [newThreadAdded, setNewThreadAdded] = useState(false);
   const searchParams = useSearchParams()
   
@@ -26,6 +26,9 @@ const Home: React.FC = () => {
     const communityIdQuery = searchParams.get('community_id')
 
     if (offsetQuery && parseInt(offsetQuery)) setOffset(parseInt(offsetQuery))
+    if(communityIdQuery){
+        console.log("got commutnity id", communityIdQuery);
+    }
     if (communityIdQuery && parseInt(communityIdQuery)) setCommunityId(parseInt(communityIdQuery))
 
     const fetchData = async () => {
@@ -63,7 +66,7 @@ const Home: React.FC = () => {
             console.log("got data: ", data);
           } else {
             const res = await response.text();
-            console.log(res,'Failed to create thread');
+            console.log(res);
           }
         } catch (error) {
           console.log('An error occurred: ' + error);
@@ -166,6 +169,8 @@ const Home: React.FC = () => {
                   commentCount={thread.commentCount}
                   threadIDForThreadInfo={thread.threadIDForThreadInfo}
                   userPostReaction={getUserPostReaction(thread.threadIDForThreadInfo)}
+                  threadUserId={thread.userIDForThreadInfo}
+                  currentUserId={isLoggedIn}
                 />
               ))
             )}

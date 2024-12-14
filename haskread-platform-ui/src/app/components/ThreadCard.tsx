@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {faComment, faShare, faThumbsDown as solidThumbsDown, faThumbsUp as solidThumbsUp} from '@fortawesome/free-solid-svg-icons'
 import {faThumbsUp as regularThumbsup, faThumbsDown as regularThumbsDown} from '@fortawesome/free-regular-svg-icons'
+import {useRouter} from 'next/navigation';
 import {useEffect, useState} from 'react';
 
 
@@ -17,6 +18,8 @@ interface ThreadCardProps {
     commentCount?: number;
     threadIDForThreadInfo: number;
     userPostReaction: number;
+    threadUserId: number;
+    currentUserId: number | null;
 }
 
 const getUpIcon = (val: number) => {return val == 1 ? solidThumbsUp : regularThumbsup}
@@ -33,14 +36,18 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
     commentCount,
     threadIDForThreadInfo,
     userPostReaction,
+    threadUserId,
+    currentUserId,
 }) => {
 
     const [upvoteC, setUpvoteC] = useState(0);
     const [downvoteC, setDownvoteC] = useState(0);
     const [userUpvoteReaction, setUserUpvoteReaction] = useState(regularThumbsup);
     const [userDownvoteReaction, setUserDownvoteReaction] = useState(regularThumbsDown);
+    const router = useRouter();
 
     useEffect(() => {
+        console.log("current userID is ", currentUserId);
         const setData = () => {
             if (upvoteCount) setUpvoteC(upvoteCount);
             if (downvoteCount) setDownvoteC(downvoteCount);
@@ -49,6 +56,31 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
         };
         setData();
     }, [])
+
+    const deletePost = async () => {
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            console.log('User is not authenticated');
+            return;
+        }
+        try {
+            const response = await fetch(`http://localhost:8085/api/v1/user/thread/delete/${threadIDForThreadInfo}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                router.push('/');
+            } else {
+                console.log(await response.text());
+            }
+        } catch (error) {
+            console.log('An error occurred: ' + error);
+        }
+    }
 
     const updateUserReactions = async (isUpvotted: boolean) => {
         if (isUpvotted) {
@@ -124,6 +156,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
                         Created by <span className="font-semibold">{userName}</span>
                     </p>
                     <p>{new Date(createdAt).toLocaleDateString()}</p>
+
                 </div>
             </div>
             {description && (
@@ -149,6 +182,10 @@ const ThreadCard: React.FC<ThreadCardProps> = ({
                         <span>{commentCount || 0}</span>
                     </span>
                 </div>
+                {currentUserId && currentUserId == threadUserId ? (
+                    <button className='text-sm space-x-1 flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1'
+                        onClick={() => deletePost()}>delete</button>
+                ) : null}
                 <button className="flex items-center space-x-1 text-gray-600 hover:text-green-500">
                     <FontAwesomeIcon icon={faShare} />
                     <span>Share</span>

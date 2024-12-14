@@ -7,7 +7,7 @@ import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import CreateThreadModal from './CreateThreadModal';
 
 interface HeaderProps {
-  setIsLoggedIn: (loggedIn: boolean) => void;
+  setIsLoggedIn: (loggedIn: number | null) => void;
   setNewThreadAdded: (newThreadAdded: boolean) => void;
 }
 
@@ -16,20 +16,23 @@ const Header: React.FC<HeaderProps> = ({ setIsLoggedIn, setNewThreadAdded }) => 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('jwt_token');
 
-    if (token) {
-      const user = JSON.parse(atob(token.split('.')[1]));
-      setUserName(user.dat.userNameForUserInfo);
-      setIsLoggedIn(true);
-    } else {
+    const fetchData = async () => {
+        const token = localStorage.getItem('jwt_token');
+        if (token) {
+        const user = JSON.parse(atob(token.split('.')[1]));
+        setUserName(user.dat.userNameForUserInfo);
+        setIsLoggedIn(user.dat.userIDForUserInfo);
+      } else {
       setUserName(null);
-      setIsLoggedIn(false);
+      setIsLoggedIn(null);
+      }
     }
+    fetchData();
   }, [setIsLoggedIn]);
 
   const logOut = () => {
-    setIsLoggedIn(false);
+    setIsLoggedIn(null);
     setUserName(null);
     localStorage.removeItem('jwt_token');
   };

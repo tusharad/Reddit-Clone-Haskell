@@ -6,6 +6,7 @@ import ThreadCard from '../../components/ThreadCard';
 import CommunityList from '../../components/CommunityList';
 import CreateCommentModal from '../../components/CreateCommentModal';
 import CommentCard from '@/app/components/CommentCard';
+import { useRouter } from 'next/navigation';
 
 interface Comment {
     mainComment: {
@@ -13,6 +14,7 @@ interface Comment {
         commentContentForCommentInfo: string;
         createdAtForCommentInfo: string;
         userNameForCommentInfo: string;
+        userIDForCommentInfo: number;
     };
     children: Comment[];
 }
@@ -32,12 +34,16 @@ const ViewThread: React.FC<{params: {id: number}}> = ({params}) => {
     const [thread, setThread] = useState<any>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [commentIdForReply, setCommentIdForReply] = useState<number | null>(null);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState<number|null>(null);
     const [communities, setCommunities] = useState<Community[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newCommentAdded, setNewCommentAdded] = useState(false);
     const [postReaction, setPostReaction] = useState(0);
+    const router = useRouter();
 
+    const viewThreadsByCommunity = () => {
+        router.push('/')       
+    }
 
     const getPostReaction = async (): Promise<number> => {
         const token = localStorage.getItem('jwt_token');
@@ -94,6 +100,7 @@ const ViewThread: React.FC<{params: {id: number}}> = ({params}) => {
                     mainComment={comment.mainComment}
                     setIsModalOpen={setIsModalOpen}
                     setCommentIdForReply={setCommentIdForReply}
+                    currentUserId={isLoggedIn}
                 />
                 {comment.children.length > 0 && renderComments(comment.children)}
             </div>
@@ -118,13 +125,15 @@ const ViewThread: React.FC<{params: {id: number}}> = ({params}) => {
                             commentCount={thread.commentCount}
                             threadIDForThreadInfo={thread.threadIDForThreadInfo}
                             userPostReaction={postReaction}
+                            threadUserId={thread.userIDForThreadInfo}
+                            currentUserId={isLoggedIn}
                         />
                     )}
 
                     <div className="mt-6">
                         <button
                             className={`mt-4 px-4 py-2 rounded bg-green-500 text-white ${!isLoggedIn ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-600'}`}
-                            disabled={!isLoggedIn}
+                            disabled={isLoggedIn === null}
                             onClick={() => {setCommentIdForReply(null); setIsModalOpen(true)}}
                         >
                             Add Comment
@@ -134,7 +143,7 @@ const ViewThread: React.FC<{params: {id: number}}> = ({params}) => {
                     </div>
                 </div>
                 <aside className="w-1/4 pl-4">
-                    <CommunityList communities={communities} />
+                    <CommunityList communities={communities} setCommunityId={(cId) => { router.push(`/?community_id=${cId}`) }} />
                 </aside>
             </main>
             {isModalOpen && (
