@@ -61,6 +61,7 @@ mainServer =
     :<|> oauth2LoginH
     :<|> oauth2CallbackH
     :<|> fetchVoteThreadsForUserH
+    :<|> fetchVoteCommentsForUserH
     :<|> fetchAllThreadsH
     :<|> fetchThreadH
     :<|> fetchCommentsByThreadH
@@ -95,6 +96,7 @@ type MainAPI auths =
     :<|> Auth auths UserInfo :> OAuth2LoginAPI
     :<|> Auth auths UserInfo :> OAuth2CallBackAPI
     :<|> Auth auths UserInfo :> FetchVoteThreadsForUser
+    :<|> Auth auths UserInfo :> FetchVoteCommentsForUser
     :<|> FetchAllThreadsAPI
     :<|> FetchThreadAPI
     :<|> FetchCommentsByThreadAPI
@@ -402,3 +404,11 @@ type FetchVoteThreadsForUser =
         :> "thread_votes"
         :> ReqBody '[JSON] FetchVoteThreadsForUserReq
         :> Post '[JSON] FetchVoteThreadsForUserResponse
+
+type FetchVoteCommentsForUser = 
+    "api"
+        :> "v1"
+        :> "user"
+        :> "comment_votes"
+        :> ReqBody '[JSON] FetchVoteComemntsForUserReq
+        :> Post '[JSON] FetchVoteComemntsForUserResponse

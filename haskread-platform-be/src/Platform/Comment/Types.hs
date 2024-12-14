@@ -11,6 +11,9 @@ module Platform.Comment.Types
     UpdateCommentResponse (..),
     VoteCommentResponse (..),
     FetchCommentsResponse (..),
+    FetchVoteComemntsForUserReq (..),
+    FetchVoteComemntsForUserResponse (..),
+    FetchVoteComments (..)
   )
 where
 
@@ -54,3 +57,16 @@ data FetchCommentsResponse = FetchCommentsResponse
     comments :: [NestedComment]
   }
   deriving (Show, Eq, Generic, ToJSON)
+
+newtype FetchVoteComemntsForUserReq = FetchVoteComemntsForUserReq {
+    commentListForVotes :: [CommentID]
+  } deriving newtype (Show, Eq, FromJSON)
+
+data FetchVoteComments = FetchVoteComments {
+    commentIDForFetchVote :: CommentID
+  , isUpvote :: Bool
+} deriving (Show, Eq, Generic, ToJSON)
+
+newtype FetchVoteComemntsForUserResponse = FetchVoteComemntsForUserResponse {
+    fetchVoteCommentsList :: [FetchVoteComments]
+} deriving newtype (Show, Eq, ToJSON)

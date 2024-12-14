@@ -8,6 +8,7 @@ module Platform.Comment.DB
   , deleteCommentVoteQ
   , updateCommentVoteQ
   , fetchCommentsByThreadQ
+  , fetchVoteCommentsByUser
   )
 where
 
@@ -19,6 +20,10 @@ import Platform.DB.Model
 import Platform.DB.Table
 import Platform.Orville.Helper
 import Data.List.NonEmpty
+import Platform.Common.Utils (queryWrapper)
+import Data.Coerce (coerce)
+import UnliftIO (MonadUnliftIO)
+import Platform.Common.AppM (AppM)
 
 addCommentQ :: (MonadOrville m) => CommentWrite -> m ()
 addCommentQ = insertEntity commentTable
@@ -132,3 +137,18 @@ fetchCommentsByThreadExpr threadID =
       mkTableExpr
         (commentTableName `appendJoinFromItem` joinList)
         defaultClauses {_whereClause = Just $ whereThreadIdIs threadID}
+
+fetchVoteCommentsByUser :: MonadUnliftIO m => UserID -> [CommentID] -> AppM m [CommentVoteRead]
+fetchVoteCommentsByUser userID commentIdList = 
+  queryWrapper $
+    findEntitiesBy
+      commentVoteTable
+      (where_
+          (fieldColumnReference userIDField
+              `equals` valueExpression
+                (SqlValue.fromInt32 $ coerce userID)
+              .&& valueIn
+                (fieldColumnReference commentIDField)
+                (fromList (valueExpression . SqlValue.fromInt32 . coerce <$> commentIdList))
+          )
+      )

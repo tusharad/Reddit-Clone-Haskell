@@ -22,6 +22,11 @@ interface Community {
     communityName: string;
 }
 
+interface CurrUserCommentVotes {
+    commentIDForFetchVote: number;
+    isUpvote: boolean;
+}
+
 const ViewThread: React.FC<{params: {id: number}}> = ({params}) => {
     const thread_id = params.id;
     const [thread, setThread] = useState<any>(null);
@@ -33,26 +38,8 @@ const ViewThread: React.FC<{params: {id: number}}> = ({params}) => {
     const [newCommentAdded, setNewCommentAdded] = useState(false);
     const [postReaction, setPostReaction] = useState(0);
 
-    const handleCommentVote = async (isUpvote: boolean, commentId: number) => {
-        const token = localStorage.getItem('jwt_token');
-        if (!token) {
-            console.log('User is not authenticated');
-            return;
-        }
-        try {
-            const response = await fetch(`http://localhost:8085/api/v1/user/comment/vote/${commentId}/${isUpvote}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-        } catch (error) {
-            console.log('An error occurred: ' + error);
-        }
-    };
 
-    const getPostReaction = async () => {
+    const getPostReaction = async (): Promise<number> => {
         const token = localStorage.getItem('jwt_token');
         if (token) {
             const response = await fetch('http://localhost:8085/api/v1/user/thread_votes', {
@@ -65,9 +52,11 @@ const ViewThread: React.FC<{params: {id: number}}> = ({params}) => {
                     threadListForVotes: [new Number(thread_id)],
                 }),
             });
-            const userReactionOnPost = await response.json();
-            if (userReactionOnPost.length > 0)
-                return (userReactionOnPost[0][1]) ? 1 : 2;
+            if (response.ok) {
+                const userReactionOnPost = await response.json();
+                if (userReactionOnPost.length > 0)
+                    return (userReactionOnPost[0][1]) ? 1 : 2;
+            }
         }
         return 0;
     }
@@ -78,6 +67,7 @@ const ViewThread: React.FC<{params: {id: number}}> = ({params}) => {
                 if (thread_id) {
                     const userReactionOnPost = await getPostReaction();
                     setPostReaction(userReactionOnPost);
+
 
                     const threadRes = await fetch(`http://localhost:8085/api/v1/thread/${thread_id}`);
                     const threadData = await threadRes.json();
@@ -90,6 +80,7 @@ const ViewThread: React.FC<{params: {id: number}}> = ({params}) => {
                     const communitiesRes = await fetch('http://localhost:8085/api/v1/community');
                     const communitiesData = await communitiesRes.json();
                     setCommunities(communitiesData.communities);
+
                 }
             } catch (error) {console.error("Error fetching data:", error);}
         };
@@ -103,7 +94,6 @@ const ViewThread: React.FC<{params: {id: number}}> = ({params}) => {
                     mainComment={comment.mainComment}
                     setIsModalOpen={setIsModalOpen}
                     setCommentIdForReply={setCommentIdForReply}
-                    handleCommentVote={handleCommentVote}
                 />
                 {comment.children.length > 0 && renderComments(comment.children)}
             </div>

@@ -301,7 +301,8 @@ commentCreateReqBody =
   encode
     CreateCommentReqBody
       { commentContentForCreate = "Great work!",
-        threadIDForCommentCreate = ThreadID 2
+        threadIDForCommentCreate = ThreadID 2,
+        parentCommentIDForCreate = Nothing
       }
 
 registerUserBody :: ByteString

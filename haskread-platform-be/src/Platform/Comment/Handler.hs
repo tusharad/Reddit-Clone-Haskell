@@ -3,11 +3,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Platform.Comment.Handler
-  ( createCommentH,
-    deleteCommentH,
-    updateCommentH,
-    voteCommentH,
-    fetchCommentsByThreadH,
+  ( createCommentH
+  , deleteCommentH
+  , updateCommentH
+  , voteCommentH
+  , fetchCommentsByThreadH
+  , fetchVoteCommentsForUserH
   )
 where
 
@@ -53,13 +54,13 @@ addComment ::
 addComment userID threadID comment mParentCommentID = do
   let commentWrite =
         Comment
-          { commentID = (),
-            userIDForComment = userID,
-            threadIDForComment = threadID,
-            commentContent = comment,
-            parentCommentID = mParentCommentID,
-            createdAtForComment = (),
-            updatedAtForComment = ()
+          { commentID = ()
+          , userIDForComment = userID
+          , threadIDForComment = threadID
+          , commentContent = comment
+          , parentCommentID = mParentCommentID
+          , createdAtForComment = ()
+          , updatedAtForComment = ()
           }
   (eRes :: Either SomeException ()) <- try $ addCommentQ commentWrite
   case eRes of
@@ -88,7 +89,11 @@ createCommentH ::
 createCommentH (Authenticated UserInfo {..}) CreateCommentReqBody {..} = do
   checkIfThreadExists threadIDForCommentCreate
   sanityCheckCommentContent commentContentForCreate
-  addComment userIDForUserInfo threadIDForCommentCreate commentContentForCreate parentCommentIDForCreate
+  addComment
+    userIDForUserInfo
+    threadIDForCommentCreate
+    commentContentForCreate
+    parentCommentIDForCreate
 createCommentH _ _ = throw401Err "Please login first"
 
 deleteCommentH ::
@@ -115,11 +120,11 @@ updateCommentH (Authenticated UserInfo {..}) commentID0 UpdateCommentReqBody {..
   sanityCheckCommentContent commentContentForUpdate
   let commentWrite =
         commentRead
-          { commentID = (),
-            userIDForComment = userIDForUserInfo,
-            commentContent = commentContentForUpdate,
-            createdAtForComment = (),
-            updatedAtForComment = ()
+          { commentID = ()
+          , userIDForComment = userIDForUserInfo
+          , commentContent = commentContentForUpdate
+          , createdAtForComment = ()
+          , updatedAtForComment = ()
           }
   (eRes :: Either SomeException ()) <- try $ updateCommentQ commentID0 commentWrite
   case eRes of
@@ -165,11 +170,11 @@ addVoteComment ::
 addVoteComment uID cID vote = do
   let commentVoteWrite =
         CommentVote
-          { userIDForCommentVote = uID,
-            commentIDForCommentVote = cID,
-            commentVote = vote,
-            createdAtForCommentVote = (),
-            updatedAtForCommentVote = ()
+          { userIDForCommentVote = uID
+          , commentIDForCommentVote = cID
+          , commentVote = vote
+          , createdAtForCommentVote = ()
+          , updatedAtForCommentVote = ()
           }
   (eRes :: Either SomeException ()) <- try $ addCommentVoteQ commentVoteWrite
   case eRes of
@@ -196,11 +201,11 @@ updateVoteComment ::
 updateVoteComment cID uID vote = do
   let commentVoteWrite =
         CommentVote
-          { userIDForCommentVote = uID,
-            commentIDForCommentVote = cID,
-            commentVote = vote,
-            createdAtForCommentVote = (),
-            updatedAtForCommentVote = ()
+          { userIDForCommentVote = uID
+          , commentIDForCommentVote = cID
+          , commentVote = vote
+          , createdAtForCommentVote = ()
+          , updatedAtForCommentVote = ()
           }
   (eRes :: Either SomeException ()) <- try $ updateCommentVoteQ cID uID commentVoteWrite
   case eRes of
@@ -213,3 +218,21 @@ fetchCommentsByThreadH threadID = do
   commentInfoList <- queryWrapper $ fetchCommentsByThreadQ threadID
   let res = buildNestedComments commentInfoList
   pure $ FetchCommentsResponse (length res) res
+
+fetchVoteCommentsForUserH ::
+  MonadUnliftIO m =>
+  AuthResult UserInfo ->
+  FetchVoteComemntsForUserReq ->
+  AppM m FetchVoteComemntsForUserResponse
+fetchVoteCommentsForUserH
+  (Authenticated UserInfo {..})
+  (FetchVoteComemntsForUserReq commentList) = do
+    if null commentList
+      then return $ FetchVoteComemntsForUserResponse []
+      else do
+        res <- fetchVoteCommentsByUser userIDForUserInfo commentList
+        pure $
+          FetchVoteComemntsForUserResponse $
+            (\CommentVote {..} -> FetchVoteComments commentIDForCommentVote commentVote)
+              <$> res
+fetchVoteCommentsForUserH _ _ = throw401Err "Please login first"
