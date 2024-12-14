@@ -88,7 +88,7 @@ createCommentH ::
 createCommentH (Authenticated UserInfo {..}) CreateCommentReqBody {..} = do
   checkIfThreadExists threadIDForCommentCreate
   sanityCheckCommentContent commentContentForCreate
-  addComment userIDForUserInfo threadIDForCommentCreate commentContentForCreate parentCommentID
+  addComment userIDForUserInfo threadIDForCommentCreate commentContentForCreate parentCommentIDForCreate
 createCommentH _ _ = throw401Err "Please login first"
 
 deleteCommentH ::
