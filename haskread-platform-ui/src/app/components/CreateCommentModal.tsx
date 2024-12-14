@@ -35,7 +35,7 @@ const CreateCommentModal: React.FC<CreateCommentModalProps> = ({closeModal,setNe
             body: JSON.stringify({
               threadIDForCommentCreate: parseInt(threadId, 10),
               commentContentForCreate: comment,
-              parentCommentID : replyCommentId
+              parentCommentIDForCreate : replyCommentId
             }),
           });
     
