@@ -4,6 +4,8 @@ This is a Reddit clone written in Haskell and PureScript. It is a work in progre
 The goal of this project is to learn Haskell and PureScript by building a real-world application. 
 Will try to follow best practices and idiomatic Haskell and PureScript as much as possible.
 
+![alt text](image/demo_img.png)
+
 ## Tech Stack
 
 ### Backend
