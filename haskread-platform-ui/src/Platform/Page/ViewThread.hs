@@ -143,7 +143,6 @@ viewThreadPage tId = do
                               , threadId = tId
                               , userToken = token
                               , parentCommentIdForAddComment = Nothing
-                              , hidden = False
                               }
                       hyper (CommentCardId 10000) (addCommentButtonView addCommentData)
                   tag "h2" (cc "text-2xl font-bold mb-4 text-gray-900") "Comments"

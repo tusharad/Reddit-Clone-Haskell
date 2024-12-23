@@ -24,7 +24,6 @@ module Platform.Common.Request
 
 import Control.Exception
 import Control.Monad.IO.Class
-import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -36,7 +35,7 @@ addThread CreateThreadData {..} = do
   let myData =
         CreateThreadReqBody
           { threadTitleForCreate = titleForCreateThread
-          , threadCommunityIDForCreate = fromMaybe 6 mCommunityId
+          , threadCommunityIDForCreate = communityId
           , threadDescriptionForCreate = if T.null content then Nothing else Just content
           }
   case mToken of

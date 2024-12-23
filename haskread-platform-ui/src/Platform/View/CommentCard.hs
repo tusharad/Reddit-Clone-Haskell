@@ -1,11 +1,13 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -53,26 +55,34 @@ instance (IOE :> es) => HyperView CommentCardId es where
     = LikeComment CommentCardOps
     | DislikeComment CommentCardOps
     | AddCommentBtn AddCommentData
-    | UpdateComentInput AddCommentData Text
-    | SubmitAddComment AddCommentData
-    | CancelAddComment AddCommentData
+    | SubmitAddComment Text Int (Maybe Int)
+    | CancelAddComment Int
     | DoRedirect Int
     | GoToLogin
     deriving (Show, Read, ViewAction)
 
   update GoToLogin = redirect "/login"
-  update (AddCommentBtn addCommentData) = pure $ addCommentView addCommentData
+  update (AddCommentBtn AddCommentData {..}) =
+    pure $ addCommentView userToken threadId parentCommentIdForAddComment genForm
   update (DoRedirect tId) = redirect . url $ T.pack ("/view-thread/" <> show tId)
-  update (UpdateComentInput addCommentData newCommentData) =
-    pure $ addCommentView addCommentData {contentForAddComment = newCommentData}
-  update (CancelAddComment AddCommentData {..}) =
+  update (CancelAddComment threadId) =
     redirect . url $ T.pack ("/view-thread/" <> show threadId)
-  update (SubmitAddComment addCommentData@AddCommentData {..}) = do
-    if T.null contentForAddComment
-      then pure $ addCommentView addCommentData
+  update (SubmitAddComment token tId mParentCommentId) = do
+    uf <- formData @AddCommentForm
+    let vals = validateForm uf
+    if anyInvalid vals
+      then
+        pure $ addCommentView token tId mParentCommentId vals
       else do
-        void . liftIO $ addComment addCommentData
-        redirect $ url $ "/view-thread/" `append` toText threadId
+        void . liftIO $
+          addComment
+            AddCommentData
+              { contentForAddComment = commentContentField uf
+              , threadId = tId
+              , userToken = token
+              , parentCommentIdForAddComment = mParentCommentId
+              }
+        redirect $ url $ "/view-thread/" `append` toText tId
   update (LikeComment commentCardOps@CommentCardOps {..}) = do
     let commentId = commentIDForCommentInfo commentInfo
     liftIO $ upvoteComment tokenForCommentCard commentId
@@ -165,33 +175,47 @@ textarea :: ViewAction (Action id) => (Text -> Action id) -> DelayMs -> Mod id -
 textarea act delay f =
   tag "textarea" (onInput act delay . f) none
 
-addCommentView :: AddCommentData -> View CommentCardId ()
-addCommentView addCommentData@AddCommentData {..} = do
+newtype AddCommentForm f = AddCommentForm
+  { commentContentField :: Field f Text
+  }
+  deriving (Generic)
+
+instance Form AddCommentForm Validated
+
+validateForm :: AddCommentForm Identity -> AddCommentForm Validated
+validateForm u =
+  AddCommentForm
+    { commentContentField = validate (T.null $ commentContentField u) "Comment cannot be empty"
+    }
+
+addCommentView :: Text -> Int -> Maybe Int -> AddCommentForm Validated -> View CommentCardId ()
+addCommentView token tId mParentCommentId v = do
+  let f = formFieldsWith v
   let css =
-        if hidden
-          then "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center opacity-0"
-          else "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+        "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
   el (cc css) $ do
     el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
       tag "h2" (cc "text-2xl font-bold mb-4") $ text "Add comment"
 
-      el (cc "mb-4") $ do
-        tag
-          "textarea"
-          ( cc "w-full px-3 py-2 border rounded"
-              <> att "rows" "4"
-              <> onInput (UpdateComentInput addCommentData) 500
-          )
-          none
+      form @AddCommentForm (SubmitAddComment token tId mParentCommentId) (gap 10) $ do
+        field (commentContentField f) (const mempty) $ do
+          el (cc "mb-4") $ do
+            tag
+              "textarea"
+              ( cc "w-full px-3 py-2 border rounded"
+                  <> att "rows" "4"
+                  <> name "commentContentField"
+              )
+              none
+        el (cc "flex justify-end space-x-2") $ do
+          submit
+            (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
+            "Submit"
       el (cc "flex justify-end space-x-2") $ do
         button
-          (CancelAddComment addCommentData)
-          (cc "px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
+          (CancelAddComment tId)
+          (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
           "Cancel"
-        button
-          (SubmitAddComment addCommentData)
-          (cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
-          "Submit"
 
 commentCardView :: CommentCardOps -> View CommentCardId ()
 commentCardView commentCardOps@CommentCardOps {commentInfo = CommentInfo {..}, ..} = do
@@ -201,7 +225,6 @@ commentCardView commentCardOps@CommentCardOps {commentInfo = CommentInfo {..}, .
           , threadId = threadIDForCommentInfo
           , userToken = fromMaybe "" tokenForCommentCard
           , parentCommentIdForAddComment = Just commentIDForCommentInfo
-          , hidden = False
           }
   el
     ( cc

@@ -48,7 +48,7 @@ data UserProfileResponse = UserProfileResponse
 data CreateThreadData = CreateThreadData
   { mToken :: Maybe Text
   , mUserInfo :: Maybe UserProfileResponse
-  , mCommunityId :: Maybe Int
+  , communityId :: Int
   , titleForCreateThread :: Text
   , content :: Text
   }
@@ -59,7 +59,6 @@ data AddCommentData = AddCommentData
   , threadId :: Int
   , userToken :: Text
   , parentCommentIdForAddComment :: Maybe Int
-  , hidden :: Bool
   }
   deriving (Eq, Show, Read)
 
