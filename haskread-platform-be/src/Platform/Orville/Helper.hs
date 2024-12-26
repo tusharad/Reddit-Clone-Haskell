@@ -5,11 +5,13 @@ module Platform.Orville.Helper
     selectClauseDistinct,
     mkTableExpr,
     defaultClauses,
+    fieldToAliasQualifiedColumnName,
     Clauses (..),
   )
 where
 
 import Orville.PostgreSQL.Expr hiding (tableName)
+import Orville.PostgreSQL.Marshall (fieldAliasQualifiedColumnName, AliasName, FieldDefinition)
 
 selectClauseDefault :: SelectClause
 selectClauseDefault = selectClause (selectExpr Nothing)
@@ -24,7 +26,8 @@ data Clauses = Clauses
     _limitExpr :: Maybe LimitExpr,
     _offSetExpr :: Maybe OffsetExpr,
     _rowLockingClause :: Maybe RowLockingClause,
-    _windowClause :: Maybe WindowClause
+    _windowClause :: Maybe WindowClause,
+    _fetchClause :: Maybe FetchClause
   }
 
 defaultClauses :: Clauses
@@ -36,7 +39,8 @@ defaultClauses =
       _limitExpr = Nothing,
       _offSetExpr = Nothing,
       _rowLockingClause = Nothing,
-      _windowClause = Nothing
+      _windowClause = Nothing,
+      _fetchClause = Nothing
     }
 
 mkTableExpr :: FromItemExpr -> Clauses -> TableExpr
@@ -50,3 +54,7 @@ mkTableExpr f Clauses {..} =
     _offSetExpr
     _rowLockingClause
     _windowClause
+    _fetchClause
+
+fieldToAliasQualifiedColumnName :: AliasName -> FieldDefinition nullability a -> QualifiedOrUnqualified ColumnName
+fieldToAliasQualifiedColumnName x y = untrackQualified $ fieldAliasQualifiedColumnName x y 

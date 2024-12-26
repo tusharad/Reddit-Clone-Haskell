@@ -48,9 +48,9 @@ extra-deps:
 - git: https://github.com/facebook/Haxl.git
   commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
 - git: https://github.com/tusharad/orville
-  commit: 7a3f82ee70373204bf69727e7cf6784f08914993
+  commit: e08919c298844bd1b4572141c3b972b7d5b7c042
   subdirs:
-   - orville-postgresql
+  - orville-postgresql
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a

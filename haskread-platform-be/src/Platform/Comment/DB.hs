@@ -59,7 +59,7 @@ fetchCommentsByThreadQ threadID = do
 whereThreadIdIs :: ThreadID -> WhereClause
 whereThreadIdIs (ThreadID tID) =
   whereClause $
-    columnReference (fieldColumnName (Just (stringToAliasName "c")) threadIDField)
+    columnReference (fieldToAliasQualifiedColumnName ( (stringToAliasName "c")) threadIDField)
       `equals` valueExpression (SqlValue.fromInt32 tID)
 
 fetchCommentsByThreadExpr :: ThreadID -> QueryExpr
@@ -69,33 +69,33 @@ fetchCommentsByThreadExpr threadID =
     selectClause_ = selectClause (selectExpr Nothing)
     selectedColumns =
       selectColumns
-        [ fieldColumnName (Just (stringToAliasName "c")) commentIDField
-        , fieldColumnName (Just (stringToAliasName "c")) commentContentField
-        , fieldColumnName (Just (stringToAliasName "c")) userIDField
-        , fieldColumnName (Just (stringToAliasName "u")) userNameField
-        , fieldColumnName (Just (stringToAliasName "c")) threadIDField
-        , fieldColumnName (Just (stringToAliasName "c")) createdAtField
-        , fieldColumnName (Just (stringToAliasName "c")) parentCommentIDField
-        , fieldColumnName Nothing upvoteCountField
-        , fieldColumnName Nothing downvoteCountField
+        [ fieldToAliasQualifiedColumnName (stringToAliasName "c") commentIDField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "c") commentContentField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "c") userIDField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "u") userNameField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "c") threadIDField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "c") createdAtField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "c") parentCommentIDField
+        , fieldColumnName upvoteCountField
+        , fieldColumnName downvoteCountField
         ]
     commentTableName = tableFromItemWithAlias (stringToAliasExpr "c") (tableName commentTable)
     userTableName = tableFromItemWithAlias (stringToAliasExpr "u") (tableName userTable)
     userIDConstraint =
-      columnReference (fieldColumnName (Just (stringToAliasName "u")) userIDField)
-        `equals` columnReference (fieldColumnName (Just (stringToAliasName "c")) userIDField)
+      columnReference (fieldToAliasQualifiedColumnName  (stringToAliasName "u") userIDField)
+        `equals` columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "c") userIDField)
     commentIdConstraint =
-      columnReference (fieldColumnName (Just (stringToAliasName "c")) commentIDField)
-        `equals` columnReference (fieldColumnName (Just (stringToAliasName "v")) commentIDField)
+      columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "c") commentIDField)
+        `equals` columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "v") commentIDField)
     voteCountTable =
       subQueryAsFromItemExpr (stringToAliasExpr "v") voteCountExpr
     voteCountExpr =
       queryExpr selectClauseDefault voteCountSelectList (Just fromVoteCommentTable)
     groupByCommentID =
-      groupByClause (groupByColumnsExpr (fieldColumnName Nothing commentIDField :| []))
+      groupByClause (groupByColumnsExpr (fieldColumnName commentIDField :| []))
     voteCountSelectList =
       selectDerivedColumns
-        [ deriveColumn $ columnReference (fieldColumnName Nothing commentIDField)
+        [ deriveColumn $ columnReference (fieldColumnName commentIDField)
         , deriveColumnAsAlias upvoteCountExpr (stringToAliasExpr "upvote_count")
         , deriveColumnAsAlias downVoteCountExpr (stringToAliasExpr "downvote_count")
         ]
@@ -129,6 +129,7 @@ fetchCommentsByThreadExpr threadID =
         Nothing
         Nothing
         Nothing
+        Nothing
     joinList =
       [ joinExpr innerJoinType userTableName (joinOnConstraint userIDConstraint)
        , joinExpr leftJoinType voteCountTable (joinOnConstraint commentIdConstraint)
@@ -139,7 +140,7 @@ fetchCommentsByThreadExpr threadID =
         defaultClauses {_whereClause = Just $ whereThreadIdIs threadID}
 
 fetchVoteCommentsByUser :: MonadUnliftIO m => UserID -> [CommentID] -> AppM m [CommentVoteRead]
-fetchVoteCommentsByUser userID commentIdList = 
+fetchVoteCommentsByUser userID commentIdList =
   queryWrapper $
     findEntitiesBy
       commentVoteTable

@@ -14,6 +14,7 @@ where
 import Data.List.NonEmpty
 import Orville.PostgreSQL
 import Orville.PostgreSQL.Expr hiding (tableName)
+import Orville.PostgreSQL.Marshall (fieldAliasQualifiedColumnName)
 import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
 import Platform.DB.Marshaller
 import Platform.DB.Model
@@ -72,7 +73,10 @@ FROM   THREAD t
 whereThreadIdIs :: ThreadID -> WhereClause
 whereThreadIdIs (ThreadID tID) =
   whereClause $
-    columnReference (fieldColumnName (Just (stringToAliasName "t")) threadIDField)
+    columnReference
+      ( untrackQualified
+          (fieldAliasQualifiedColumnName (stringToAliasName "t") threadIDField)
+      )
       `equals` valueExpression (SqlValue.fromInt32 tID)
 
 fetchThreadInfoByIDQ :: (MonadOrville m) => ThreadID -> m (Maybe ThreadInfo)
@@ -94,12 +98,18 @@ mkWhereClauseForFetchThreadInfo (Just cId) (Just uId) = Just $ whereClause (user
 
 communityIdExpr :: Int -> BooleanExpr
 communityIdExpr cId =
-  columnReference (fieldColumnName (Just (stringToAliasName "t")) communityIDField)
+  columnReference
+    ( untrackQualified $
+        fieldAliasQualifiedColumnName (stringToAliasName "t") communityIDField
+    )
     `equals` valueExpression (SqlValue.fromInt32 $ fromIntegral cId)
 
 userIdExpr :: Int -> BooleanExpr
 userIdExpr uId =
-  columnReference (fieldColumnName (Just (stringToAliasName "t")) userIDField)
+  columnReference
+    ( untrackQualified $
+        fieldAliasQualifiedColumnName (stringToAliasName "t") userIDField
+    )
     `equals` valueExpression (SqlValue.fromInt32 $ fromIntegral uId)
 
 fetchThreadInfoQ :: (MonadOrville m) => Int -> Int -> Maybe Int -> Maybe Int -> m [ThreadInfo]
@@ -119,19 +129,20 @@ fetchThreadInfoExpr wClause lClause oClause =
   where
     selectedColumns =
       selectColumns
-        [ fieldColumnName (Just (stringToAliasName "t")) threadIDField
-        , fieldColumnName (Just (stringToAliasName "t")) threadTitleField
-        , fieldColumnName (Just (stringToAliasName "t")) threadDescriptionField
-        , fieldColumnName (Just (stringToAliasName "t")) createdAtField
-        , fieldColumnName (Just (stringToAliasName "u")) userIDField
-        , fieldColumnName (Just (stringToAliasName "u")) userNameField
-        , fieldColumnName (Just (stringToAliasName "c")) communityIDField
-        , fieldColumnName (Just (stringToAliasName "c")) communityNameField
-        , fieldColumnName Nothing upvoteCountField
-        , fieldColumnName Nothing downvoteCountField
-        , fieldColumnName Nothing commentCountField
+        [
+          fieldToAliasQualifiedColumnName (stringToAliasName "t") threadIDField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "t") threadTitleField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "t") threadDescriptionField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "t") createdAtField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "u") userIDField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "u") userNameField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "c") communityIDField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "c") communityNameField
+        , fieldColumnName upvoteCountField
+        , fieldColumnName downvoteCountField
+        , fieldColumnName commentCountField
         ]
-    threadIDColumnName = fieldColumnName Nothing threadIDField
+    threadIDColumnName = fieldColumnName threadIDField
     threadTableName = tableFromItemWithAlias (stringToAliasExpr "t") (tableName threadTable)
     userTableName = tableFromItemWithAlias (stringToAliasExpr "u") (tableName userTable)
     communityTableName =
@@ -139,14 +150,14 @@ fetchThreadInfoExpr wClause lClause oClause =
         (stringToAliasExpr "c")
         (tableName communityTable)
     userIDConstraint =
-      columnReference (fieldColumnName (Just (stringToAliasName "u")) userIDField)
-        `equals` columnReference (fieldColumnName (Just (stringToAliasName "t")) userIDField)
+      columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "u") userIDField)
+        `equals` columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "t") userIDField)
     communityIDConstraint =
-      columnReference (fieldColumnName (Just (stringToAliasName "c")) communityIDField)
-        `equals` columnReference (fieldColumnName (Just (stringToAliasName "t")) communityIDField)
+      columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "c") communityIDField)
+        `equals` columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "t") communityIDField)
     commentConstraint =
-      columnReference (fieldColumnName (Just (stringToAliasName "comm")) threadIDField)
-        `equals` columnReference (fieldColumnName (Just (stringToAliasName "t")) threadIDField)
+      columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "comm") threadIDField)
+        `equals` columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "t") threadIDField)
     voteCountTable =
       subQueryAsFromItemExpr (stringToAliasExpr "s") voteCountExpr
     voteCountExpr =
@@ -161,11 +172,12 @@ fetchThreadInfoExpr wClause lClause oClause =
         Nothing
         Nothing
         Nothing
+        Nothing
     groupByThreadID =
       groupByClause (groupByColumnsExpr (threadIDColumnName :| []))
     voteCountSelectList =
       selectDerivedColumns
-        [ deriveColumn $ columnReference (fieldColumnName Nothing threadIDField)
+        [ deriveColumn $ columnReference (fieldColumnName threadIDField)
         , deriveColumnAsAlias upvoteCountExpr (stringToAliasExpr "upvote_count")
         , deriveColumnAsAlias downVoteCountExpr (stringToAliasExpr "downvote_count")
         ]
@@ -190,17 +202,17 @@ fetchThreadInfoExpr wClause lClause oClause =
             (Just (valueExpression SqlValue.sqlNull))
         )
     threadIDConstraint =
-      columnReference (fieldColumnName (Just (stringToAliasName "s")) threadIDField)
-        `equals` columnReference (fieldColumnName (Just (stringToAliasName "t")) threadIDField)
+      columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "s") threadIDField)
+        `equals` columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "t") threadIDField)
     commentCountSelectList =
       selectDerivedColumns
-        [ deriveColumn $ columnReference (fieldColumnName Nothing threadIDField)
+        [ deriveColumn $ columnReference (fieldColumnName threadIDField)
         , deriveColumnAsAlias commentCountFieldExpr (stringToAliasExpr "comment_count")
         ]
     commentCountTable =
       subQueryAsFromItemExpr (stringToAliasExpr "comm") commentCountExpr
     commentCountFieldExpr =
-      countColumn (fieldColumnName Nothing threadIDField)
+      countColumn (fieldColumnName  threadIDField)
     commentCountExpr =
       queryExpr selectClauseDefault commentCountSelectList (Just fromCommentTable)
     fromCommentTable =
@@ -208,6 +220,7 @@ fetchThreadInfoExpr wClause lClause oClause =
         (tableFromItem (tableName commentTable))
         Nothing
         (Just groupByThreadID)
+        Nothing
         Nothing
         Nothing
         Nothing

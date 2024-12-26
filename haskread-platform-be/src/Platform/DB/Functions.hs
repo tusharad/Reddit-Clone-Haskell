@@ -14,7 +14,6 @@ import Orville.PostgreSQL.Expr
     triggerForEachRow,
     triggerOnUpdate,
   )
-import qualified Orville.PostgreSQL.Expr as Expr
 import Platform.DB.Table
 
 {-
@@ -61,10 +60,6 @@ setUpdatedAtUsersTrigger =
       (tableName commentVoteTable, "set_updated_at_commentVote")
     ]
   where
-    runSetUpdatedAtTrigger ::
-      (MonadOrville m) =>
-      (Expr.Qualified Expr.TableName, String) ->
-      m ()
     runSetUpdatedAtTrigger (tName, triggerName) =
       executeVoid OtherQuery $
         mkCreateTriggerExpr

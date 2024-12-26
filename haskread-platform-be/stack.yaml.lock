@@ -30,16 +30,16 @@ packages:
     commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
     git: https://github.com/facebook/Haxl.git
 - completed:
-    commit: 7a3f82ee70373204bf69727e7cf6784f08914993
+    commit: e08919c298844bd1b4572141c3b972b7d5b7c042
     git: https://github.com/tusharad/orville
     name: orville-postgresql
     pantry-tree:
-      sha256: f927bae70a7731a58bb597717446b8000e8f09d348eaa46ab2554fad2009110a
-      size: 16864
+      sha256: 7342f4a39e181cee6197638b1cb41b4ff712e74c11f1c02be7ec0759737519b5
+      size: 17540
     subdir: orville-postgresql
     version: 1.1.0.0
   original:
-    commit: 7a3f82ee70373204bf69727e7cf6784f08914993
+    commit: e08919c298844bd1b4572141c3b972b7d5b7c042
     git: https://github.com/tusharad/orville
     subdir: orville-postgresql
 snapshots:
