@@ -1,11 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Platform.User.Thread.DB
   ( fetchThreadByIDQ
   , addThreadQ
   , updateThreadQ
   , deleteThreadQ
-  , fetchAllThreadsQ
   , fetchThreadInfoQ
   , fetchThreadInfoByIDQ
+  , fetchThreadInfoByTextQ
   )
 where
 
@@ -32,12 +34,6 @@ updateThreadQ = updateEntity threadTable
 
 deleteThreadQ :: (MonadOrville m) => ThreadID -> m ()
 deleteThreadQ = deleteEntity threadTable
-
-{-
-select thread_title,thread_description from thread;
--}
-fetchAllThreadsQ :: (MonadOrville m) => m [ThreadInfo]
-fetchAllThreadsQ = undefined
 
 {-
  SELECT t.thread_id,
@@ -84,7 +80,7 @@ fetchThreadInfoByIDQ tID = do
   res <-
     executeAndDecode
       SelectQuery
-      (fetchThreadInfoExpr (Just $ whereThreadIdIs tID) Nothing Nothing)
+      (fetchThreadInfoExpr (Just $ whereThreadIdIs tID) Nothing Nothing Nothing)
       (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)
   case res of
     [] -> pure Nothing
@@ -94,7 +90,9 @@ mkWhereClauseForFetchThreadInfo :: Maybe Int -> Maybe Int -> Maybe WhereClause
 mkWhereClauseForFetchThreadInfo Nothing Nothing = Nothing
 mkWhereClauseForFetchThreadInfo (Just cId) Nothing = Just $ whereClause (communityIdExpr cId)
 mkWhereClauseForFetchThreadInfo Nothing (Just uId) = Just $ whereClause (userIdExpr uId)
-mkWhereClauseForFetchThreadInfo (Just cId) (Just uId) = Just $ whereClause (userIdExpr uId .&& communityIdExpr cId)
+mkWhereClauseForFetchThreadInfo (Just cId) (Just uId) =
+  Just $
+    whereClause (userIdExpr uId .&& communityIdExpr cId)
 
 communityIdExpr :: Int -> BooleanExpr
 communityIdExpr cId =
@@ -113,24 +111,32 @@ userIdExpr uId =
     `equals` valueExpression (SqlValue.fromInt32 $ fromIntegral uId)
 
 fetchThreadInfoQ :: (MonadOrville m) => Int -> Int -> Maybe Int -> Maybe Int -> m [ThreadInfo]
-fetchThreadInfoQ limit offset mCommunityId mUserId =
+fetchThreadInfoQ limit offset mCommunityId mUserId = 
   executeAndDecode
     SelectQuery
     ( fetchThreadInfoExpr
         (mkWhereClauseForFetchThreadInfo mCommunityId mUserId)
         (Just (limitExpr limit))
         (Just (offsetExpr offset))
+        Nothing
     )
     (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)
 
-fetchThreadInfoExpr :: Maybe WhereClause -> Maybe LimitExpr -> Maybe OffsetExpr -> QueryExpr
-fetchThreadInfoExpr wClause lClause oClause =
-  queryExpr selectClauseDefault selectedColumns (Just (fromTable wClause lClause oClause))
+fetchThreadInfoExpr ::
+  Maybe WhereClause ->
+  Maybe LimitExpr ->
+  Maybe OffsetExpr ->
+  Maybe OrderByClause ->
+  QueryExpr
+fetchThreadInfoExpr wClause lClause oClause orderClause =
+  queryExpr
+    selectClauseDefault
+    selectedColumns
+    (Just (fromTable wClause lClause oClause orderClause))
   where
     selectedColumns =
       selectColumns
-        [
-          fieldToAliasQualifiedColumnName (stringToAliasName "t") threadIDField
+        [ fieldToAliasQualifiedColumnName (stringToAliasName "t") threadIDField
         , fieldToAliasQualifiedColumnName (stringToAliasName "t") threadTitleField
         , fieldToAliasQualifiedColumnName (stringToAliasName "t") threadDescriptionField
         , fieldToAliasQualifiedColumnName (stringToAliasName "t") createdAtField
@@ -151,13 +157,13 @@ fetchThreadInfoExpr wClause lClause oClause =
         (tableName communityTable)
     userIDConstraint =
       columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "u") userIDField)
-        `equals` columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "t") userIDField)
+        `equals` columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "t") userIDField)
     communityIDConstraint =
-      columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "c") communityIDField)
-        `equals` columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "t") communityIDField)
+      columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "c") communityIDField)
+        `equals` columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "t") communityIDField)
     commentConstraint =
-      columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "comm") threadIDField)
-        `equals` columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "t") threadIDField)
+      columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "comm") threadIDField)
+        `equals` columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "t") threadIDField)
     voteCountTable =
       subQueryAsFromItemExpr (stringToAliasExpr "s") voteCountExpr
     voteCountExpr =
@@ -202,8 +208,8 @@ fetchThreadInfoExpr wClause lClause oClause =
             (Just (valueExpression SqlValue.sqlNull))
         )
     threadIDConstraint =
-      columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "s") threadIDField)
-        `equals` columnReference (fieldToAliasQualifiedColumnName ( stringToAliasName "t") threadIDField)
+      columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "s") threadIDField)
+        `equals` columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "t") threadIDField)
     commentCountSelectList =
       selectDerivedColumns
         [ deriveColumn $ columnReference (fieldColumnName threadIDField)
@@ -212,7 +218,7 @@ fetchThreadInfoExpr wClause lClause oClause =
     commentCountTable =
       subQueryAsFromItemExpr (stringToAliasExpr "comm") commentCountExpr
     commentCountFieldExpr =
-      countColumn (fieldColumnName  threadIDField)
+      countColumn (fieldColumnName threadIDField)
     commentCountExpr =
       queryExpr selectClauseDefault commentCountSelectList (Just fromCommentTable)
     fromCommentTable =
@@ -232,11 +238,67 @@ fetchThreadInfoExpr wClause lClause oClause =
       , joinExpr leftJoinType voteCountTable (joinOnConstraint threadIDConstraint)
       , joinExpr leftJoinType commentCountTable (joinOnConstraint commentConstraint)
       ]
-    fromTable wClause lClause oClause =
+    fromTable wClause lClause oClause orderClause =
       mkTableExpr
         (threadTableName `appendJoinFromItem` joinList)
         defaultClauses
           { _whereClause = wClause
           , _limitExpr = lClause
           , _offSetExpr = oClause
+          , _orderByClause = orderClause
           }
+{-
+SELECT
+    thread_title,
+    thread_description
+FROM thread
+WHERE
+    to_tsvector('english', thread_title) @@ plainto_tsquery('english', 'haskell')
+    OR
+    to_tsvector('english', thread_description) @@ plainto_tsquery('english', 'haskell')
+ORDER BY ts_rank(
+        setweight(to_tsvector('english', thread_title), 'A') ||
+        setweight(to_tsvector('english', thread_description), 'B'),
+        to_tsquery('english', 'is')
+    ) DESC;
+-}
+
+mkWhereClauseForFetchThreadInfoByText txt =
+  Just $
+    whereClause $
+      go threadTitleField
+        .|| go threadDescriptionField
+  where
+    go t =
+      tsMatch
+        (toTSVector (columnToValExpression t) (Just English))
+        (textToPlainTSQuery txt)
+
+mkOrderByClauseForFetchThreadInfoByText txt =
+  Just $
+    orderByClause $
+      orderByValueExpression
+        (tsRank 
+            (stringConcat 
+            (setWeight (toTSVector (columnToValExpression threadTitleField) (Just English)) A)
+            (setWeight (toTSVector (columnToValExpression threadDescriptionField) (Just English)) B)) 
+            (textToTSQuery txt))
+        ascendingOrder
+
+-- simple internal functions
+columnToValExpression t = 
+    columnReference (untrackQualified (fieldAliasQualifiedColumnName (stringToAliasName "t") t))
+textToPlainTSQuery txt = plainToTSQuery (valueExpression $ SqlValue.fromText txt) (Just English)
+textToTSQuery txt = toTSQuery (valueExpression $ SqlValue.fromText txt) (Just English)
+
+fetchThreadInfoByTextQ :: MonadOrville m => m [ThreadInfo]
+fetchThreadInfoByTextQ =
+  executeAndDecode
+    SelectQuery
+    ( fetchThreadInfoExpr
+        (mkWhereClauseForFetchThreadInfoByText "haskell")
+        (Just (limitExpr 10))
+        Nothing
+        (mkOrderByClauseForFetchThreadInfoByText "haskell")
+    )
+    (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)
