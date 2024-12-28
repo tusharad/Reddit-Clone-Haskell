@@ -66,6 +66,7 @@ mainServer =
     :<|> fetchThreadH
     :<|> fetchCommentsByThreadH
     :<|> fetchCommunitiesH
+    :<|> fetchAllThreadsBySearchH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -101,6 +102,7 @@ type MainAPI auths =
     :<|> FetchThreadAPI
     :<|> FetchCommentsByThreadAPI
     :<|> FetchCommunitiesAPI
+    :<|> FetchAllThreadsBySearch 
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -412,3 +414,11 @@ type FetchVoteCommentsForUser =
         :> "comment_votes"
         :> ReqBody '[JSON] FetchVoteComemntsForUserReq
         :> Post '[JSON] FetchVoteComemntsForUserResponse
+
+type FetchAllThreadsBySearch = 
+  "api" 
+    :> "v1"
+    :> "user"
+    :> "thread"
+    :> QueryParam "search_term" Text
+    :> Get '[JSON] FetchAllThreadsResponse

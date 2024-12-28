@@ -37,7 +37,7 @@ import Effectful (IOE)
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
-import Web.Hyperbole hiding (input)
+import Web.Hyperbole hiding (input, textarea)
 import Web.Hyperbole.View (onInput)
 
 data CommentCardOps = CommentCardOps

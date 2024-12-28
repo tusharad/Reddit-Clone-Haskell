@@ -23,6 +23,7 @@ import Platform.Common.Utils
 import Platform.View
 import Platform.View.Header
 import Web.Hyperbole
+import Platform.View.LiveSearch (LiveSearchId)
 
 data FormView = FormView
   deriving (Show, Read, ViewId)
@@ -78,7 +79,7 @@ validatePass :: Text -> Validated Text
 validatePass p1 =
   validate (T.length p1 < 3) "Password must be at least 8 chars"
 
-loginPage :: Eff es (Page '[FormView, HeaderId, FooterId])
+loginPage :: Eff es (Page '[FormView, HeaderId, FooterId, LiveSearchId])
 loginPage = do
   pure $ do
     style globalCSS

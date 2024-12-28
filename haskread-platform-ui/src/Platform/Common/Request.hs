@@ -20,6 +20,7 @@ module Platform.Common.Request
   , downvoteThread
   , getAllThreads
   , getCommunityList_
+  , getAllThreadsBySearch
   ) where
 
 import Control.Exception
@@ -390,3 +391,20 @@ getCommunityList_ = runReq defaultHttpConfig $ do
       port 8085
   let (Communities res) = (responseBody jsonResp :: Communities)
   pure $ fmap communityName res
+
+getAllThreadsBySearch :: Text -> IO (Maybe FetchAllThreadsResponse)
+getAllThreadsBySearch search = do
+  eRes ::
+    Either HttpException (Maybe FetchAllThreadsResponse) <- try $ runReq defaultHttpConfig $ do
+    jsonResp <-
+      req
+        GET
+        (http "localhost" /: "api" /: "v1" /: "user" /: "thread")
+        NoReqBody
+        jsonResponse
+        $ "search_term" =: search
+          <> port 8085
+    pure $ Just (responseBody jsonResp :: FetchAllThreadsResponse)
+  case eRes of
+    Left _ -> pure Nothing
+    Right r -> pure r

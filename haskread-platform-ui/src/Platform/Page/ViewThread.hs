@@ -24,6 +24,7 @@ import Platform.View.CommentCard
 import Platform.View.Header
 import Platform.View.ThreadCard
 import Web.Hyperbole
+import Platform.View.LiveSearch (LiveSearchId)
 
 newtype ViewThreadId = ViewThreadId Int
   deriving (Show, Read, ViewId)
@@ -47,6 +48,7 @@ showCommentsList ::
         , CommunityId
         , FooterId
         , CommentCardId
+        , LiveSearchId
         ]
     )
     ()
@@ -96,6 +98,7 @@ viewThreadPage ::
          , CommunityId
          , FooterId
          , CommentCardId
+         , LiveSearchId
          ]
     )
 viewThreadPage tId = do

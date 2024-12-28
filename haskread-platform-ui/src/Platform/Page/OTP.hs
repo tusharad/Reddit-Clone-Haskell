@@ -24,6 +24,7 @@ import Platform.View
 import Platform.View.Header
 import Text.Read (readMaybe)
 import Web.Hyperbole
+import Platform.View.LiveSearch (LiveSearchId)
 
 data OTPView = OTPView
   deriving (Show, Read, ViewId)
@@ -71,7 +72,7 @@ validateOTP otp_ =
     , validate (isNothing (readMaybe $ T.unpack otp_ :: Maybe Int)) "OTP should be numbers only"
     ]
 
-otpPage :: Int -> Eff es (Page '[OTPView, HeaderId, FooterId])
+otpPage :: Int -> Eff es (Page '[OTPView, HeaderId, FooterId, LiveSearchId])
 otpPage newUserId = do
   pure $ do
     style globalCSS

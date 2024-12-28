@@ -37,12 +37,12 @@ packages:
 #
 extra-deps:
 - git: https://github.com/seanhess/hyperbole.git
-  commit: f6f1d95ed9e9343333498ee7e77cb0da3668f862
-- git: https://github.com/seanhess/web-view.git
-  commit: 4a8293372b1eee6eda307cd42a62d9677c49cc33
+  commit: 161579c3b2c139124a9fabae12ffefbb493cde7c
+- git: https://github.com/seanhess/web-view
+  commit: 7579ddab0cfed8f3d84e2369cf25cbceb23e7e92
 - effectful-2.5.1.0@sha256:bc202099c724feeac0cc083a719aab2d2ba91a1eb18e9150c560054008a93e12,7440
-- effectful-core-2.5.1.0@sha256:252d6c7641d8ecf16d7d228ad2aced011b92f36e175acdf6ccac528e576cf7cb,4211
 - http-api-data-0.6.1@sha256:e389f4353cc6fc9a6522e2a6e21973fe627deac2fcae5df753fe1606a182813f,3247
+- effectful-core-2.5.1.0@sha256:252d6c7641d8ecf16d7d228ad2aced011b92f36e175acdf6ccac528e576cf7cb,4211
 - strict-mutable-base-1.1.0.0@sha256:b1c039f6b179aedb420a90cbe15d3c3e78fbaaa7146ed02700b84c6018ee734f,1430
 - uuid-types-1.0.6@sha256:595644500d36908be85cd02fb446c411555ecc5c59b7ce33d1205cfc9ceb55a6,2604
 # - acme-missiles-0.3

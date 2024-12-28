@@ -22,6 +22,7 @@ import Platform.View
 import Platform.View.Header
 import Platform.View.ThreadCard
 import Web.Hyperbole
+import Platform.View.LiveSearch (LiveSearchId)
 
 newtype HomeId = HomeId Int
   deriving (Show, Read, ViewId)
@@ -49,11 +50,11 @@ currentPage = 1
 
 homePage ::
   (Hyperbole :> es, IOE :> es) =>
-  Eff es (Page '[HomeId, SortMenuId, HeaderId, ThreadId, FooterId, CommunityId])
+  Eff es (Page '[HomeId, SortMenuId, HeaderId, ThreadId, FooterId, CommunityId, LiveSearchId])
 homePage = do
   mJwtToken :: Maybe Text <- session "jwt_token"
   res <- liftIO getAllThreads
-  mUserInfo_ <- liftIO $ if isJust mJwtToken then getUserInfo (fromJust mJwtToken) else pure Nothing
+  mUserInfo_ <- liftIO $ maybe (pure Nothing) getUserInfo mJwtToken
   mUserThreadVotes <-
     liftIO $
       if isJust mJwtToken

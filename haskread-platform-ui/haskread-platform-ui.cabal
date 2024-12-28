@@ -39,6 +39,7 @@ library
       Platform.View
       Platform.View.CommentCard
       Platform.View.Header
+      Platform.View.LiveSearch
       Platform.View.ThreadCard
   other-modules:
       Paths_haskread_platform_ui

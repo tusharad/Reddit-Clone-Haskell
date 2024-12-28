@@ -6,7 +6,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -30,8 +30,8 @@ import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
 import Web.Hyperbole
-import qualified Web.View.Element as Element
 import Web.View.Types
+import Platform.View.LiveSearch
 
 newtype HeaderId = HeaderId Int
   deriving (Show, Read, ViewId)
@@ -44,6 +44,7 @@ instance IOE :> es => HyperView HeaderId es where
     | CancelCreateThreadForm (Maybe Text) (Maybe UserProfileResponse)
     deriving (Show, Read, ViewAction)
 
+  type Require HeaderId = '[LiveSearchId]
   update DoLogout = do
     clearSession "jwt_token"
     pure $ headerView Nothing Nothing
@@ -194,12 +195,7 @@ headerView mToken mUserInfo = do
     el (cc "container mx-auto px-6 py-4 flex justify-between items-center") $ do
       link "http://localhost:3000/" (cc "text-3xl font-bold text-white") "HaskRead"
       el (cc "flex items-center") $ do
-        el (cc "relative") $ do
-          Element.input (cc "pl-2 pr-4 py-2 border rounded-full focus:ring-2 focus:ring-blue-600")
-          tag
-            "i"
-            (cc "bx bx-search-alt bg-white rounded-md px-3 py-3 ml-2")
-            none
+          hyper (LiveSearchId 1) (liveSearch mempty [])
       el (cc "ml-4 flex items-center space-x-2") $ do
         case mUserInfo of
           Nothing -> showLoginAndSignup

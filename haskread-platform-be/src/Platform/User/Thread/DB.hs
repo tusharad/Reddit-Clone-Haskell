@@ -14,6 +14,7 @@ where
 -- import qualified Orville.PostgreSQL.Expr as Expr
 
 import Data.List.NonEmpty
+import Data.Text (Text)
 import Orville.PostgreSQL
 import Orville.PostgreSQL.Expr hiding (tableName)
 import Orville.PostgreSQL.Marshall (fieldAliasQualifiedColumnName)
@@ -111,7 +112,7 @@ userIdExpr uId =
     `equals` valueExpression (SqlValue.fromInt32 $ fromIntegral uId)
 
 fetchThreadInfoQ :: (MonadOrville m) => Int -> Int -> Maybe Int -> Maybe Int -> m [ThreadInfo]
-fetchThreadInfoQ limit offset mCommunityId mUserId = 
+fetchThreadInfoQ limit offset mCommunityId mUserId =
   executeAndDecode
     SelectQuery
     ( fetchThreadInfoExpr
@@ -247,6 +248,7 @@ fetchThreadInfoExpr wClause lClause oClause orderClause =
           , _offSetExpr = oClause
           , _orderByClause = orderClause
           }
+
 {-
 SELECT
     thread_title,
@@ -278,27 +280,29 @@ mkOrderByClauseForFetchThreadInfoByText txt =
   Just $
     orderByClause $
       orderByValueExpression
-        (tsRank 
-            (stringConcat 
-            (setWeight (toTSVector (columnToValExpression threadTitleField) (Just English)) A)
-            (setWeight (toTSVector (columnToValExpression threadDescriptionField) (Just English)) B)) 
-            (textToTSQuery txt))
+        ( tsRank
+            ( stringConcat
+                (setWeight (toTSVector (columnToValExpression threadTitleField) (Just English)) A)
+                (setWeight (toTSVector (columnToValExpression threadDescriptionField) (Just English)) B)
+            )
+            (textToTSQuery txt)
+        )
         ascendingOrder
 
 -- simple internal functions
-columnToValExpression t = 
-    columnReference (untrackQualified (fieldAliasQualifiedColumnName (stringToAliasName "t") t))
+columnToValExpression t =
+  columnReference (untrackQualified (fieldAliasQualifiedColumnName (stringToAliasName "t") t))
 textToPlainTSQuery txt = plainToTSQuery (valueExpression $ SqlValue.fromText txt) (Just English)
 textToTSQuery txt = toTSQuery (valueExpression $ SqlValue.fromText txt) (Just English)
 
-fetchThreadInfoByTextQ :: MonadOrville m => m [ThreadInfo]
-fetchThreadInfoByTextQ =
+fetchThreadInfoByTextQ :: MonadOrville m => Text -> m [ThreadInfo]
+fetchThreadInfoByTextQ searchTerm =
   executeAndDecode
     SelectQuery
     ( fetchThreadInfoExpr
-        (mkWhereClauseForFetchThreadInfoByText "haskell")
+        (mkWhereClauseForFetchThreadInfoByText searchTerm)
         (Just (limitExpr 10))
         Nothing
-        (mkOrderByClauseForFetchThreadInfoByText "haskell")
+        (mkOrderByClauseForFetchThreadInfoByText searchTerm)
     )
     (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)

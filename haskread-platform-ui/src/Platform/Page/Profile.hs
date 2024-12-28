@@ -21,6 +21,7 @@ import Platform.View
 import Platform.View.Header
 import Platform.View.ThreadCard
 import Web.Hyperbole
+import Platform.View.LiveSearch (LiveSearchId)
 
 newtype ProfileId = ProfileId Int
   deriving (Show, Read, ViewId)
@@ -33,7 +34,7 @@ instance HyperView ProfileId es where
 
 profilePage ::
   (Hyperbole :> es, IOE :> es) =>
-  Eff es (Page '[ProfileId, HeaderId, ThreadId, FooterId])
+  Eff es (Page '[ProfileId, HeaderId, ThreadId, FooterId, LiveSearchId])
 profilePage = do
   mJwtToken :: Maybe Text <- session "jwt_token"
   case mJwtToken of

@@ -27,6 +27,7 @@ import Platform.Common.Utils
 import Platform.View
 import Platform.View.Header
 import Web.Hyperbole
+import Platform.View.LiveSearch (LiveSearchId)
 
 data RegisterForm = RegisterForm
   deriving (Show, Read, ViewId)
@@ -94,7 +95,7 @@ validatePass p1 p2 =
     , validate (p1 /= p2) "Password and Confirm Password do not matched!"
     ]
 
-registerPage :: Eff es (Page '[RegisterForm, HeaderId, FooterId])
+registerPage :: Eff es (Page '[RegisterForm, HeaderId, FooterId, LiveSearchId])
 registerPage = do
   pure $ do
     style globalCSS
