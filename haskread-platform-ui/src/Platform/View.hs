@@ -18,10 +18,10 @@ module Platform.View
   , sortMenuView
   ) where
 
-import Data.Text (Text)
 import Platform.Common.Utils
 import Web.Hyperbole
 import Web.View.Style
+import Platform.Common.Types (CommunityC (..))
 
 newtype FooterId = FooterId Int
   deriving (Show, Read, ViewId)
@@ -36,10 +36,8 @@ newtype CommunityId = CommunityId Int
   deriving (Show, Read, ViewId)
 
 instance HyperView CommunityId es where
-  data Action CommunityId = Init Text
+  data Action CommunityId = Init
     deriving (Show, Read, ViewAction)
-
-  update (Init _) = pure communityListView
 
 newtype SortMenuId = SortMenuId Int
   deriving (Show, Read, ViewId)
@@ -65,23 +63,26 @@ footerView = do
         text "The source code is licensed under"
         link "https://opensource.org/license/mit" (cc "text-blue-300 hover:underline") "MIT"
 
-showCommunityNames :: Int -> [Text] -> View CommunityId ()
-showCommunityNames _ [] = none
-showCommunityNames n (x : xs) = do
+showCommunityNames :: [CommunityC] -> View CommunityId ()
+showCommunityNames [] = none
+showCommunityNames (community : communityList) = do
   tag "li" (cc "mb-2") $ do
-    button (Init "xyz") (cc "block text-blue-600 hover:underline") (text x)
+    link 
+      (url $ "/?communityId=" <> toText (communityID community)) 
+      (cc "block text-blue-600 hover:underline") 
+      (text (communityName community))
     tag "hr" (cc "border-gray-300") none
-    showCommunityNames (n + 1) xs
+    showCommunityNames communityList
 
-communityListView :: View CommunityId ()
-communityListView = do
+communityListView :: [CommunityC] -> View CommunityId ()
+communityListView communityList = do
   el (addClass (cls "card-bg shadow-lg rounded-lg mb-6 overflow-hidden")) $ do
     el (addClass (cls "border-b p-4")) $ do
       el (addClass (cls "text-lg font-bold text-gray-800")) $ do
         text "Communities"
         el (cc "p-4") $ do
           tag "ul" (cc "space-y-2") $ do
-            showCommunityNames 1 ["Haskell", "Functional programming"]
+            showCommunityNames communityList
 
 sortMenuView :: View SortMenuId ()
 sortMenuView = do

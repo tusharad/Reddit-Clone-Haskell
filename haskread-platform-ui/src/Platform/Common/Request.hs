@@ -19,7 +19,7 @@ module Platform.Common.Request
   , upvoteThread
   , downvoteThread
   , getAllThreads
-  , getCommunityList_
+  , getCommunityList
   , getAllThreadsBySearch
   ) where
 
@@ -369,19 +369,28 @@ downvoteThread :: Maybe Text -> Int -> IO ()
 downvoteThread Nothing _ = pure ()
 downvoteThread (Just t) tId = voteThread "downvote" t tId
 
-getAllThreads :: IO FetchAllThreadsResponse
-getAllThreads = runReq defaultHttpConfig $ do
+getAllThreads :: 
+    Maybe Int ->
+    Maybe Int ->
+    Maybe Int ->
+    Maybe Int ->
+    IO FetchAllThreadsResponse
+getAllThreads mbLimit mbOffset mbCommunityId mbUserId = runReq defaultHttpConfig $ do
   jsonResp <- req
     GET
     (http "localhost" /: "api" /: "v1" /: "thread" /: "all")
     NoReqBody
     jsonResponse
-    $ do
+    $
+      maybe mempty ("limit" =:) mbLimit <>
+      maybe mempty ("offset" =:) mbOffset <>
+      maybe mempty ("communityId" =:) mbCommunityId <>
+      maybe mempty ("userId" =:) mbUserId <>
       port 8085
   pure (responseBody jsonResp :: FetchAllThreadsResponse)
 
-getCommunityList_ :: IO [Text]
-getCommunityList_ = runReq defaultHttpConfig $ do
+getCommunityList :: IO [CommunityC]
+getCommunityList = runReq defaultHttpConfig $ do
   jsonResp <- req
     GET
     (http "localhost" /: "api" /: "v1" /: "community")
@@ -390,7 +399,7 @@ getCommunityList_ = runReq defaultHttpConfig $ do
     $ do
       port 8085
   let (Communities res) = (responseBody jsonResp :: Communities)
-  pure $ fmap communityName res
+  pure res
 
 getAllThreadsBySearch :: Text -> IO (Maybe FetchAllThreadsResponse)
 getAllThreadsBySearch search = do

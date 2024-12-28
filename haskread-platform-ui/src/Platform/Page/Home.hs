@@ -13,7 +13,9 @@
 module Platform.Page.Home (homePage) where
 
 import Data.Maybe (fromJust, isJust)
+import Text.Read
 import Data.Text (Text)
+import qualified Data.Text as T
 import Effectful
 import Platform.Common.Request
 import Platform.Common.Types
@@ -53,7 +55,13 @@ homePage ::
   Eff es (Page '[HomeId, SortMenuId, HeaderId, ThreadId, FooterId, CommunityId, LiveSearchId])
 homePage = do
   mJwtToken :: Maybe Text <- session "jwt_token"
-  res <- liftIO getAllThreads
+  q <- reqParams
+  let mbLimit = readMaybe . T.unpack =<< lookupParam "limit" q 
+      mbOffset = readMaybe . T.unpack =<< lookupParam "offset" q 
+      mbCommunityId = readMaybe . T.unpack =<< lookupParam "communityId" q 
+      mbUserId = readMaybe . T.unpack =<< lookupParam "userId" q 
+  res <- liftIO (getAllThreads mbLimit mbOffset mbCommunityId mbUserId)
+  communityList <- liftIO getCommunityList
   mUserInfo_ <- liftIO $ maybe (pure Nothing) getUserInfo mJwtToken
   mUserThreadVotes <-
     liftIO $
@@ -70,5 +78,5 @@ homePage = do
             tag "p" (cc "text-3xl text-center mb-6 text-gray-800") "Threads"
             hyper (SortMenuId 1) sortMenuView
             viewThreadsList mJwtToken mUserThreadVotes 0 (threads res)
-          hyper (CommunityId 1) communityListView
+          hyper (CommunityId 1) (communityListView communityList)
       hyper (FooterId 1) footerView

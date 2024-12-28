@@ -105,6 +105,7 @@ viewThreadPage tId = do
   mToken :: Maybe Text <- session "jwt_token"
   mThreadInfo <- liftIO $ getThreadByThreadId tId
   mCommentList <- liftIO $ getCommentsByThreadId tId
+  communityList <- liftIO getCommunityList
   case mThreadInfo of
     Nothing -> pure $ el mempty "Hello"
     Just t -> do
@@ -151,5 +152,5 @@ viewThreadPage tId = do
                   tag "h2" (cc "text-2xl font-bold mb-4 text-gray-900") "Comments"
                   showCommentsList 0 mUserCommentVotes mToken (maybe [] comments mCommentList)
               el (cc "w-1/4 pl-4") $ do
-                hyper (CommunityId 1) communityListView
+                hyper (CommunityId 1) $ communityListView communityList
           hyper (FooterId 1) footerView
