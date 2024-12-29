@@ -5,6 +5,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -12,9 +13,8 @@
 
 module Platform.Page.Home (homePage) where
 
-import Data.Maybe (fromJust, isJust)
-import Text.Read
-import Data.Text (Text)
+import Data.Maybe
+import Data.Text (Text, append)
 import qualified Data.Text as T
 import Effectful
 import Platform.Common.Request
@@ -22,33 +22,74 @@ import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.View
 import Platform.View.Header
-import Platform.View.ThreadCard
-import Web.Hyperbole
 import Platform.View.LiveSearch (LiveSearchId)
+import Platform.View.ThreadCard
+import Text.Read
+import Web.Hyperbole
+
+data PageParams = PageParams
+  { mbCommunityId :: Maybe Int
+  , mbUserId :: Maybe Int
+  , mbLimit :: Maybe Int
+  , mbOffset :: Maybe Int
+  }
+  deriving (Eq, Show, Read)
 
 newtype HomeId = HomeId Int
   deriving (Show, Read, ViewId)
 
 instance HyperView HomeId es where
-  data Action HomeId = HandlePrev Int | HandleNext Int
+  data Action HomeId = HandlePrev PageParams | HandleNext PageParams
     deriving (Show, Read, ViewAction)
 
-  update (HandlePrev _) = pure paginationView
-  update (HandleNext _) = pure paginationView
+  update (HandlePrev p) =
+    redirect $
+      "/"
+        <> pageParamsToUrl
+          p
+            { mbOffset = Just $ maybe 0 (\x -> x - 10) (mbOffset p)
+            }
+  update (HandleNext p) =
+    redirect $
+      "/"
+        <> pageParamsToUrl
+          p
+            { mbOffset = Just $ maybe 10 (+ 10) (mbOffset p)
+            }
 
-paginationView :: View HomeId ()
-paginationView = tag "nav" (cc "flex justify-center items-center mt-8 py-2 px-2") $ do
-  button
-    (HandlePrev currentPage)
-    (cc "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1")
-    "Previous"
-  button
-    (HandleNext currentPage)
-    (cc "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1")
-    "Next"
+pageParamsToUrl :: PageParams -> Url
+pageParamsToUrl PageParams {..} = do
+  url $
+    "?"
+      `append` T.intercalate
+        "&"
+        ( catMaybes
+            [ (\x -> "communityId=" `append` toText x) <$> mbCommunityId
+            , (\x -> "userId=" `append` toText x) <$> mbUserId
+            , (\x -> "offset=" `append` toText x) <$> mbOffset
+            , (\x -> "limit=" `append` toText x) <$> mbLimit
+            ]
+        )
 
-currentPage :: Int
-currentPage = 1
+paginationView :: Int -> PageParams -> View HomeId ()
+paginationView threadCount pageParams@PageParams {..} =
+  tag
+    "nav"
+    (cc "flex justify-center items-center mt-8 py-2 px-2")
+    $ do
+      button
+        (HandlePrev pageParams)
+        ( cc 
+            "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1"
+            . maybe disabled (const mempty) mbOffset 
+        )
+        "Previous"
+      button
+        (HandleNext pageParams)
+        (cc "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1"
+          . if threadCount < 10 then disabled else mempty
+        )
+        "Next"
 
 homePage ::
   (Hyperbole :> es, IOE :> es) =>
@@ -56,10 +97,10 @@ homePage ::
 homePage = do
   mJwtToken :: Maybe Text <- session "jwt_token"
   q <- reqParams
-  let mbLimit = readMaybe . T.unpack =<< lookupParam "limit" q 
-      mbOffset = readMaybe . T.unpack =<< lookupParam "offset" q 
-      mbCommunityId = readMaybe . T.unpack =<< lookupParam "communityId" q 
-      mbUserId = readMaybe . T.unpack =<< lookupParam "userId" q 
+  let mbLimit = readMaybe . T.unpack =<< lookupParam "limit" q
+      mbOffset = readMaybe . T.unpack =<< lookupParam "offset" q
+      mbCommunityId = readMaybe . T.unpack =<< lookupParam "communityId" q
+      mbUserId = readMaybe . T.unpack =<< lookupParam "userId" q
   res <- liftIO (getAllThreads mbLimit mbOffset mbCommunityId mbUserId)
   communityList <- liftIO getCommunityList
   mUserInfo_ <- liftIO $ maybe (pure Nothing) getUserInfo mJwtToken
@@ -78,5 +119,6 @@ homePage = do
             tag "p" (cc "text-3xl text-center mb-6 text-gray-800") "Threads"
             hyper (SortMenuId 1) sortMenuView
             viewThreadsList mJwtToken mUserThreadVotes 0 (threads res)
+            hyper (HomeId 1) (paginationView (threadsCount res) PageParams {..})
           hyper (CommunityId 1) (communityListView communityList)
       hyper (FooterId 1) footerView

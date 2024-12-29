@@ -17,6 +17,25 @@ env:
   HaskReadJwtSecret : ${{ secrets.HaskReadJwtSecret }}
 
 jobs:
+  build-ui:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./haskread-platform-ui/
+
+    steps:
+    
+    - name: Copy repo into actions 
+      uses: actions/checkout@v3
+    
+    - name: install dependancies, build and test stack project.
+      uses: freckle/stack-action@v5
+      with:
+        working-directory: ./haskread-platform-be/
+        stack-build-arguments: --ghc-options="-fno-warn-unused-imports -fno-warn-unused-matches -fno-warn-type-defaults -fno-warn-missing-export-lists"
+        stack-build-arguments-test: --ghc-options="-fno-warn-unused-imports -fno-warn-unused-matches -fno-warn-type-defaults -fno-warn-missing-export-lists"
+
   build:
     environment: Test Env
     runs-on: ubuntu-22.04

@@ -25,6 +25,7 @@ module Platform.Common.Request
 
 import Control.Exception
 import Control.Monad.IO.Class
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -369,24 +370,24 @@ downvoteThread :: Maybe Text -> Int -> IO ()
 downvoteThread Nothing _ = pure ()
 downvoteThread (Just t) tId = voteThread "downvote" t tId
 
-getAllThreads :: 
-    Maybe Int ->
-    Maybe Int ->
-    Maybe Int ->
-    Maybe Int ->
-    IO FetchAllThreadsResponse
+getAllThreads ::
+  Maybe Int ->
+  Maybe Int ->
+  Maybe Int ->
+  Maybe Int ->
+  IO FetchAllThreadsResponse
 getAllThreads mbLimit mbOffset mbCommunityId mbUserId = runReq defaultHttpConfig $ do
-  jsonResp <- req
-    GET
-    (http "localhost" /: "api" /: "v1" /: "thread" /: "all")
-    NoReqBody
-    jsonResponse
-    $
-      maybe mempty ("limit" =:) mbLimit <>
-      maybe mempty ("offset" =:) mbOffset <>
-      maybe mempty ("communityId" =:) mbCommunityId <>
-      maybe mempty ("userId" =:) mbUserId <>
-      port 8085
+  jsonResp <-
+    req
+      GET
+      (http "localhost" /: "api" /: "v1" /: "thread" /: "all")
+      NoReqBody
+      jsonResponse
+      $ ("limit" =: fromMaybe 10 mbLimit)
+        <> maybe mempty ("offset" =:) mbOffset
+        <> maybe mempty ("communityId" =:) mbCommunityId
+        <> maybe mempty ("userId" =:) mbUserId
+        <> port 8085
   pure (responseBody jsonResp :: FetchAllThreadsResponse)
 
 getCommunityList :: IO [CommunityC]

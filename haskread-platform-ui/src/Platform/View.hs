@@ -60,7 +60,7 @@ footerView = do
           "https://www.linkedin.com/in/tushar-adhatrao/"
           (cc "text-blue-300 hover:underline")
           "Tushar Adhatrao"
-        text "The source code is licensed under"
+        text "The source code is licensed under "
         link "https://opensource.org/license/mit" (cc "text-blue-300 hover:underline") "MIT"
 
 showCommunityNames :: [CommunityC] -> View CommunityId ()

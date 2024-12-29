@@ -13,6 +13,7 @@ module Platform.Common.Utils
   , getThreadIds
   , topVotedBtnCSS
   , reallyLongCSS
+  , disabled 
   ) where
 
 import Data.Text (Text)
@@ -67,3 +68,5 @@ topVotedBtnCSS =
 
 reallyLongCSS :: ClassName
 reallyLongCSS = "px-4 py-2 rounded-full text-gray-800 hover:bg-blue-100 cursor-pointer transition shadow"
+
+disabled = (att "disabled" mempty)
