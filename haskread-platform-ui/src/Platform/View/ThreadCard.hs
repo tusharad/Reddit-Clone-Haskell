@@ -36,6 +36,7 @@ data ThreadCardOps = ThreadCardOps
   { token :: Maybe Text
   , currUserVotesForThreads :: Maybe [(Int, Bool)]
   , threadInfo :: ThreadInfo
+  , mbUserInfo :: Maybe UserProfileResponse
   }
   deriving (Show, Eq, Read)
 
@@ -46,6 +47,7 @@ instance IOE :> es => HyperView ThreadId es where
   data Action ThreadId
     = UpdateUpVote ThreadCardOps
     | UpdateDownVote ThreadCardOps
+    | DeleteThread ThreadCardOps
     deriving (Show, Read, ViewAction)
 
   update (UpdateUpVote threadCardOps@ThreadCardOps {..}) = do
@@ -66,6 +68,13 @@ instance IOE :> es => HyperView ThreadId es where
           { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId False
           , threadInfo = updateVoteCount currUserVotesForThreads False threadInfo
           }
+  update (DeleteThread ThreadCardOps{..}) = do 
+    let threadId = threadIDForThreadInfo threadInfo
+    case token of
+      Nothing -> redirect "/"
+      Just t -> do 
+        _ <- liftIO $ deleteThread threadId t
+        redirect "/"
 
 updateVoteCount :: Maybe [(Int, Bool)] -> Bool -> ThreadInfo -> ThreadInfo
 updateVoteCount vals isUpvote t =
@@ -111,8 +120,8 @@ showLikeIcon (Just vals) tId = do
     Just True -> tag "i" (cc "bx bxs-like") none
     _ -> tag "i" (cc "bx bx-like") none
 
-viewThreadsList _ _ _ [] = none
-viewThreadsList mToken_ mUserThreadVotes n (t : ts) = do
+viewThreadsList _ _ _ _ [] = none
+viewThreadsList mUserInfo mToken_ mUserThreadVotes n (t : ts) = do
   hyper
     (ThreadId n)
     ( threadView
@@ -120,9 +129,10 @@ viewThreadsList mToken_ mUserThreadVotes n (t : ts) = do
           { currUserVotesForThreads = mUserThreadVotes
           , token = mToken_
           , threadInfo = t
+          , mbUserInfo = mUserInfo
           }
     )
-  viewThreadsList mToken_ mUserThreadVotes (n + 1) ts
+  viewThreadsList mUserInfo mToken_ mUserThreadVotes (n + 1) ts
 
 threadView :: ThreadCardOps -> View ThreadId ()
 threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
@@ -157,6 +167,15 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
           $ do
             showDislikeIcon currUserVotesForThreads threadIDForThreadInfo
             tag "span" mempty . text $ toText (fromMaybe 0 downvoteCount)
+        case mbUserInfo of
+          Nothing -> none
+          Just userInfo -> do
+            if userIDForUPR userInfo == userIDForThreadInfo then do
+              button
+                (DeleteThread threadCardOps)
+                (cc "text-sm flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1")
+                "delete"
+            else none
         tag "span" (cc "flex items-center space-x-1") $ do
           tag "i" (cc "bx bx-comment") none
           tag "span" mempty . text $ toText (fromMaybe 0 commentCount)

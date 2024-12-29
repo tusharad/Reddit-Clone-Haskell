@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -15,6 +16,7 @@ module Platform.Page.Home (homePage) where
 
 import Data.Maybe
 import Data.Text (Text, append)
+import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import qualified Data.Text as T
 import Effectful
 import Platform.Common.Request
@@ -24,8 +26,8 @@ import Platform.View
 import Platform.View.Header
 import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
-import Text.Read
 import Web.Hyperbole
+import Web.Internal.HttpApiData
 
 data PageParams = PageParams
   { mbCommunityId :: Maybe Int
@@ -47,7 +49,7 @@ instance HyperView HomeId es where
       "/"
         <> pageParamsToUrl
           p
-            { mbOffset = Just $ maybe 0 (\x -> x - 10) (mbOffset p)
+            { mbOffset = Just $ maybe 0 (\x -> if x > 10 then x - 10 else 0) (mbOffset p)
             }
   update (HandleNext p) =
     redirect $
@@ -87,7 +89,7 @@ paginationView threadCount pageParams@PageParams {..} =
       button
         (HandleNext pageParams)
         (cc "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1"
-          . if threadCount < 10 then disabled else mempty
+          . if threadCount < 3 then disabled else mempty
         )
         "Next"
 
@@ -96,11 +98,10 @@ homePage ::
   Eff es (Page '[HomeId, SortMenuId, HeaderId, ThreadId, FooterId, CommunityId, LiveSearchId])
 homePage = do
   mJwtToken :: Maybe Text <- session "jwt_token"
-  q <- reqParams
-  let mbLimit = readMaybe . T.unpack =<< lookupParam "limit" q
-      mbOffset = readMaybe . T.unpack =<< lookupParam "offset" q
-      mbCommunityId = readMaybe . T.unpack =<< lookupParam "communityId" q
-      mbUserId = readMaybe . T.unpack =<< lookupParam "userId" q
+  mbLimit <- reqParamMaybe "limit"
+  mbOffset <- reqParamMaybe "offset" 
+  mbCommunityId <- reqParamMaybe "communityId"
+  mbUserId <- reqParamMaybe "userId"
   res <- liftIO (getAllThreads mbLimit mbOffset mbCommunityId mbUserId)
   communityList <- liftIO getCommunityList
   mUserInfo_ <- liftIO $ maybe (pure Nothing) getUserInfo mJwtToken
@@ -118,7 +119,14 @@ homePage = do
           el (cc "w-full lg:w-3/4 px-4") $ do
             tag "p" (cc "text-3xl text-center mb-6 text-gray-800") "Threads"
             hyper (SortMenuId 1) sortMenuView
-            viewThreadsList mJwtToken mUserThreadVotes 0 (threads res)
+            viewThreadsList mUserInfo_ mJwtToken mUserThreadVotes 0 (threads res) 
             hyper (HomeId 1) (paginationView (threadsCount res) PageParams {..})
           hyper (CommunityId 1) (communityListView communityList)
       hyper (FooterId 1) footerView
+
+reqParamMaybe :: forall a es. (Hyperbole :> es, FromHttpApiData a) => Text -> Eff es (Maybe a)
+reqParamMaybe p = do
+  q <- reqParams
+  pure $ lookup (encodeUtf8 p) q >>= \case
+    Nothing -> Nothing
+    Just v -> either (const Nothing) Just $ parseQueryParam (decodeUtf8 v)

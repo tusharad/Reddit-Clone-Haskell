@@ -44,6 +44,7 @@ data CommentCardOps = CommentCardOps
   { currUserVotes :: Maybe [(Int, Bool)]
   , tokenForCommentCard :: Maybe Text
   , commentInfo :: CommentInfo
+  , mbUserInfoForCommentCard :: Maybe UserProfileResponse
   }
   deriving (Show, Eq, Read)
 
@@ -54,6 +55,7 @@ instance (IOE :> es) => HyperView CommentCardId es where
   data Action CommentCardId
     = LikeComment CommentCardOps
     | DislikeComment CommentCardOps
+    | DeleteComment CommentCardOps
     | AddCommentBtn AddCommentData
     | SubmitAddComment Text Int (Maybe Int)
     | CancelAddComment Int
@@ -101,6 +103,14 @@ instance (IOE :> es) => HyperView CommentCardId es where
           { currUserVotes = updateCurrUserVotes currUserVotes commentId False
           , commentInfo = updateVoteCount currUserVotes False commentInfo
           }
+  update (DeleteComment CommentCardOps{..}) = do
+    let commentId = commentIDForCommentInfo commentInfo
+        tId = threadIDForCommentInfo commentInfo
+    case tokenForCommentCard of
+      Nothing -> redirect $ url $ "/view-thread/" `append` toText tId
+      Just token -> do
+        _ <- liftIO $ deleteComment commentId token
+        redirect $ url $ "/view-thread/" `append` toText tId
 
 updateVoteCount :: Maybe [(Int, Bool)] -> Bool -> CommentInfo -> CommentInfo
 updateVoteCount Nothing True t =
@@ -256,3 +266,12 @@ commentCardView commentCardOps@CommentCardOps {commentInfo = CommentInfo {..}, .
         button (DislikeComment commentCardOps) (cc "hover:text-red-500") $ do
           showDislikeIcon currUserVotes commentIDForCommentInfo
           tag "span" mempty $ text $ T.pack . show $ fromMaybe 0 commentDownvoteCount
+        case mbUserInfoForCommentCard of
+          Nothing -> none
+          Just userInfo -> do
+            if userIDForUPR userInfo == userIDForCommentInfo then do
+              button
+                (DeleteComment commentCardOps)
+                (cc "text-sm flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1")
+                "delete"
+            else none

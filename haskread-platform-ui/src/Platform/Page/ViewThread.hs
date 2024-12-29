@@ -36,6 +36,7 @@ instance HyperView ViewThreadId es where
   update InitViewThread = redirect "/"
 
 showCommentsList ::
+  Maybe UserProfileResponse ->
   Int ->
   Maybe [(Int, Bool)] ->
   Maybe Text ->
@@ -52,7 +53,7 @@ showCommentsList ::
         ]
     )
     ()
-showCommentsList n mUserCommentVotes mToken nestedComments = do
+showCommentsList mbUserInfo n mUserCommentVotes mToken nestedComments = do
   el (cc "ml-4 border-l-2 border-gray-300 pl-4") $ do
     go n nestedComments
   where
@@ -65,11 +66,13 @@ showCommentsList n mUserCommentVotes mToken nestedComments = do
               { currUserVotes = mUserCommentVotes
               , tokenForCommentCard = mToken
               , commentInfo = mainComment c
+              , mbUserInfoForCommentCard = mbUserInfo
               }
         )
       unless
         (null (children c))
         ( showCommentsList
+            mbUserInfo
             (n + 500)
             mUserCommentVotes
             mToken
@@ -130,11 +133,12 @@ viewThreadPage tId = do
               el (cc "w-full lg:w-3/4 px-4") $ do
                 hyper
                   (ThreadId 1)
-                  ( threadView
+                  (threadView
                       ThreadCardOps
                         { threadInfo = t
                         , currUserVotesForThreads = mUserThreadVotes
                         , token = mToken
+                        , mbUserInfo = mUserInfo
                         }
                   )
                 el (cc "mt-6") $ do
@@ -150,7 +154,7 @@ viewThreadPage tId = do
                               }
                       hyper (CommentCardId 10000) (addCommentButtonView addCommentData)
                   tag "h2" (cc "text-2xl font-bold mb-4 text-gray-900") "Comments"
-                  showCommentsList 0 mUserCommentVotes mToken (maybe [] comments mCommentList)
+                  showCommentsList mUserInfo 0 mUserCommentVotes mToken (maybe [] comments mCommentList)
               el (cc "w-1/4 pl-4") $ do
                 hyper (CommunityId 1) $ communityListView communityList
           hyper (FooterId 1) footerView

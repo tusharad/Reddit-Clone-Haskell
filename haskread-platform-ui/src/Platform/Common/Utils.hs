@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-
 module Platform.Common.Utils
   ( btn
   , btn'
@@ -41,7 +40,7 @@ success = color Success
 inputS :: Mod id
 inputS = cc "w-full px-3 py-2 border rounded"
 
-cc :: ClassName -> Mod c
+cc :: ClassName -> Mod id
 cc txt = addClass $ cls txt
 
 globalCSS :: Text
@@ -69,4 +68,5 @@ topVotedBtnCSS =
 reallyLongCSS :: ClassName
 reallyLongCSS = "px-4 py-2 rounded-full text-gray-800 hover:bg-blue-100 cursor-pointer transition shadow"
 
-disabled = (att "disabled" mempty)
+disabled :: Mod id
+disabled = att "disabled" mempty

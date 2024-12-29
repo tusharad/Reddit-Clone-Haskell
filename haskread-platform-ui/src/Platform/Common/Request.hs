@@ -21,6 +21,8 @@ module Platform.Common.Request
   , getAllThreads
   , getCommunityList
   , getAllThreadsBySearch
+  , deleteThread
+  , deleteComment 
   ) where
 
 import Control.Exception
@@ -31,6 +33,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Network.HTTP.Req
 import Platform.Common.Types
+import Platform.Common.Utils (toText)
 
 addThread :: CreateThreadData -> IO (Maybe String)
 addThread CreateThreadData {..} = do
@@ -417,4 +420,53 @@ getAllThreadsBySearch search = do
     pure $ Just (responseBody jsonResp :: FetchAllThreadsResponse)
   case eRes of
     Left _ -> pure Nothing
+    Right r -> pure r
+
+deleteThread :: Int -> Text -> IO (Maybe String)
+deleteThread threadId token = do
+  eRes ::
+    Either HttpException (Maybe String) <- try $ runReq defaultHttpConfig $ do
+    bResponse <-
+      req
+        DELETE
+        (http "localhost" /: "api" /: "v1" /: "user" /: "thread" /: "delete" /: toText threadId)
+        NoReqBody
+        bsResponse
+        $ 
+          header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
+          <> port 8085
+    if responseStatusCode bResponse == 200 then
+      pure $ Just "all good"
+    else do 
+      liftIO $ print (responseBody bResponse)
+      pure Nothing
+  case eRes of
+    Left e -> do 
+      print e
+      pure Nothing
+    Right r -> pure r
+
+
+deleteComment :: Int -> Text -> IO (Maybe String)
+deleteComment commentId token = do
+  eRes ::
+    Either HttpException (Maybe String) <- try $ runReq defaultHttpConfig $ do
+    bResponse <-
+      req
+        DELETE
+        (http "localhost" /: "api" /: "v1" /: "user" /: "comment" /: "delete" /: toText commentId)
+        NoReqBody
+        bsResponse
+        $ 
+          header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
+          <> port 8085
+    if responseStatusCode bResponse == 200 then
+      pure $ Just "all good"
+    else do 
+      liftIO $ print (responseBody bResponse)
+      pure Nothing
+  case eRes of
+    Left e -> do 
+      print e
+      pure Nothing
     Right r -> pure r
