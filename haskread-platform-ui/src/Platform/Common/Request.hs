@@ -22,7 +22,9 @@ module Platform.Common.Request
   , getCommunityList
   , getAllThreadsBySearch
   , deleteThread
-  , deleteComment 
+  , deleteComment
+  , editThread 
+  , editComment 
   ) where
 
 import Control.Exception
@@ -74,6 +76,82 @@ addThread CreateThreadData {..} = do
       case eRes of
         Left _ -> pure Nothing
         Right r -> pure r
+
+editComment :: Int -> Text -> Text -> IO (Maybe String)
+editComment cId token newContent = do
+  let myData =
+        UpdateCommentReqBody
+          {  
+            commentContentForUpdate = newContent
+          }
+  eRes ::
+      Either HttpException (Maybe String) <-
+      try $ runReq defaultHttpConfig $ do
+        bsResp <-
+          req
+            PUT
+            ( http
+                "localhost"
+                /: "api"
+                /: "v1"
+                /: "user"
+                /: "comment"
+                /: "update"
+                /: T.pack (show cId)
+            )
+            (ReqBodyJson myData)
+            bsResponse
+            $ header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
+              <> port 8085
+        if responseStatusCode bsResp == 200
+          then
+            pure $ Just "All good"
+          else do
+            liftIO $ print $ responseStatusCode bsResp
+            pure Nothing
+  print eRes
+  case eRes of
+    Left _ -> pure Nothing
+    Right r -> pure r
+
+editThread :: Text -> EditThreadData -> IO (Maybe String)
+editThread token EditThreadData {..} = do
+  let myData =
+        UpdateThreadReqBody
+          {  
+            threadIDForUpdate = threadIdForEditThread
+          , threadCommunityIDForUpdate = fromMaybe 6 communityIdForEditThread
+          , threadTitleForUpdate = fromMaybe "" titleForEditThread
+          , threadDescriptionForUpdate = descriptionForEditThread
+          }
+  eRes ::
+      Either HttpException (Maybe String) <-
+      try $ runReq defaultHttpConfig $ do
+        bsResp <-
+          req
+            PUT
+            ( http
+                "localhost"
+                /: "api"
+                /: "v1"
+                /: "user"
+                /: "thread"
+                /: "update"
+            )
+            (ReqBodyJson myData)
+            bsResponse
+            $ header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
+              <> port 8085
+        if responseStatusCode bsResp == 200
+          then
+            pure $ Just "All good"
+          else do
+            liftIO $ print $ responseStatusCode bsResp
+            pure Nothing
+  print eRes
+  case eRes of
+    Left _ -> pure Nothing
+    Right r -> pure r
 
 getUserCommentVotes :: Text -> [Int] -> IO (Maybe [(Int, Bool)])
 getUserCommentVotes token threadIds = do
@@ -445,7 +523,6 @@ deleteThread threadId token = do
       print e
       pure Nothing
     Right r -> pure r
-
 
 deleteComment :: Int -> Text -> IO (Maybe String)
 deleteComment commentId token = do

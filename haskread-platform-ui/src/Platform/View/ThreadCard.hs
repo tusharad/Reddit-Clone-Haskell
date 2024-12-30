@@ -1,11 +1,13 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -30,7 +32,7 @@ import Effectful
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
-import Web.Hyperbole hiding (input)
+import Web.Hyperbole
 
 data ThreadCardOps = ThreadCardOps
   { token :: Maybe Text
@@ -48,6 +50,9 @@ instance IOE :> es => HyperView ThreadId es where
     = UpdateUpVote ThreadCardOps
     | UpdateDownVote ThreadCardOps
     | DeleteThread ThreadCardOps
+    | EditThread ThreadCardOps
+    | SubmitEditThreadForm Int Text UserProfileResponse
+    | CancelEditThreadForm
     deriving (Show, Read, ViewAction)
 
   update (UpdateUpVote threadCardOps@ThreadCardOps {..}) = do
@@ -68,13 +73,48 @@ instance IOE :> es => HyperView ThreadId es where
           { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId False
           , threadInfo = updateVoteCount currUserVotesForThreads False threadInfo
           }
-  update (DeleteThread ThreadCardOps{..}) = do 
+  update (DeleteThread ThreadCardOps {..}) = do
     let threadId = threadIDForThreadInfo threadInfo
     case token of
       Nothing -> redirect "/"
-      Just t -> do 
+      Just t -> do
         _ <- liftIO $ deleteThread threadId t
         redirect "/"
+  update CancelEditThreadForm = redirect "/"
+  update (SubmitEditThreadForm tId token userInfo) = do
+    uf <- formData @EditThreadForm
+    _ <- liftIO $ editThread
+      token
+      EditThreadData
+        { threadIdForEditThread = tId
+        , userIdForEditThread = userIDForUPR userInfo
+        , titleForEditThread = pure $ titleField uf
+        , descriptionForEditThread = pure $ descriptionField uf
+        , communityIdForEditThread = pure $ communityIdField uf
+        }
+    redirect "/"
+  update (EditThread ThreadCardOps {..}) = do
+    case token of
+      Nothing -> redirect "/"
+      Just t -> do
+        case mbUserInfo of
+          Nothing -> redirect "/"
+          (Just uInfo) -> do
+            pure $
+              editThreadView
+                (threadIDForThreadInfo threadInfo)
+                t
+                uInfo
+                Nothing
+                (genEditThreadForm threadInfo)
+
+genEditThreadForm :: ThreadInfo -> EditThreadForm Maybe
+genEditThreadForm ThreadInfo {..} =
+  EditThreadForm
+    { communityIdField = Just communityIDForThreadInfo
+    , titleField = Just title
+    , descriptionField = pure $ fromMaybe "" description
+    }
 
 updateVoteCount :: Maybe [(Int, Bool)] -> Bool -> ThreadInfo -> ThreadInfo
 updateVoteCount vals isUpvote t =
@@ -170,12 +210,80 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
         case mbUserInfo of
           Nothing -> none
           Just userInfo -> do
-            if userIDForUPR userInfo == userIDForThreadInfo then do
-              button
-                (DeleteThread threadCardOps)
-                (cc "text-sm flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1")
-                "delete"
-            else none
+            if userIDForUPR userInfo == userIDForThreadInfo
+              then do
+                button
+                  (DeleteThread threadCardOps)
+                  (cc "text-sm flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1")
+                  "delete"
+                button
+                  (EditThread threadCardOps)
+                  (cc "text-sm flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1")
+                  "edit"
+              else none
         tag "span" (cc "flex items-center space-x-1") $ do
           tag "i" (cc "bx bx-comment") none
           tag "span" mempty . text $ toText (fromMaybe 0 commentCount)
+
+-- Edit thread code
+data EditThreadForm f = EditThreadForm
+  { communityIdField :: Field f Int
+  , titleField :: Field f Text
+  , descriptionField :: Field f Text
+  }
+  deriving (Generic)
+
+instance Form EditThreadForm Maybe
+
+editThreadView ::
+  Int ->
+  Text ->
+  UserProfileResponse ->
+  Maybe Text ->
+  EditThreadForm Maybe ->
+  View ThreadId ()
+editThreadView tId token userProfile mErrorMsg v = do
+  let f = genFieldsWith v
+  let css = "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+  el (cc css) $ do
+    el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
+      tag "h2" (cc "text-2xl font-bold mb-4") $ text "Create Thread"
+
+      form @EditThreadForm (SubmitEditThreadForm tId token userProfile) (gap 10) $ do
+        field (communityIdField f) (const mempty) $ do
+          el (cc "mb-4") $ do
+            tag "label" (cc "block text-gray-700") "Select community"
+            tag "select" (name "communityIdField" . cc "w-full px-2 py-2 border rounded") $
+              do
+                tag "option" (att "value" "6") "Haskell"
+                tag "option" (att "value" "7") "Functional programming"
+
+        field (titleField f) (const mempty) $ do
+          el (cc "mb-4") $ do
+            tag "label" (cc "block text-gray-700") "Enter title"
+            input
+              TextInput
+              ( placeholder "Title"
+                  . cc "w-full px-3 py-2 border rounded"
+                  . maybe id value (titleField v)
+              )
+
+        field (descriptionField f) mempty $ do
+          el (cc "mb-4") $ do
+            tag "label" (cc "block text-gray-700") "Enter Description"
+            textarea
+              (name "descriptionField" . cc "w-full px-3 py-2 border rounded")
+              (descriptionField v)
+
+        case mErrorMsg of
+          Nothing -> pure ()
+          Just errMsg -> el invalid (text errMsg)
+
+        submit
+          (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
+          "Submit"
+
+      button
+        CancelEditThreadForm
+        (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
+        "Cancel"

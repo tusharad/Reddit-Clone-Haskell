@@ -6,7 +6,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -19,7 +18,6 @@ module Platform.View.Header
   , CreateThreadData (..)
   , headerButtonCSS
   , showUserName
-  , searchBarView
   , showLoginAndSignup
   ) where
 
@@ -148,9 +146,6 @@ createThreadView mToken mUserInfo mErrorMsg v = do
     valStyle (Invalid _) = invalid
     valStyle Valid = success
     valStyle _ = id
-
-searchBarView :: Text -> View HeaderId ()
-searchBarView = undefined
 
 showLoginAndSignup :: View c ()
 showLoginAndSignup = do

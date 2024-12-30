@@ -37,8 +37,7 @@ import Effectful (IOE)
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
-import Web.Hyperbole hiding (input, textarea)
-import Web.Hyperbole.View (onInput)
+import Web.Hyperbole hiding (input)
 
 data CommentCardOps = CommentCardOps
   { currUserVotes :: Maybe [(Int, Bool)]
@@ -56,13 +55,19 @@ instance (IOE :> es) => HyperView CommentCardId es where
     = LikeComment CommentCardOps
     | DislikeComment CommentCardOps
     | DeleteComment CommentCardOps
+    | EditComment CommentCardOps
     | AddCommentBtn AddCommentData
     | SubmitAddComment Text Int (Maybe Int)
+    | SubmitEditComment Int Text Int (Maybe Int)
     | CancelAddComment Int
     | DoRedirect Int
     | GoToLogin
     deriving (Show, Read, ViewAction)
 
+  update (SubmitEditComment cId token tId mbParentId) = do
+    uf <- formData @EditCommentForm
+    _ <- liftIO $ editComment cId token (commentContentForEdit uf)
+    redirect . url $ T.pack ("/view-thread/" <> show tId)
   update GoToLogin = redirect "/login"
   update (AddCommentBtn AddCommentData {..}) =
     pure $ addCommentView userToken threadId parentCommentIdForAddComment genForm
@@ -103,7 +108,7 @@ instance (IOE :> es) => HyperView CommentCardId es where
           { currUserVotes = updateCurrUserVotes currUserVotes commentId False
           , commentInfo = updateVoteCount currUserVotes False commentInfo
           }
-  update (DeleteComment CommentCardOps{..}) = do
+  update (DeleteComment CommentCardOps {..}) = do
     let commentId = commentIDForCommentInfo commentInfo
         tId = threadIDForCommentInfo commentInfo
     case tokenForCommentCard of
@@ -111,6 +116,23 @@ instance (IOE :> es) => HyperView CommentCardId es where
       Just token -> do
         _ <- liftIO $ deleteComment commentId token
         redirect $ url $ "/view-thread/" `append` toText tId
+  update (EditComment CommentCardOps {..}) = do
+    let commentId = commentIDForCommentInfo commentInfo
+    case tokenForCommentCard of
+      Nothing -> redirect "/"
+      Just token -> do
+        pure $
+          editCommentView
+            commentId 
+            token
+            (threadIDForCommentInfo commentInfo)
+            (parentCommentIDForCommentInfo commentInfo)
+            ( EditCommentForm
+                { commentContentForEdit =
+                    Just $
+                      commentContentForCommentInfo commentInfo
+                }
+            )
 
 updateVoteCount :: Maybe [(Int, Bool)] -> Bool -> CommentInfo -> CommentInfo
 updateVoteCount Nothing True t =
@@ -181,10 +203,6 @@ addCommentButtonView addCommentData = button
   $ do
     "Add comment"
 
-textarea :: ViewAction (Action id) => (Text -> Action id) -> DelayMs -> Mod id -> View id ()
-textarea act delay f =
-  tag "textarea" (onInput act delay . f) none
-
 newtype AddCommentForm f = AddCommentForm
   { commentContentField :: Field f Text
   }
@@ -198,7 +216,53 @@ validateForm u =
     { commentContentField = validate (T.null $ commentContentField u) "Comment cannot be empty"
     }
 
-addCommentView :: Text -> Int -> Maybe Int -> AddCommentForm Validated -> View CommentCardId ()
+newtype EditCommentForm f = EditCommentForm
+  { commentContentForEdit :: Field f Text
+  }
+  deriving (Generic)
+
+instance Form EditCommentForm Maybe
+
+editCommentView ::
+  Int ->
+  Text ->
+  Int ->
+  Maybe Int ->
+  EditCommentForm Maybe ->
+  View CommentCardId ()
+editCommentView commentId token tId mParentCommentId v = do
+  let f = formFieldsWith v
+  let css =
+        "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+  el (cc css) $ do
+    el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
+      tag "h2" (cc "text-2xl font-bold mb-4") $ text "Add comment"
+
+      form @EditCommentForm (SubmitEditComment commentId token tId mParentCommentId) (gap 10) $ do
+        field (commentContentForEdit f) (const mempty) $ do
+          el (cc "mb-4") $ do
+            textarea
+              ( cc "w-full px-3 py-2 border rounded"
+                  <> att "rows" "4"
+                  <> name "commentContentField"
+              )
+              (commentContentForEdit v)
+        el (cc "flex justify-end space-x-2") $ do
+          submit
+            (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
+            "Submit"
+      el (cc "flex justify-end space-x-2") $ do
+        button
+          (CancelAddComment tId)
+          (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
+          "Cancel"
+
+addCommentView ::
+  Text ->
+  Int ->
+  Maybe Int ->
+  AddCommentForm Validated ->
+  View CommentCardId ()
 addCommentView token tId mParentCommentId v = do
   let f = formFieldsWith v
   let css =
@@ -269,9 +333,14 @@ commentCardView commentCardOps@CommentCardOps {commentInfo = CommentInfo {..}, .
         case mbUserInfoForCommentCard of
           Nothing -> none
           Just userInfo -> do
-            if userIDForUPR userInfo == userIDForCommentInfo then do
-              button
-                (DeleteComment commentCardOps)
-                (cc "text-sm flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1")
-                "delete"
-            else none
+            if userIDForUPR userInfo == userIDForCommentInfo
+              then do
+                button
+                  (DeleteComment commentCardOps)
+                  (cc "text-sm flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1")
+                  "delete"
+                button
+                  (EditComment commentCardOps)
+                  (cc "text-sm flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1")
+                  "edit"
+              else none

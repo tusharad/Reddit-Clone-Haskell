@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Platform.Common.Types
@@ -26,6 +28,9 @@ module Platform.Common.Types
   , FetchVoteComments (..)
   , FetchVoteComemntsForUserResponse (..)
   , CreateThreadReqBody (..)
+  , EditThreadData (..)
+  , UpdateThreadReqBody (..)
+  , UpdateCommentReqBody (..)
   ) where
 
 import Data.Aeson (FromJSON, ToJSON)
@@ -53,6 +58,14 @@ data CreateThreadData = CreateThreadData
   , content :: Text
   }
   deriving (Eq, Show, Read)
+
+data EditThreadData = EditThreadData {
+    threadIdForEditThread :: Int
+  , titleForEditThread :: Maybe Text
+  , userIdForEditThread :: Int
+  , descriptionForEditThread :: Maybe Text
+  , communityIdForEditThread :: Maybe Int
+} deriving (Eq, Show, Read)
 
 data AddCommentData = AddCommentData
   { contentForAddComment :: Text
@@ -172,6 +185,11 @@ data CommentInfo = CommentInfo
   }
   deriving (Show, Eq, Generic, FromJSON, Read)
 
+newtype UpdateCommentReqBody = UpdateCommentReqBody
+  {commentContentForUpdate :: Text}
+  deriving (Generic, Show, Eq, Ord)
+  deriving newtype (ToJSON, FromJSON)
+
 data NestedComment = NestedComment
   { mainComment :: CommentInfo
   , children :: [NestedComment]
@@ -216,5 +234,13 @@ data CreateThreadReqBody = CreateThreadReqBody
   { threadTitleForCreate :: Text
   , threadDescriptionForCreate :: Maybe Text
   , threadCommunityIDForCreate :: Int
+  }
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
+
+data UpdateThreadReqBody = UpdateThreadReqBody
+  { threadIDForUpdate :: Int,
+    threadTitleForUpdate :: Text,
+    threadDescriptionForUpdate :: Maybe Text,
+    threadCommunityIDForUpdate :: Int
   }
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
