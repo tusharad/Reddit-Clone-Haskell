@@ -22,6 +22,10 @@ Will try to follow best practices and idiomatic Haskell as much as possible.
 - Haxl
 - Hyperbole
 
+## ER Diagram
+
+![alt text](haskread-platform-be/Wiki/erd.jpeg)
+
 ### Future Features
 
 - [x] User registration
