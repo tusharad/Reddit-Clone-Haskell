@@ -5,27 +5,27 @@
 
 packages:
 - completed:
-    commit: f6f1d95ed9e9343333498ee7e77cb0da3668f862
+    commit: 161579c3b2c139124a9fabae12ffefbb493cde7c
     git: https://github.com/seanhess/hyperbole.git
     name: hyperbole
     pantry-tree:
-      sha256: 6f366741a886850ed9841ba38dc224dddd45f8b0b0700bbc65b57e446a6e53af
-      size: 7017
+      sha256: 13fca655c25098688fbabc9a3090ca750f14e2c94bb5a9d042a07ae12aecb5e7
+      size: 7252
     version: 0.4.2
   original:
-    commit: f6f1d95ed9e9343333498ee7e77cb0da3668f862
+    commit: 161579c3b2c139124a9fabae12ffefbb493cde7c
     git: https://github.com/seanhess/hyperbole.git
 - completed:
-    commit: 4a8293372b1eee6eda307cd42a62d9677c49cc33
-    git: https://github.com/seanhess/web-view.git
+    commit: 7579ddab0cfed8f3d84e2369cf25cbceb23e7e92
+    git: https://github.com/seanhess/web-view
     name: web-view
     pantry-tree:
-      sha256: 045b9c8eb88755657790d4fcdbe9846b1d469b0ddae4b8cd1fd53147865818d2
+      sha256: 723fe38832423f2281e65a05041f41ce1d32ea70d6fae8b43e26587379948978
       size: 2380
-    version: 0.6.1
+    version: 0.6.2
   original:
-    commit: 4a8293372b1eee6eda307cd42a62d9677c49cc33
-    git: https://github.com/seanhess/web-view.git
+    commit: 7579ddab0cfed8f3d84e2369cf25cbceb23e7e92
+    git: https://github.com/seanhess/web-view
 - completed:
     hackage: effectful-2.5.1.0@sha256:bc202099c724feeac0cc083a719aab2d2ba91a1eb18e9150c560054008a93e12,7440
     pantry-tree:
@@ -34,19 +34,19 @@ packages:
   original:
     hackage: effectful-2.5.1.0@sha256:bc202099c724feeac0cc083a719aab2d2ba91a1eb18e9150c560054008a93e12,7440
 - completed:
-    hackage: effectful-core-2.5.1.0@sha256:252d6c7641d8ecf16d7d228ad2aced011b92f36e175acdf6ccac528e576cf7cb,4211
-    pantry-tree:
-      sha256: b9e1311d58a351a92425a405ca7483addfdb6e5a5e3f5a707f50e32b7a577623
-      size: 2474
-  original:
-    hackage: effectful-core-2.5.1.0@sha256:252d6c7641d8ecf16d7d228ad2aced011b92f36e175acdf6ccac528e576cf7cb,4211
-- completed:
     hackage: http-api-data-0.6.1@sha256:e389f4353cc6fc9a6522e2a6e21973fe627deac2fcae5df753fe1606a182813f,3247
     pantry-tree:
       sha256: 2d03a605ac637ccfed7d027188450030d072bbd786058f0f0c5f46fb0fbb0256
       size: 819
   original:
     hackage: http-api-data-0.6.1@sha256:e389f4353cc6fc9a6522e2a6e21973fe627deac2fcae5df753fe1606a182813f,3247
+- completed:
+    hackage: effectful-core-2.5.1.0@sha256:252d6c7641d8ecf16d7d228ad2aced011b92f36e175acdf6ccac528e576cf7cb,4211
+    pantry-tree:
+      sha256: b9e1311d58a351a92425a405ca7483addfdb6e5a5e3f5a707f50e32b7a577623
+      size: 2474
+  original:
+    hackage: effectful-core-2.5.1.0@sha256:252d6c7641d8ecf16d7d228ad2aced011b92f36e175acdf6ccac528e576cf7cb,4211
 - completed:
     hackage: strict-mutable-base-1.1.0.0@sha256:b1c039f6b179aedb420a90cbe15d3c3e78fbaaa7146ed02700b84c6018ee734f,1430
     pantry-tree:
