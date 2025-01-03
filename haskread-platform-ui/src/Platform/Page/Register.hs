@@ -36,7 +36,7 @@ instance (IOE :> es, Hyperbole :> es) => HyperView RegisterForm es where
   data Action RegisterForm = Submit | DoRedirect String | OauthPage
     deriving (Show, Read, ViewAction)
 
-  update (DoRedirect x) = redirect (url . pack $ "/url/" <> x)
+  update (DoRedirect x) = redirect (url . pack $ "/otp/" <> x)
   update OauthPage = redirect "http://localhost:8085/api/v1/user/oauth2/login"
   update Submit = do
     uf <- formData @RegisterFormData
@@ -53,7 +53,7 @@ registerSuccessFullView :: Int -> View RegisterForm ()
 registerSuccessFullView newUserId = do
   el (onLoad (DoRedirect $ show newUserId) 10) $ do
     el_ "Register successful, you will be redirected to OTP page. If not please click here. "
-    link (url . pack $ "/url/" <> show newUserId) mempty "Click here"
+    link (url . pack $ "/otp/" <> show newUserId) mempty "Click here"
 
 newtype User = User {username :: Text}
   deriving (Generic)

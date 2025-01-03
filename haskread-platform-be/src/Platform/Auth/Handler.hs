@@ -287,7 +287,7 @@ resendVerifyEmailH userID0 = do
   when (isNothing mUserOTP) $ deleteUEVO userID0
   mUser <- fetchUserByID userID0
   when (isNothing mUser) $ throw400Err "User does not exists!" -- impossible case
-  void $ sendOTPForEmailVerify userID0 (fromMaybe "" (email <$> mUser))
+  void $ sendOTPForEmailVerify userID0 (maybe "" email mUser)
   pure $ ResendVerifyEmailResponse "Verification mail has been sent!"
 
 oauth2LoginH :: (MonadUnliftIO m) => AuthResult UserInfo -> AppM m NoContent
@@ -301,7 +301,7 @@ mkTestGoogleApp ::
   (MonadIO m) =>
   AppM m (IdpApplication Google AuthorizationCodeApplication)
 mkTestGoogleApp = do
-  googleOAuth2Cfg <- googleOauth2Config <$> asks appConfig
+  googleOAuth2Cfg <- asks (googleOauth2Config . appConfig)
   let application =
         AuthorizationCodeApplication
           { acClientId = ClientId $ TL.fromStrict (clientID googleOAuth2Cfg)
@@ -342,7 +342,7 @@ oauth2CallbackH _ (Just _) (Just codeP) = do
   -- idpName = T.takeWhile ('.' /=) stateP
   googleApp <- mkTestGoogleApp
   mgr <- liftIO $ newManager tlsManagerSettings
-  eTokenResp <- runExceptT $ (conduitTokenRequest googleApp mgr code)
+  eTokenResp <- runExceptT (conduitTokenRequest googleApp mgr code)
   case eTokenResp of
     Left e -> throw401Err $ BSL.pack $ show e
     Right tokenResp -> do
@@ -415,7 +415,7 @@ loginUser userRead0 isOAuth = do
         Right v -> do
           if isOAuth
             then do
-              let redirectUrl = "http://localhost:3000/oauth2/callback?token=" <> v
+              let redirectUrl = "/oauth2/callback?token=" <> v
               void $ redirects $ BSL.toStrict redirectUrl
               return $ x (LoginUserResponse (T.decodeUtf8 $ BSL.toStrict v) "")
             else

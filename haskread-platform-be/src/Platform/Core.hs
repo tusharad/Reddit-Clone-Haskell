@@ -56,7 +56,7 @@ startApp = do
         else do
           eEnv <- readEnv envFilePath
           case eEnv of
-            Left e -> print e >> exitFailure
+            Left e -> print ("error happened: ",e) >> exitFailure
             Right (appST, _, ctx, appPort, _) -> do
               putStrLn $ "Application running at pot " <> show appPort
               run appPort $ myCorsMiddleware (app appST ctx)

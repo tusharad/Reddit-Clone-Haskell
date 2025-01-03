@@ -137,7 +137,7 @@ viewThreadPage tId = do
                       ThreadCardOps
                         { threadInfo = t
                         , currUserVotesForThreads = mUserThreadVotes
-                        , token = mToken
+                        , tokenForThreadCard = mToken
                         , mbUserInfo = mUserInfo
                         }
                   )

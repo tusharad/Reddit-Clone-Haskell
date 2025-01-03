@@ -35,7 +35,7 @@ import Platform.Common.Utils
 import Web.Hyperbole
 
 data ThreadCardOps = ThreadCardOps
-  { token :: Maybe Text
+  { tokenForThreadCard :: Maybe Text
   , currUserVotesForThreads :: Maybe [(Int, Bool)]
   , threadInfo :: ThreadInfo
   , mbUserInfo :: Maybe UserProfileResponse
@@ -57,7 +57,7 @@ instance IOE :> es => HyperView ThreadId es where
 
   update (UpdateUpVote threadCardOps@ThreadCardOps {..}) = do
     let threadId = threadIDForThreadInfo threadInfo
-    liftIO $ upvoteThread token threadId
+    liftIO $ upvoteThread tokenForThreadCard threadId
     pure $
       threadView
         threadCardOps
@@ -66,7 +66,7 @@ instance IOE :> es => HyperView ThreadId es where
           }
   update (UpdateDownVote threadCardOps@ThreadCardOps {..}) = do
     let threadId = threadIDForThreadInfo threadInfo
-    liftIO $ downvoteThread token threadId
+    liftIO $ downvoteThread tokenForThreadCard threadId
     pure $
       threadView
         threadCardOps
@@ -75,7 +75,7 @@ instance IOE :> es => HyperView ThreadId es where
           }
   update (DeleteThread ThreadCardOps {..}) = do
     let threadId = threadIDForThreadInfo threadInfo
-    case token of
+    case tokenForThreadCard of
       Nothing -> redirect "/"
       Just t -> do
         _ <- liftIO $ deleteThread threadId t
@@ -94,7 +94,7 @@ instance IOE :> es => HyperView ThreadId es where
         }
     redirect "/"
   update (EditThread ThreadCardOps {..}) = do
-    case token of
+    case tokenForThreadCard of
       Nothing -> redirect "/"
       Just t -> do
         case mbUserInfo of
@@ -167,7 +167,7 @@ viewThreadsList mUserInfo mToken_ mUserThreadVotes n (t : ts) = do
     ( threadView
         ThreadCardOps
           { currUserVotesForThreads = mUserThreadVotes
-          , token = mToken_
+          , tokenForThreadCard = mToken_
           , threadInfo = t
           , mbUserInfo = mUserInfo
           }
@@ -180,7 +180,7 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
     el (cc "flex justify-between items-center p-4 border-b") $ do
       tag "h2" (cc "text-lg font-bold text-gray-800") $ do
         link
-          (stringToUrl $ "http://localhost:3000/view-thread/" <> show threadIDForThreadInfo)
+          (stringToUrl $ "/view-thread/" <> show threadIDForThreadInfo)
           mempty
           (text title)
       el (cc "text-sm text-right text-gray-500") $ do

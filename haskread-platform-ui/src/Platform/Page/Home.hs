@@ -16,7 +16,6 @@ module Platform.Page.Home (homePage) where
 
 import Data.Maybe
 import Data.Text (Text, append)
-import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import qualified Data.Text as T
 import Effectful
 import Platform.Common.Request
@@ -27,7 +26,6 @@ import Platform.View.Header
 import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
-import Web.Internal.HttpApiData
 
 data PageParams = PageParams
   { mbCommunityId :: Maybe Int
@@ -124,9 +122,4 @@ homePage = do
           hyper (CommunityId 1) (communityListView communityList)
       hyper (FooterId 1) footerView
 
-reqParamMaybe :: forall a es. (Hyperbole :> es, FromHttpApiData a) => Text -> Eff es (Maybe a)
-reqParamMaybe p = do
-  q <- reqParams
-  pure $ lookup (encodeUtf8 p) q >>= \case
-    Nothing -> Nothing
-    Just v -> either (const Nothing) Just $ parseQueryParam (decodeUtf8 v)
+

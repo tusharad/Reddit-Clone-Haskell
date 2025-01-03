@@ -31,6 +31,8 @@ module Platform.Common.Types
   , EditThreadData (..)
   , UpdateThreadReqBody (..)
   , UpdateCommentReqBody (..)
+  , ChangePasswordBody (..)
+  , DeleteUserBody (..)
   ) where
 
 import Data.Aeson (FromJSON, ToJSON)
@@ -244,3 +246,16 @@ data UpdateThreadReqBody = UpdateThreadReqBody
     threadCommunityIDForUpdate :: Int
   }
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
+
+data ChangePasswordBody = ChangePasswordBody
+  { oldPasswordForChangePass :: Text,
+    newPasswordForChangePass :: Text,
+    confirmPasswordForChangePass :: Text
+  }
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
+data DeleteUserBody = DeleteUserBody
+  { passwordForDeleteUser :: Text,
+    areUSure :: Bool
+  }
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)

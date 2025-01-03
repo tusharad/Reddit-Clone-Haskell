@@ -33,7 +33,7 @@ instance (IOE :> es, Hyperbole :> es) => HyperView FormView es where
     deriving (Show, Read, ViewAction)
 
   update DoRedirect = redirect "/"
-  update OAuthPage = redirect "http://localhost:8085/api/v1/user/oauth2/login"
+  update OAuthPage = redirect "/api/v1/user/oauth2/login"
   update Submit = do
     uf <- formData @UserForm
     let vals = validateForm uf

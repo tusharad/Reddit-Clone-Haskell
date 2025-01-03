@@ -141,7 +141,7 @@ readEnv ::
     )
 readEnv envFilePath = do
   eEnv <-
-    try $ input auto (T.pack $ envFilePath) ::
+    try $ input auto (T.pack envFilePath) ::
       IO (Either SomeException Env)
   case eEnv of
     Left e -> pure $ Left e

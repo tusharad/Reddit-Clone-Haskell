@@ -23,8 +23,10 @@ module Platform.Common.Request
   , getAllThreadsBySearch
   , deleteThread
   , deleteComment
-  , editThread 
-  , editComment 
+  , editThread
+  , editComment
+  , changePassword
+  , deleteUser 
   ) where
 
 import Control.Exception
@@ -81,34 +83,33 @@ editComment :: Int -> Text -> Text -> IO (Maybe String)
 editComment cId token newContent = do
   let myData =
         UpdateCommentReqBody
-          {  
-            commentContentForUpdate = newContent
+          { commentContentForUpdate = newContent
           }
   eRes ::
-      Either HttpException (Maybe String) <-
-      try $ runReq defaultHttpConfig $ do
-        bsResp <-
-          req
-            PUT
-            ( http
-                "localhost"
-                /: "api"
-                /: "v1"
-                /: "user"
-                /: "comment"
-                /: "update"
-                /: T.pack (show cId)
-            )
-            (ReqBodyJson myData)
-            bsResponse
-            $ header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
-              <> port 8085
-        if responseStatusCode bsResp == 200
-          then
-            pure $ Just "All good"
-          else do
-            liftIO $ print $ responseStatusCode bsResp
-            pure Nothing
+    Either HttpException (Maybe String) <-
+    try $ runReq defaultHttpConfig $ do
+      bsResp <-
+        req
+          PUT
+          ( http
+              "localhost"
+              /: "api"
+              /: "v1"
+              /: "user"
+              /: "comment"
+              /: "update"
+              /: T.pack (show cId)
+          )
+          (ReqBodyJson myData)
+          bsResponse
+          $ header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
+            <> port 8085
+      if responseStatusCode bsResp == 200
+        then
+          pure $ Just "All good"
+        else do
+          liftIO $ print $ responseStatusCode bsResp
+          pure Nothing
   print eRes
   case eRes of
     Left _ -> pure Nothing
@@ -118,36 +119,35 @@ editThread :: Text -> EditThreadData -> IO (Maybe String)
 editThread token EditThreadData {..} = do
   let myData =
         UpdateThreadReqBody
-          {  
-            threadIDForUpdate = threadIdForEditThread
+          { threadIDForUpdate = threadIdForEditThread
           , threadCommunityIDForUpdate = fromMaybe 6 communityIdForEditThread
           , threadTitleForUpdate = fromMaybe "" titleForEditThread
           , threadDescriptionForUpdate = descriptionForEditThread
           }
   eRes ::
-      Either HttpException (Maybe String) <-
-      try $ runReq defaultHttpConfig $ do
-        bsResp <-
-          req
-            PUT
-            ( http
-                "localhost"
-                /: "api"
-                /: "v1"
-                /: "user"
-                /: "thread"
-                /: "update"
-            )
-            (ReqBodyJson myData)
-            bsResponse
-            $ header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
-              <> port 8085
-        if responseStatusCode bsResp == 200
-          then
-            pure $ Just "All good"
-          else do
-            liftIO $ print $ responseStatusCode bsResp
-            pure Nothing
+    Either HttpException (Maybe String) <-
+    try $ runReq defaultHttpConfig $ do
+      bsResp <-
+        req
+          PUT
+          ( http
+              "localhost"
+              /: "api"
+              /: "v1"
+              /: "user"
+              /: "thread"
+              /: "update"
+          )
+          (ReqBodyJson myData)
+          bsResponse
+          $ header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
+            <> port 8085
+      if responseStatusCode bsResp == 200
+        then
+          pure $ Just "All good"
+        else do
+          liftIO $ print $ responseStatusCode bsResp
+          pure Nothing
   print eRes
   case eRes of
     Left _ -> pure Nothing
@@ -510,16 +510,16 @@ deleteThread threadId token = do
         (http "localhost" /: "api" /: "v1" /: "user" /: "thread" /: "delete" /: toText threadId)
         NoReqBody
         bsResponse
-        $ 
-          header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
+        $ header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
           <> port 8085
-    if responseStatusCode bResponse == 200 then
-      pure $ Just "all good"
-    else do 
-      liftIO $ print (responseBody bResponse)
-      pure Nothing
+    if responseStatusCode bResponse == 200
+      then
+        pure $ Just "all good"
+      else do
+        liftIO $ print (responseBody bResponse)
+        pure Nothing
   case eRes of
-    Left e -> do 
+    Left e -> do
       print e
       pure Nothing
     Right r -> pure r
@@ -534,16 +534,79 @@ deleteComment commentId token = do
         (http "localhost" /: "api" /: "v1" /: "user" /: "comment" /: "delete" /: toText commentId)
         NoReqBody
         bsResponse
-        $ 
-          header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
+        $ header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
           <> port 8085
-    if responseStatusCode bResponse == 200 then
-      pure $ Just "all good"
-    else do 
-      liftIO $ print (responseBody bResponse)
-      pure Nothing
+    if responseStatusCode bResponse == 200
+      then
+        pure $ Just "all good"
+      else do
+        liftIO $ print (responseBody bResponse)
+        pure Nothing
   case eRes of
-    Left e -> do 
+    Left e -> do
       print e
       pure Nothing
     Right r -> pure r
+
+changePassword :: Text -> ChangePasswordBody -> IO (Either String ())
+changePassword token changePasswordBody = do
+  eRes ::
+    Either HttpException (Maybe String) <-
+    try $ runReq defaultHttpConfig $ do
+      bsResp <-
+        req
+          PUT
+          ( http
+              "localhost"
+              /: "api"
+              /: "v1"
+              /: "user"
+              /: "profile"
+              /: "change-password"
+          )
+          (ReqBodyJson changePasswordBody)
+          bsResponse
+          $ header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
+            <> port 8085
+      if responseStatusCode bsResp == 200
+        then
+          pure $ Just "All good"
+        else do
+          liftIO $ print $ responseStatusCode bsResp
+          pure Nothing
+  print eRes
+  case eRes of
+    Left e -> pure . Left $ show e
+    Right _ -> pure $ Right ()
+
+deleteUser :: Text -> DeleteUserBody -> IO (Either String ())
+deleteUser token deleteUserBody = do
+  eRes ::
+    Either HttpException (Maybe String) <-
+    try $ runReq defaultHttpConfig $ do
+      bsResp <-
+        req
+          PUT
+          ( http
+              "localhost"
+              /: "api"
+              /: "v1"
+              /: "user"
+              /: "profile"
+              /: "delete-account"
+          )
+          (ReqBodyJson deleteUserBody)
+          bsResponse
+          $ header "Authorization" ("Bearer " <> TE.encodeUtf8 token)
+            <> port 8085
+      if responseStatusCode bsResp == 200
+        then
+          pure $ Just "All good"
+        else do
+          liftIO $ print $ responseStatusCode bsResp
+          pure Nothing
+  print eRes
+  case eRes of
+    Left e -> pure . Left $ show e
+    Right _ -> do 
+      pure $ Right ()
