@@ -98,3 +98,9 @@ jobs:
         with:
           path: ./artifacts
           destination: haskread_ci_storage
+      
+      - name: Deploying code
+        run: |
+          curl --request POST \
+            --url https://35.208.94.172/api/service/app/update \
+            --header 'Authorization: Bearer ${{ secrets.BEARER_TOKEN }}'

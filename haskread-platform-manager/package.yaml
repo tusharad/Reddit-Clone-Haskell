@@ -28,6 +28,10 @@ dependencies:
 - bytestring
 - http-types
 - unix
+- scotty
+- dhall
+- filepath
+- directory
 
 ghc-options:
 - -Wall

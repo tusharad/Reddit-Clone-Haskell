@@ -28,7 +28,9 @@ library
       Lib
       Manager.Common.Types
       Manager.Common.Utils
+      Manager.Server
       Manager.Storage
+      Manager.Systemd
   other-modules:
       Paths_haskread_platform_manager
   hs-source-dirs:
@@ -37,6 +39,9 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , dhall
+    , directory
+    , filepath
     , http-types
     , process
     , req
@@ -55,6 +60,9 @@ executable haskread-platform-manager-exe
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , dhall
+    , directory
+    , filepath
     , haskread-platform-manager
     , http-types
     , process
@@ -75,6 +83,9 @@ test-suite haskread-platform-manager-test
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , dhall
+    , directory
+    , filepath
     , haskread-platform-manager
     , http-types
     , process
