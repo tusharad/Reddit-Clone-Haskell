@@ -20,7 +20,9 @@ let Env = {
     mailAPIToken : Text,
     mailFromEmail : Text,
     oauth2Config : OAuth2Config,
-    tokenExpiryTime : Natural -- Seconds
+    tokenExpiryTime : Natural, -- Seconds
+    environment_ : Text,
+    ip_ : Text
 }
 
 let dbConfig : DBConfig = {
@@ -46,7 +48,9 @@ let env : Env = {
     mailAPIToken = env:MailAPIToken as Text,
     mailFromEmail = env:MailFromEmail as Text,
     oauth2Config = oauth2Config,
-    tokenExpiryTime = 120
+    tokenExpiryTime = 120,
+    environment_ = "test",
+    ip_ = "127.0.0.1"
 }
 
 in env

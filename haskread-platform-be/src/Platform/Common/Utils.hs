@@ -5,19 +5,19 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Platform.Common.Utils
-  ( toUserInfo,
-    throw400Err,
-    throw401Err,
-    passwordUpdatedUser,
-    validatePassword,
-    passwordConstraintMessage,
-    toAdminInfo,
-    toJsonbArray,
-    readEnv,
-    matchPasswords,
-    queryWrapper,
-    redirects,
-    genRandomUserName,
+  ( toUserInfo
+  , throw400Err
+  , throw401Err
+  , passwordUpdatedUser
+  , validatePassword
+  , passwordConstraintMessage
+  , toAdminInfo
+  , toJsonbArray
+  , readEnv
+  , matchPasswords
+  , queryWrapper
+  , redirects
+  , genRandomUserName
   )
 where
 
@@ -57,10 +57,10 @@ throw401Err err = throwError $ err401 {errBody = err}
 passwordUpdatedUser :: UserRead -> PasswordHash Bcrypt -> UserWrite
 passwordUpdatedUser u password0 =
   u
-    { userPassword = Just (MyPassword password0),
-      createdAt = (),
-      updatedAt = (),
-      userID = ()
+    { userPassword = Just (MyPassword password0)
+    , createdAt = ()
+    , updatedAt = ()
+    , userID = ()
     }
 
 -- Constraints:
@@ -86,18 +86,18 @@ mkConnection :: DBConfig -> ConnectionOptions
 mkConnection DBConfig {..} =
   let connString =
         unwords
-          [ "dbname=" <> T.unpack dbName,
-            "host=" <> T.unpack host,
-            "user=" <> T.unpack dbUserName,
-            "password=" <> T.unpack dbPassword,
-            "port=" <> show port
+          [ "dbname=" <> T.unpack dbName
+          , "host=" <> T.unpack host
+          , "user=" <> T.unpack dbUserName
+          , "password=" <> T.unpack dbPassword
+          , "port=" <> show port
           ]
    in ConnectionOptions
-        { connectionString = connString,
-          connectionNoticeReporting = DisableNoticeReporting,
-          connectionPoolStripes = OneStripePerCapability,
-          connectionPoolMaxConnections = MaxConnectionsPerStripe 1,
-          connectionPoolLingerTime = 10
+        { connectionString = connString
+        , connectionNoticeReporting = DisableNoticeReporting
+        , connectionPoolStripes = OneStripePerCapability
+        , connectionPoolMaxConnections = MaxConnectionsPerStripe 1
+        , connectionPoolLingerTime = 10
         }
 
 toLogLevel :: Text -> MinLogLevel
@@ -116,7 +116,7 @@ queryWrapper queryFunc = do
     Left e -> throw400Err $ BSL.pack (show (e :: SomeException))
     Right r -> pure r
 
-data MissingEnvArgumentException = MissingEnvArgumentException Text
+newtype MissingEnvArgumentException = MissingEnvArgumentException Text
   deriving (Show)
 
 instance Exception MissingEnvArgumentException
@@ -132,11 +132,11 @@ readEnv ::
   IO
     ( Either
         SomeException
-        ( MyAppState,
-          JWTSettings,
-          Context [CookieSettings, JWTSettings],
-          Int,
-          ConnectionPool
+        ( MyAppState
+        , JWTSettings
+        , Context [CookieSettings, JWTSettings]
+        , Int
+        , ConnectionPool
         )
     )
 readEnv envFilePath = do
@@ -160,24 +160,26 @@ readEnv envFilePath = do
               jwtSett = defaultJWTSettings jwtSecretKey
               appCfg =
                 AppConfig
-                  { fileUploadDir = fileUploadPath,
-                    loggerSet = loggerSet_,
-                    minLogLevel = toLogLevel logLevel,
-                    emailAPIToken = mailAPIToken,
-                    emailFromEmail = mailFromEmail,
-                    googleOauth2Config = oauth2Config,
-                    jwtSett = jwtSett,
-                    cookieSett =
+                  { fileUploadDir = fileUploadPath
+                  , loggerSet = loggerSet_
+                  , minLogLevel = toLogLevel logLevel
+                  , emailAPIToken = mailAPIToken
+                  , emailFromEmail = mailFromEmail
+                  , googleOauth2Config = oauth2Config
+                  , jwtSett = jwtSett
+                  , cookieSett =
                       defaultCookieSettings
-                      {-
-                        { cookieMaxAge =
-                            Just $
-                              secondsToDiffTime $
-                                fromIntegral tokenExpiryTime
-                        }
-                        -}
-                        ,
+                  , {-
+                      { cookieMaxAge =
+                          Just $
+                            secondsToDiffTime $
+                              fromIntegral tokenExpiryTime
+                      }
+                      -}
+
                     tokenExpiryTime0 = fromIntegral tokenExpiryTime
+                  , environment = toEnv environment_
+                  , ip = ip_
                   }
               appST =
                 MyAppState
@@ -212,3 +214,11 @@ genRandomUserName = do
                 head $
                   results (responseBody jsonRes :: RandomUserNameApiResponse)
         pure $ Right (T.pack res0)
+
+toEnv :: Text -> Environment
+toEnv "local" = Local
+toEnv "test" = Test
+toEnv "development" = Development
+toEnv "sandbox" = Sandbox
+toEnv "production" = Production
+toEnv _ = Local -- Shouldn't happen

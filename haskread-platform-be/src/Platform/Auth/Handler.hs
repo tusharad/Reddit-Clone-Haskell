@@ -22,7 +22,7 @@ import Control.Monad.Trans.Except
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Either (fromRight)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, isJust, isNothing)
+import Data.Maybe
 import Data.Password.Bcrypt
 import qualified Data.Set as Set
 import Data.Text (Text)
@@ -56,6 +56,7 @@ import Platform.User.Types
 import Servant
 import Servant.Auth.Server
 import System.Random
+import URI.ByteString (parseURI, strictURIParserOptions)
 import URI.ByteString.QQ (uri)
 import UnliftIO
 
@@ -302,12 +303,19 @@ mkTestGoogleApp ::
   AppM m (IdpApplication Google AuthorizationCodeApplication)
 mkTestGoogleApp = do
   googleOAuth2Cfg <- asks (googleOauth2Config . appConfig)
+  AppConfig {..} <- asks appConfig
+  let url =
+        if environment == Production
+          then
+            parseURI strictURIParserOptions ("https://" <> T.encodeUtf8 ip <> "/callback")
+          else
+            parseURI strictURIParserOptions "http://localhost:8085/callback"
   let application =
         AuthorizationCodeApplication
           { acClientId = ClientId $ TL.fromStrict (clientID googleOAuth2Cfg)
           , acClientSecret = ClientSecret $ TL.fromStrict (clientSecret googleOAuth2Cfg)
           , acAuthorizeState = AuthorizeState ("google." <> randomStateValue)
-          , acRedirectUri = [uri|http://localhost:8085/callback|]
+          , acRedirectUri = fromRight [uri|http://localhost:8085/callback|] url
           , acScope =
               Set.fromList
                 [ "https://www.googleapis.com/auth/userinfo.email"
@@ -415,7 +423,12 @@ loginUser userRead0 isOAuth = do
         Right v -> do
           if isOAuth
             then do
-              let redirectUrl = "/oauth2/callback?token=" <> v
+              let redirectUrl =
+                    if environment == Production
+                      then
+                        "https://" <> BSL.fromStrict (T.encodeUtf8 ip) <> "/oauth2/callback?token=" <> v
+                      else
+                        "http://localhost:3000/oauth2/callback?token=" <> v
               void $ redirects $ BSL.toStrict redirectUrl
               return $ x (LoginUserResponse (T.decodeUtf8 $ BSL.toStrict v) "")
             else

@@ -23,12 +23,17 @@ import Platform.Page.Register
 import Platform.Page.ViewThread
 import Text.Read (readMaybe)
 import Web.Hyperbole
+import System.Environment
 
 main :: IO ()
 main = do
-  putStrLn "UI running on http://localhost:3000"
-  run 3000 $ do
-    liveApp (basicDocument "HaskRead-UI") (routeRequest router)
+  args <- getArgs
+  if null args then putStrLn "Please provide env"
+  else do
+    let env = if head args == "local" then "local" else "dev"
+    putStrLn "UI running on http://localhost:3000"
+    run 3000 $ do
+      liveApp (basicDocument "HaskRead-UI") (routeRequest (router env))
 
 data AppRoute
   = Home
@@ -54,14 +59,14 @@ instance Route AppRoute where
     pure $ ViewThread tId_
   matchRoute _ = pure Home
 
-router :: forall es. (Hyperbole :> es, IOE :> es) => AppRoute -> Eff es Response
-router Home = runPage homePage
-router Login = runPage loginPage
-router Register = runPage registerPage
-router Profile = runPage profilePage
-router Callback = runPage callbackPage
-router (OTP tId) = runPage (otpPage tId)
-router (ViewThread tId) = runPage (viewThreadPage tId)
+router :: forall es. (Hyperbole :> es, IOE :> es) => String -> AppRoute -> Eff es Response
+router _ Home = runPage homePage
+router env Login = runPage (loginPage env)
+router env Register = runPage (registerPage env)
+router _ Profile = runPage profilePage
+router _ Callback = runPage callbackPage
+router _ (OTP tId) = runPage (otpPage tId)
+router _ (ViewThread tId) = runPage (viewThreadPage tId)
 
 newtype Message = Message Int
   deriving (Show, Read, ViewId)

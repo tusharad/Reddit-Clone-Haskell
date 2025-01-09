@@ -58,7 +58,7 @@ instance forall m e. (MonadUnliftIO m, Exception e) => MonadUnliftIO (MyExceptT 
       exceptToIO (runInIO . (either throwIO pure <=< (runExceptT . runMyExceptT)))
 
 -- https://hackage.haskell.org/package/orville-postgresql-1.0.0.0/docs/Orville-PostgreSQL-UnliftIO.html#v:liftWithConnectionViaUnliftIO
-instance (MonadIO m,UnliftIO.MonadUnliftIO m) => O.MonadOrvilleControl (AppM m) where
+instance (MonadIO m, UnliftIO.MonadUnliftIO m) => O.MonadOrvilleControl (AppM m) where
   liftWithConnection = OrvilleUnliftIO.liftWithConnectionViaUnliftIO
   liftCatch = OrvilleUnliftIO.liftCatchViaUnliftIO
   liftMask = OrvilleUnliftIO.liftMaskViaUnliftIO
