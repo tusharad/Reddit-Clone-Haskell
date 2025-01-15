@@ -102,5 +102,5 @@ jobs:
       - name: Deploying code
         run: |
           curl --request POST \
-            --url https://35.208.94.172/api/service/app/update \
+            --url https://haskread.tushar-adhatrao.in/api/service/app/update \
             --header 'Authorization: Bearer ${{ secrets.BEARER_TOKEN }}'

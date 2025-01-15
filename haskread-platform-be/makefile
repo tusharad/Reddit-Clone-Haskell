@@ -32,14 +32,5 @@ startDB:
 	--rm -d  \
     postgres:16.3-alpine3.20
 
-be-ghcid:
-	ghcid --command="stack repl"
-
 be-haskread-platform-run:
 	stack run haskread-platform-be-exe -- "./env.dhall"
-
-build-be-platform:
-	docker exec -it haskread_platform_be /bin/bash -c "stack build"
-
-run-be-platform:
-	docker compose exec -it stack run -- "/app/env.dhall"

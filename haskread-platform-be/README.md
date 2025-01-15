@@ -5,8 +5,10 @@ Platform backend of haskread.
 ## Instructions to setup local development environment
 
 ### Prerequisites
-- [Docker](https://www.docker.com/)
-- [Docker-compose](https://docs.docker.com/compose/)
+
+- [Docker](https://www.docker.com/) For PostgreSQL setup.
+- Install GHC, Cabal and Stack from [GHCup](https://www.haskell.org/ghcup/).
+- Note: This setup assumes you are using linux environment though Windows and mac will have similar commands.
 
 ### Clone the repository
 
@@ -20,42 +22,40 @@ $ git clone git@github.com:tusharad/Reddit-Clone-Haskell.git
 $ cd haskread-platform-be
 ```
 
-### Up the docker compose
+### Start the PostgreSQL Database using make command
 
 ```bash
-$ docker compose up
+$ make startDB
 ```
 
 This command will:
- - Start a postgresql database with all schema created.
- - Start the container which includes haskell compiler tool (stack)
- - The project source code will be mounted to container and postgresql database 
-   will be mounted at .dockermnt/pg_db/
+ - Start a postgresql database.
+ - The postgresql database will be mounted at .dockermnt/pg_db/
 
-Note:
-    - Docker-compose command be either `docker-compose up` or `docker compose up` 
-      depending upon your installation.
-
-### Build the project using make command 
+For the first time, run the (schema.sql)[./Scripts/DB/schema.sql] script to initiate database.
 
 ```bash
-$ make build-be-platform
+$ docker cp Scripts/DB/schema.sql haskread_local_pg_db:/tmp/schema.sql
+$ docker exec -i haskread_local_pg_db psql -d haskread_local_db -U tushar -f /tmp/schema.sql
 ```
 
-### Run the project
+### Run the project using make command 
+
+Make sure you have stack installed.
 
 ```bash
-$ make run-be-platform
+$ make be-haskread-platform-run
 ```
 
 Note:
- - Make sure the environment variables in `env.dhall` are correct for 
-   `docker-compose.yml's` postgresql env.
- - Feel free to change them as per your needs.
+ - Make sure the environment variables in `env.dhall` are correct feel free to change them as per your needs.
+
+With this, the backend application will start running at port 8085.
 
 ### Run tests
 
 ```
+$ make startTestDB
 $ make startTest
 ```
 

@@ -4,6 +4,15 @@ This is a Reddit clone written in Haskell. It is a work in progress.
 The goal of this project is to learn Haskell by building a real-world application. 
 Will try to follow best practices and idiomatic Haskell as much as possible.
 
+## Setting up local development environment
+
+The instructions for setting up setting local dev environment is provided in respective frontend and backend projects.
+
+- [Frontend](./haskread-platform-ui/README.md)
+- [Backend](./haskread-platform-be/README.md)
+
+The Installation instructions for 
+
 ![alt text](image/demo_img.png)
 
 ## Tech Stack
