@@ -30,6 +30,7 @@ import Platform.Common.Utils
 import Web.Hyperbole
 import Web.View.Types
 import Platform.View.LiveSearch
+import Control.Monad (forM_)
 
 newtype HeaderId = HeaderId Int
   deriving (Show, Read, ViewId)
@@ -47,15 +48,17 @@ instance IOE :> es => HyperView HeaderId es where
     clearSession "jwt_token"
     pure $ headerView Nothing Nothing
   update (AddThread mToken mUserInfo) = do
+    communityList <- liftIO getCommunityList
     case mToken of
       Nothing -> pure $ headerView mToken mUserInfo -- Cannot create thread without token
-      Just _ -> pure $ createThreadView mToken mUserInfo Nothing genForm -- pure $ createThreadView createThreadData
+      Just _ -> pure $ createThreadView communityList mToken mUserInfo Nothing genForm 
   update (SubmitCreateThreadForm mToken mUserInfo) = do
+    communityList <- liftIO getCommunityList
     uf <- formData @CreateThreadForm
     let vals = validateForm uf
     if anyInvalid vals
       then
-        pure $ createThreadView mToken mUserInfo Nothing vals
+        pure $ createThreadView communityList mToken mUserInfo Nothing vals
       else do
         mRes <-
           liftIO $
@@ -98,12 +101,13 @@ validateTitle e =
     ]
 
 createThreadView ::
+  [CommunityC] ->
   Maybe Text ->
   Maybe UserProfileResponse ->
   Maybe Text ->
   CreateThreadForm Validated ->
   View HeaderId ()
-createThreadView mToken mUserInfo mErrorMsg v = do
+createThreadView communityList mToken mUserInfo mErrorMsg v = do
   let f = formFieldsWith v
   let css = "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
   el (cc css) $ do
@@ -115,8 +119,14 @@ createThreadView mToken mUserInfo mErrorMsg v = do
             tag "label" (cc "block text-gray-700") "Select community"
             tag "select" (name "communityIdField" . cc "w-full px-2 py-2 border rounded") $
               do
-                tag "option" (att "value" "6") "Haskell"
-                tag "option" (att "value" "7") "Functional programming"
+                  forM_ communityList $ \c -> do
+                         tag 
+                            "option" 
+                            (att "value" (toText $ communityID c))
+                            (raw $ communityName c)
+                    -- communityList
+                -- tag "option" (att "value" "1") "Haskell"
+                -- tag "option" (att "value" "2") "Functional programming"
 
         field (titleField f) valStyle $ do
           el (cc "mb-4") $ do

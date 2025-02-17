@@ -138,4 +138,11 @@ BEFORE UPDATE ON vote_comment
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
+INSERT INTO community
+(community_id, community_name, community_description, created_at, updated_at, label_list)
+VALUES(1, 'Haskell', 'Community for haskell programming language', '2025-02-17 19:09:47.081', '2025-02-17 19:09:47.081', '["programming"]'::jsonb);
+INSERT INTO community
+(community_id, community_name, community_description, created_at, updated_at, label_list)
+VALUES(2, 'Functional programming', 'All things functional', '2025-02-17 19:10:14.433', '2025-02-17 19:10:14.433', '["programming"]'::jsonb);
+
 commit;
