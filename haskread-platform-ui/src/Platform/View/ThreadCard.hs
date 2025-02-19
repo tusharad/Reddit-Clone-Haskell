@@ -33,6 +33,7 @@ import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
 import Web.Hyperbole
+import Control.Monad (void)
 
 data ThreadCardOps = ThreadCardOps
   { tokenForThreadCard :: Maybe Text
@@ -57,7 +58,7 @@ instance IOE :> es => HyperView ThreadId es where
 
   update (UpdateUpVote threadCardOps@ThreadCardOps {..}) = do
     let threadId = threadIDForThreadInfo threadInfo
-    liftIO $ upvoteThread tokenForThreadCard threadId
+    void . liftIO $ upvoteThread tokenForThreadCard threadId
     pure $
       threadView
         threadCardOps
@@ -66,7 +67,7 @@ instance IOE :> es => HyperView ThreadId es where
           }
   update (UpdateDownVote threadCardOps@ThreadCardOps {..}) = do
     let threadId = threadIDForThreadInfo threadInfo
-    liftIO $ downvoteThread tokenForThreadCard threadId
+    void . liftIO $ downvoteThread tokenForThreadCard threadId
     pure $
       threadView
         threadCardOps

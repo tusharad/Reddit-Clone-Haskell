@@ -28,8 +28,9 @@ dependencies:
 - effectful-core
 - hyperbole
 - text
-- req
+- http-conduit
 - web-view
+- bytestring
 
 ghc-options:
 - -Wall

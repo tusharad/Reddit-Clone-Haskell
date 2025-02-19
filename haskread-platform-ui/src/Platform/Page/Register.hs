@@ -33,24 +33,23 @@ data RegisterForm = RegisterForm
   deriving (Show, Read, ViewId)
 
 instance (IOE :> es, Hyperbole :> es) => HyperView RegisterForm es where
-  data Action RegisterForm = Submit String | DoRedirect String | OauthPage String
+  data Action RegisterForm = Submit | DoRedirect String | OauthPage
     deriving (Show, Read, ViewAction)
 
   update (DoRedirect x) = redirect (url . pack $ "/otp/" <> x)
-  update (OauthPage env) = do
-    let redirectUrl = if env == "local" then "http://localhost:8085/api/v1/user/oauth2/login"
-                        else "/api/v1/user/oauth2/login"
+  update OauthPage = do
+    redirectUrl <- liftIO getRedirectUrl
     redirect redirectUrl
-  update (Submit env) = do
+  update Submit = do
     uf <- formData @RegisterFormData
     let vals = validateForm uf
     if anyInvalid vals
-      then pure $ registerFormView env Nothing vals
+      then pure $ registerFormView Nothing vals
       else do
-        mRes <- liftIO $ registerUser (coerce uf.userName) uf.email uf.pass1 uf.pass2
-        case mRes of
-          Nothing -> pure $ registerFormView env (Just "Something went wrong!") vals
-          Just resp -> pure $ registerSuccessFullView (userIDForRUR resp)
+        eRes <- liftIO $ registerUser (coerce uf.userName) uf.email uf.pass1 uf.pass2
+        case eRes of
+          Left err -> pure $ registerFormView (Just (T.pack err)) vals
+          Right resp -> pure $ registerSuccessFullView (userIDForRUR resp)
 
 registerSuccessFullView :: Int -> View RegisterForm ()
 registerSuccessFullView newUserId = do
@@ -98,12 +97,12 @@ validatePass p1 p2 =
     , validate (p1 /= p2) "Password and Confirm Password do not matched!"
     ]
 
-registerPage :: String -> Eff es (Page '[RegisterForm, HeaderId, FooterId, LiveSearchId])
-registerPage env = do
+registerPage :: Eff es (Page '[RegisterForm, HeaderId, FooterId, LiveSearchId])
+registerPage = do
   pure $ do
     style globalCSS
     el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
-      hyper (HeaderId 1) (headerView Nothing Nothing)
+      hyper (HeaderId 1) (headerView defaultHeaderOps)
       tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
         el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
           el (cc "w-full lg px-4") $ do
@@ -111,13 +110,13 @@ registerPage env = do
               tag "main" (cc "container mx-auto mt-20 px-6 flex-grow") $ do
                 tag "h1" (cc "text-2xl font-bold mb-4 text-center") "Register"
                 el (cc "card-bg px-6 py-6 shadow-lg rounded-lg mb-6 overflow-hidden") $ do
-                  hyper RegisterForm $ registerFormView env Nothing genForm
+                  hyper RegisterForm $ registerFormView Nothing genForm
         hyper (FooterId 1) footerView
 
-registerFormView :: String -> Maybe Text -> RegisterFormData Validated -> View RegisterForm ()
-registerFormView env mErrorMsg v = do
+registerFormView :: Maybe Text -> RegisterFormData Validated -> View RegisterForm ()
+registerFormView mErrorMsg v = do
   let f = formFieldsWith v
-  form @RegisterFormData (Submit env) (gap 10) $ do
+  form @RegisterFormData Submit (gap 10) $ do
     field f.userName valStyle $ do
       input Username (inp . placeholder "Enter user name")
       invalidText
@@ -139,7 +138,7 @@ registerFormView env mErrorMsg v = do
       Just errMsg -> el invalid (text errMsg)
     submit (btn . cc "rounded") "Submit"
   button
-    (OauthPage env)
+    OauthPage
     (cc "mt-2 w-full bg-red-600 text-white py-2 rounded hover:bg-red-700")
     "Continue with Google"
   where

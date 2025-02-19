@@ -6,6 +6,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -13,24 +14,26 @@
 
 module Platform.View.Header
   ( HeaderId (..)
+  , HeaderOps (..)
   , headerView
   , defaultCreateThreadData
   , CreateThreadData (..)
   , headerButtonCSS
   , showUserName
   , showLoginAndSignup
+  , defaultHeaderOps 
   ) where
 
+import Control.Monad (forM_)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Effectful
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
+import Platform.View.LiveSearch
 import Web.Hyperbole
 import Web.View.Types
-import Platform.View.LiveSearch
-import Control.Monad (forM_)
 
 newtype HeaderId = HeaderId Int
   deriving (Show, Read, ViewId)
@@ -38,44 +41,59 @@ newtype HeaderId = HeaderId Int
 instance IOE :> es => HyperView HeaderId es where
   data Action HeaderId
     = DoLogout
-    | AddThread (Maybe Text) (Maybe UserProfileResponse)
-    | SubmitCreateThreadForm (Maybe Text) (Maybe UserProfileResponse)
-    | CancelCreateThreadForm (Maybe Text) (Maybe UserProfileResponse)
+    | AddThread Text UserProfileResponse
+    | SubmitCreateThreadForm Text UserProfileResponse
+    | CancelCreateThreadForm
     deriving (Show, Read, ViewAction)
 
   type Require HeaderId = '[LiveSearchId]
   update DoLogout = do
     clearSession "jwt_token"
-    pure $ headerView Nothing Nothing
-  update (AddThread mToken mUserInfo) = do
-    communityList <- liftIO getCommunityList
-    case mToken of
-      Nothing -> pure $ headerView mToken mUserInfo -- Cannot create thread without token
-      Just _ -> pure $ createThreadView communityList mToken mUserInfo Nothing genForm 
-  update (SubmitCreateThreadForm mToken mUserInfo) = do
-    communityList <- liftIO getCommunityList
-    uf <- formData @CreateThreadForm
-    let vals = validateForm uf
-    if anyInvalid vals
-      then
-        pure $ createThreadView communityList mToken mUserInfo Nothing vals
-      else do
-        mRes <-
-          liftIO $
-            addThread
-              CreateThreadData
-                { titleForCreateThread = titleField uf
-                , content = descriptionField uf
-                , mToken = mToken
-                , mUserInfo = mUserInfo
-                , communityId = communityIdField uf
-                }
-        case mRes of
-          Nothing -> liftIO $ putStrLn "Couldn't insert thread"
-          Just _ -> pure ()
+    pure $ headerView defaultHeaderOps
+  update (AddThread token userInfo) = do
+    eCommunityList <- liftIO getCommunityList
+    case eCommunityList of
+      Left err -> do
+        liftIO $ putStrLn $ "Error: " <> err
+        pure $ headerView $ HeaderOps (Just token) (Just userInfo)
+      Right communityList -> do
+        pure $
+          createThreadView
+            communityList
+            token
+            userInfo
+            Nothing
+            genForm
+  update (SubmitCreateThreadForm token userInfo) = do
+    eCommunityList <- liftIO getCommunityList
+    case eCommunityList of
+      Left err -> do 
+        liftIO $ putStrLn $ "Error:" <> err
         redirect "/"
-  update (CancelCreateThreadForm mToken mUserInfo) = do
-    pure $ headerView mToken mUserInfo
+      Right communityList -> do
+        uf <- formData @CreateThreadForm
+        let vals = validateForm uf
+        if anyInvalid vals
+          then
+            pure $ createThreadView communityList token userInfo Nothing vals
+          else do
+            eRes <-
+              liftIO $
+                addThread
+                  CreateThreadData
+                    { titleForCreateThread = titleField uf
+                    , content = descriptionField uf
+                    , mToken = Just token
+                    , mUserInfo = Just userInfo
+                    , communityId = communityIdField uf
+                    }
+            case eRes of
+              Left err -> liftIO $ putStrLn $ "Couldn't insert thread: " <> err
+              Right _ -> pure ()
+            redirect "/"
+
+  update CancelCreateThreadForm = do
+    redirect "/"
 
 data CreateThreadForm f = CreateThreadForm
   { communityIdField :: Field f Int
@@ -101,33 +119,29 @@ validateTitle e =
     ]
 
 createThreadView ::
-  [CommunityC] ->
-  Maybe Text ->
-  Maybe UserProfileResponse ->
+  Communities ->
+  Text ->
+  UserProfileResponse ->
   Maybe Text ->
   CreateThreadForm Validated ->
   View HeaderId ()
-createThreadView communityList mToken mUserInfo mErrorMsg v = do
+createThreadView (Communities communityList) token userInfo mErrorMsg v = do
   let f = formFieldsWith v
   let css = "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
   el (cc css) $ do
     el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
       tag "h2" (cc "text-2xl font-bold mb-4") $ text "Create Thread"
-      form @CreateThreadForm (SubmitCreateThreadForm mToken mUserInfo) (gap 10) $ do
+      form @CreateThreadForm (SubmitCreateThreadForm token userInfo) (gap 10) $ do
         field (communityIdField f) (const mempty) $ do
           el (cc "mb-4") $ do
             tag "label" (cc "block text-gray-700") "Select community"
             tag "select" (name "communityIdField" . cc "w-full px-2 py-2 border rounded") $
               do
-                  forM_ communityList $ \c -> do
-                         tag 
-                            "option" 
-                            (att "value" (toText $ communityID c))
-                            (raw $ communityName c)
-                    -- communityList
-                -- tag "option" (att "value" "1") "Haskell"
-                -- tag "option" (att "value" "2") "Functional programming"
-
+                forM_ communityList $ \c -> do
+                  tag
+                    "option"
+                    (att "value" (toText $ communityID c))
+                    (raw $ communityName c)
         field (titleField f) valStyle $ do
           el (cc "mb-4") $ do
             tag "label" (cc "block text-gray-700") "Enter title"
@@ -149,7 +163,7 @@ createThreadView communityList mToken mUserInfo mErrorMsg v = do
           "Submit"
 
       button
-        (CancelCreateThreadForm mToken mUserInfo)
+        CancelCreateThreadForm
         (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
         "Cancel"
   where
@@ -192,22 +206,33 @@ defaultCreateThreadData mToken mUserInfo =
     , content = ""
     }
 
-headerView :: Maybe Text -> Maybe UserProfileResponse -> View HeaderId ()
-headerView mToken mUserInfo = do
+data HeaderOps = HeaderOps {
+    mbToken :: Maybe Text
+  , mbUserInfo :: Maybe UserProfileResponse
+ } deriving (Eq, Show)
+
+defaultHeaderOps :: HeaderOps
+defaultHeaderOps = HeaderOps {
+    mbToken = Nothing
+  , mbUserInfo = Nothing
+ } 
+
+headerView :: HeaderOps -> View HeaderId ()
+headerView HeaderOps{..} = do
   stylesheet "https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
   script "https://cdn.tailwindcss.com"
   tag "header" (cc "navbar-bg shadow-lg w-full z-50") $ do
     el (cc "container mx-auto px-6 py-4 flex justify-between items-center") $ do
       link "/" (cc "text-3xl font-bold text-white") "HaskRead"
       el (cc "flex items-center") $ do
-          hyper (LiveSearchId 1) (liveSearch mempty [])
+        hyper (LiveSearchId 1) (liveSearch mempty [])
       el (cc "ml-4 flex items-center space-x-2") $ do
-        case mUserInfo of
-          Nothing -> showLoginAndSignup
-          Just t -> do
+        case (mbToken,mbUserInfo) of
+          (Just token, Just userInfo@UserProfileResponse{..}) -> do 
             button
-              (AddThread mToken mUserInfo)
-              (headerButtonCSS "bg-blue-600")
-              "Add Thread"
-            showUserName (userNameForUPR t, userIDForUPR t)
+                  (AddThread token userInfo)
+                  (headerButtonCSS "bg-blue-600")
+                  "Add Thread"
+            showUserName (userNameForUPR, userIDForUPR)
             button DoLogout (headerButtonCSS "bg-yellow-500") "Logout"
+          _ -> showLoginAndSignup

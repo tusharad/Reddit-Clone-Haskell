@@ -58,13 +58,13 @@ instance (IOE :> es) => HyperView CommentCardId es where
     | EditComment CommentCardOps
     | AddCommentBtn AddCommentData
     | SubmitAddComment Text Int (Maybe Int)
-    | SubmitEditComment Int Text Int (Maybe Int)
+    | SubmitEditComment Int Text Int 
     | CancelAddComment Int
     | DoRedirect Int
     | GoToLogin
     deriving (Show, Read, ViewAction)
 
-  update (SubmitEditComment cId token tId mbParentId) = do
+  update (SubmitEditComment cId token tId) = do
     uf <- formData @EditCommentForm
     _ <- liftIO $ editComment cId token (commentContentForEdit uf)
     redirect . url $ T.pack ("/view-thread/" <> show tId)
@@ -92,7 +92,7 @@ instance (IOE :> es) => HyperView CommentCardId es where
         redirect $ url $ "/view-thread/" `append` toText tId
   update (LikeComment commentCardOps@CommentCardOps {..}) = do
     let commentId = commentIDForCommentInfo commentInfo
-    liftIO $ upvoteComment tokenForCommentCard commentId
+    void $ liftIO $ upvoteComment tokenForCommentCard commentId
     pure $
       commentCardView
         commentCardOps
@@ -101,7 +101,7 @@ instance (IOE :> es) => HyperView CommentCardId es where
           }
   update (DislikeComment commentCardOps@CommentCardOps {..}) = do
     let commentId = commentIDForCommentInfo commentInfo
-    liftIO $ downvoteComment tokenForCommentCard commentId
+    void $ liftIO $ downvoteComment tokenForCommentCard commentId
     pure $
       commentCardView
         commentCardOps
@@ -126,13 +126,7 @@ instance (IOE :> es) => HyperView CommentCardId es where
             commentId 
             token
             (threadIDForCommentInfo commentInfo)
-            (parentCommentIDForCommentInfo commentInfo)
-            ( EditCommentForm
-                { commentContentForEdit =
-                    Just $
-                      commentContentForCommentInfo commentInfo
-                }
-            )
+            (EditCommentForm { commentContentForEdit = Just $ commentContentForCommentInfo commentInfo })
 
 updateVoteCount :: Maybe [(Int, Bool)] -> Bool -> CommentInfo -> CommentInfo
 updateVoteCount Nothing True t =
@@ -227,10 +221,9 @@ editCommentView ::
   Int ->
   Text ->
   Int ->
-  Maybe Int ->
   EditCommentForm Maybe ->
   View CommentCardId ()
-editCommentView commentId token tId mParentCommentId v = do
+editCommentView commentId token tId v = do
   let f = formFieldsWith v
   let css =
         "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
@@ -238,7 +231,7 @@ editCommentView commentId token tId mParentCommentId v = do
     el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
       tag "h2" (cc "text-2xl font-bold mb-4") $ text "Add comment"
 
-      form @EditCommentForm (SubmitEditComment commentId token tId mParentCommentId) (gap 10) $ do
+      form @EditCommentForm (SubmitEditComment commentId token tId) (gap 10) $ do
         field (commentContentForEdit f) (const mempty) $ do
           el (cc "mb-4") $ do
             textarea

@@ -1,11 +1,13 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -14,7 +16,9 @@
 module Platform.Page.ViewThread (viewThreadPage) where
 
 import Control.Monad (unless)
+import Data.Either (fromLeft)
 import Data.Text (Text)
+import qualified Data.Text as T
 import Effectful
 import Platform.Common.Request
 import Platform.Common.Types
@@ -22,9 +26,9 @@ import Platform.Common.Utils
 import Platform.View
 import Platform.View.CommentCard
 import Platform.View.Header
+import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
-import Platform.View.LiveSearch (LiveSearchId)
 
 newtype ViewThreadId = ViewThreadId Int
   deriving (Show, Read, ViewId)
@@ -38,7 +42,7 @@ instance HyperView ViewThreadId es where
 showCommentsList ::
   Maybe UserProfileResponse ->
   Int ->
-  Maybe [(Int, Bool)] ->
+  Maybe FetchVoteComemntsForUserResponse ->
   Maybe Text ->
   [NestedComment] ->
   View
@@ -63,7 +67,14 @@ showCommentsList mbUserInfo n mUserCommentVotes mToken nestedComments = do
         (CommentCardId num)
         ( commentCardView $
             CommentCardOps
-              { currUserVotes = mUserCommentVotes
+              { currUserVotes =
+                  ( \(FetchVoteComemntsForUserResponse lst) ->
+                      Just $
+                        map
+                          (\FetchVoteComments {..} -> (commentIDForFetchVote, isUpvote))
+                          lst
+                  )
+                    =<< mUserCommentVotes
               , tokenForCommentCard = mToken
               , commentInfo = mainComment c
               , mbUserInfoForCommentCard = mbUserInfo
@@ -80,15 +91,16 @@ showCommentsList mbUserInfo n mUserCommentVotes mToken nestedComments = do
         )
       go (num + 1) cs
 
-flattenCommentIds :: Maybe FetchCommentsResponse -> [Int]
-flattenCommentIds Nothing = []
-flattenCommentIds (Just (FetchCommentsResponse {comments})) = flattenCommentIds_ comments
+flattenCommentIds :: Either String FetchCommentsResponse -> [Int]
+flattenCommentIds (Left _) = []
+flattenCommentIds (Right (FetchCommentsResponse {comments})) = flattenCommentIds_ comments
 
 flattenCommentIds_ :: [NestedComment] -> [Int]
 flattenCommentIds_ = concatMap go
   where
     go c = commentIDForCommentInfo (mainComment c) : flattenCommentIds_ (children c)
 
+{-
 viewThreadPage ::
   (Hyperbole :> es, IOE :> es) =>
   Int ->
@@ -104,36 +116,36 @@ viewThreadPage ::
          , LiveSearchId
          ]
     )
-viewThreadPage tId = do
+viewThreadPage threadId = do
   mToken :: Maybe Text <- session "jwt_token"
-  mThreadInfo <- liftIO $ getThreadByThreadId tId
-  mCommentList <- liftIO $ getCommentsByThreadId tId
+  eThreadInfo <- liftIO $ getThreadByThreadId threadId
+  eCommentList <- liftIO $ getCommentsByThreadId threadId
   communityList <- liftIO getCommunityList
-  case mThreadInfo of
-    Nothing -> pure $ el mempty "Hello"
-    Just t -> do
+  case eThreadInfo of
+    Left err -> pure $ el_ $ raw (T.pack err)
+    Right t -> do
       (mUserInfo, mUserThreadVotes, mUserCommentVotes) <- case mToken of
         Nothing -> pure (Nothing, Nothing, Nothing)
         Just token -> do
-          mUserInfo <- liftIO $ getUserInfo token
-          mUserThreadVotes <- liftIO $ getUserThreadVotes token [threadIDForThreadInfo t]
-          mUserCommentVotes <-
+          eUserInfo <- liftIO $ getUserInfo token
+          eUserThreadVotes <- liftIO $ getUserThreadVotes token [threadIDForThreadInfo t]
+          eUserCommentVotes <-
             liftIO $
               getUserCommentVotes
                 token
-                (flattenCommentIds mCommentList)
-          liftIO $ print ("mUserCommentVotes" :: String, mUserCommentVotes)
-          return (mUserInfo, mUserThreadVotes, mUserCommentVotes)
+                (flattenCommentIds eCommentList)
+          liftIO $ print ("mUserCommentVotes" :: String, eUserCommentVotes)
+          return (eUserInfo, eUserThreadVotes, eUserCommentVotes)
       pure $ col (pad 20) $ do
         style globalCSS
         el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
-          hyper (HeaderId 1) (headerView mToken mUserInfo)
+          hyper (HeaderId 1) (headerView $ HeaderOps mToken _)
           tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
             el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
               el (cc "w-full lg:w-3/4 px-4") $ do
                 hyper
                   (ThreadId 1)
-                  (threadView
+                  ( threadView
                       ThreadCardOps
                         { threadInfo = t
                         , currUserVotesForThreads = mUserThreadVotes
@@ -154,7 +166,111 @@ viewThreadPage tId = do
                               }
                       hyper (CommentCardId 10000) (addCommentButtonView addCommentData)
                   tag "h2" (cc "text-2xl font-bold mb-4 text-gray-900") "Comments"
-                  showCommentsList mUserInfo 0 mUserCommentVotes mToken (maybe [] comments mCommentList)
+                  showCommentsList
+                    mUserInfo
+                    0
+                    mUserCommentVotes
+                    mToken
+                    (either (const []) comments eCommentList)
               el (cc "w-1/4 pl-4") $ do
                 hyper (CommunityId 1) $ communityListView communityList
           hyper (FooterId 1) footerView
+-}
+
+viewThreadPage ::
+  (Hyperbole :> es, IOE :> es) =>
+  Int ->
+  Eff
+    es
+    ( Page
+        '[ ViewThreadId
+         , HeaderId
+         , ThreadId
+         , CommunityId
+         , FooterId
+         , CommentCardId
+         , LiveSearchId
+         ]
+    )
+viewThreadPage threadId = do
+  mToken <- session "jwt_token"
+  eThreadInfo <- liftIO $ getThreadByThreadId threadId
+  eCommentList <- liftIO $ getCommentsByThreadId threadId
+  eCommunityList <- liftIO getCommunityList
+
+  case eThreadInfo of
+    Left err -> pure $ el_ $ raw (T.pack err)
+    Right threadInfo -> do
+      userData <- fetchUserData mToken eCommentList threadInfo
+      pure $ renderPage mToken threadInfo eCommentList userData eCommunityList
+
+fetchUserData ::
+  (IOE :> es) =>
+  Maybe Text ->
+  Either String FetchCommentsResponse ->
+  ThreadInfo ->
+  Eff es (Maybe UserProfileResponse, Maybe [(Int, Bool)], Maybe FetchVoteComemntsForUserResponse)
+fetchUserData Nothing _ _ = pure (Nothing, Nothing, Nothing)
+fetchUserData (Just token) eCommentList threadInfo = do
+  eUserInfo <- liftIO $ getUserInfo token
+  eUserThreadVotes <- liftIO $ getUserThreadVotes token [threadIDForThreadInfo threadInfo]
+  eUserCommentVotes <- liftIO $ getUserCommentVotes token (flattenCommentIds eCommentList)
+  liftIO $ putStrLn $ fromLeft "" eUserInfo
+  liftIO $ putStrLn $ fromLeft "" eUserThreadVotes
+  liftIO $ putStrLn $ fromLeft "" eUserCommentVotes
+  return (hush eUserInfo, hush eUserThreadVotes, hush eUserCommentVotes)
+
+renderPage ::
+  Maybe Text ->
+  ThreadInfo ->
+  Either String FetchCommentsResponse ->
+  (Maybe UserProfileResponse, Maybe [(Int, Bool)], Maybe FetchVoteComemntsForUserResponse) ->
+  Either String Communities ->
+  Page '[ViewThreadId, HeaderId, ThreadId, CommunityId, FooterId, CommentCardId, LiveSearchId]
+renderPage
+  mToken
+  threadInfo
+  eCommentList
+  (mUserInfo, mUserThreadVotes, mUserCommentVotes)
+  eCommunityList =
+    col (pad 20) $ do
+      style globalCSS
+      el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
+        hyper (HeaderId 1) (headerView $ HeaderOps mToken mUserInfo)
+        tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
+          el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
+            el (cc "w-full lg:w-3/4 px-4") $ do
+              hyper
+                (ThreadId 1)
+                ( threadView
+                    ThreadCardOps
+                      { threadInfo = threadInfo
+                      , currUserVotesForThreads = mUserThreadVotes
+                      , tokenForThreadCard = mToken
+                      , mbUserInfo = mUserInfo
+                      }
+                )
+              renderCommentsSection mToken threadInfo eCommentList mUserInfo mUserCommentVotes
+            case eCommunityList of
+              Left err -> el_ $ raw $ T.pack err
+              Right communityList ->
+                el (cc "w-1/4 pl-4") $ hyper (CommunityId 1) $ communityListView communityList
+        hyper (FooterId 1) footerView
+
+renderCommentsSection mToken threadInfo commentList mUserInfo mUserCommentVotes = do
+  el (cc "mt-6") $ do
+    case mToken of
+      Nothing -> hyper (CommentCardId 10000) disabledAddCommentButtonView
+      Just token ->
+        hyper
+          (CommentCardId 10000)
+          ( addCommentButtonView
+              (AddCommentData "" (threadIDForThreadInfo threadInfo) token Nothing)
+          )
+    tag "h2" (cc "text-2xl font-bold mb-4 text-gray-900") "Comments"
+    showCommentsList
+      mUserInfo
+      0
+      mUserCommentVotes
+      mToken
+      (either (const []) comments commentList)

@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -79,15 +78,15 @@ paginationView threadCount pageParams@PageParams {..} =
     $ do
       button
         (HandlePrev pageParams)
-        ( cc 
+        ( cc
             "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1"
-            . maybe disabled (const mempty) mbOffset 
+            . maybe disabled (const mempty) mbOffset
         )
         "Previous"
       button
         (HandleNext pageParams)
-        (cc "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1"
-          . if threadCount < 3 then disabled else mempty
+        ( cc "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1"
+            . if threadCount < 3 then disabled else mempty
         )
         "Next"
 
@@ -97,29 +96,34 @@ homePage ::
 homePage = do
   mJwtToken :: Maybe Text <- session "jwt_token"
   mbLimit <- reqParamMaybe "limit"
-  mbOffset <- reqParamMaybe "offset" 
+  mbOffset <- reqParamMaybe "offset"
   mbCommunityId <- reqParamMaybe "communityId"
   mbUserId <- reqParamMaybe "userId"
-  res <- liftIO (getAllThreads mbLimit mbOffset mbCommunityId mbUserId)
-  communityList <- liftIO getCommunityList
-  mUserInfo_ <- liftIO $ maybe (pure Nothing) getUserInfo mJwtToken
-  mUserThreadVotes <-
-    liftIO $
-      if isJust mJwtToken
-        then getUserThreadVotes (fromJust mJwtToken) (getThreadIds res)
-        else pure Nothing
-  pure $ col (pad 20) $ do
-    style globalCSS
-    el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
-      hyper (HeaderId 1) (headerView mJwtToken mUserInfo_)
-      tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-        el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
-          el (cc "w-full lg:w-3/4 px-4") $ do
-            tag "p" (cc "text-3xl text-center mb-6 text-gray-800") "Threads"
-            hyper (SortMenuId 1) sortMenuView
-            viewThreadsList mUserInfo_ mJwtToken mUserThreadVotes 0 (threads res) 
-            hyper (HomeId 1) (paginationView (threadsCount res) PageParams {..})
-          hyper (CommunityId 1) (communityListView communityList)
-      hyper (FooterId 1) footerView
-
-
+  eRes <- liftIO (getAllThreads mbLimit mbOffset mbCommunityId mbUserId)
+  eCommunityList <- liftIO getCommunityList
+  eUserInfo <- liftIO $ maybe (pure $ Left "token not found") getUserInfo mJwtToken
+  case eRes of
+    Left err -> pure . el_ $ raw (T.pack err)
+    Right res -> do
+      eUserThreadVotes <-
+        liftIO $
+          maybe
+            (pure (Left "Token not found"))
+            (\jwtToken -> getUserThreadVotes jwtToken (getThreadIds res))
+            mJwtToken
+      pure $ col (pad 20) $ do
+        style globalCSS
+        el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
+          hyper (HeaderId 1) (headerView $ HeaderOps mJwtToken (hush eUserInfo))
+          tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
+            el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
+              el (cc "w-full lg:w-3/4 px-4") $ do
+                tag "p" (cc "text-3xl text-center mb-6 text-gray-800") "Threads"
+                hyper (SortMenuId 1) sortMenuView
+                viewThreadsList (hush eUserInfo) mJwtToken (hush eUserThreadVotes) 0 (threads res)
+                hyper (HomeId 1) (paginationView (threadsCount res) PageParams {..})
+              either 
+                (el_ . raw . T.pack ) 
+                (hyper (CommunityId 1) . communityListView)
+                eCommunityList
+          hyper (FooterId 1) footerView

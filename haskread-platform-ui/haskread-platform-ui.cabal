@@ -51,10 +51,11 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , effectful-core
     , http-api-data
+    , http-conduit
     , hyperbole
-    , req
     , string-conversions
     , text
     , time
@@ -73,11 +74,12 @@ executable haskread-platform-ui-exe
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , effectful-core
     , haskread-platform-ui
     , http-api-data
+    , http-conduit
     , hyperbole
-    , req
     , string-conversions
     , text
     , time
@@ -97,11 +99,12 @@ test-suite haskread-platform-ui-test
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , effectful-core
     , haskread-platform-ui
     , http-api-data
+    , http-conduit
     , hyperbole
-    , req
     , string-conversions
     , text
     , time

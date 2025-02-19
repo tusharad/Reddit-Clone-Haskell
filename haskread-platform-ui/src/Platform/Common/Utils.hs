@@ -19,6 +19,8 @@ module Platform.Common.Utils
   , reallyLongCSS
   , disabled 
   , reqParamMaybe
+  , getRedirectUrl 
+  , hush
   ) where
 
 import Data.Text (Text)
@@ -28,6 +30,7 @@ import Web.Hyperbole
 import Web.View.Style
 import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import Web.Internal.HttpApiData
+import System.Environment (getArgs)
 
 btn :: Mod id
 btn = btn' Primary
@@ -85,3 +88,13 @@ reqParamMaybe p = do
   pure $ lookup (encodeUtf8 p) q >>= \case
     Nothing -> Nothing
     Just v -> either (const Nothing) Just $ parseQueryParam (decodeUtf8 v)
+
+getRedirectUrl :: IO Url
+getRedirectUrl = do
+  argList <- getArgs
+  if null argList || (head argList == "local") then 
+    return "http://localhost:8085/api/v1/user/oauth2/login"
+  else return "/api/v1/user/oauth2/login"
+
+hush :: Either a b -> Maybe b
+hush = either (const Nothing) Just

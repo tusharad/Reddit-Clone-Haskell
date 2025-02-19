@@ -222,14 +222,14 @@ profilePage = do
   case mJwtToken of
     Nothing -> redirect "/"
     Just token_ -> do
-      mUserInfo_ <- liftIO $ getUserInfo token_
+      eUserInfo_ <- liftIO $ getUserInfo token_
       mbLimit <- reqParamMaybe "limit"
       mbOffset <- reqParamMaybe "offset"
       mbCommunityId <- reqParamMaybe "communityId"
-      case mUserInfo_ of
-        Nothing -> redirect "/"
-        Just userInfo -> do
-          res <-
+      case eUserInfo_ of
+        Left _ -> redirect "/"
+        Right userInfo -> do
+          eRes <-
             liftIO
               ( getAllThreads
                   mbLimit
@@ -237,21 +237,29 @@ profilePage = do
                   mbCommunityId
                   (Just $ userIDForUPR userInfo)
               )
-          mUserThreadVotes <- liftIO $ getUserThreadVotes token_ (getThreadIds res)
-          pure $ col (pad 20) $ do
-            style globalCSS
-            hyper (HeaderId 1) (headerView mJwtToken mUserInfo_)
-            tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-              el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
-                el (cc "mb-6") $ do
-                  tag "h1" (cc "text-3xl font-bold text-center mb-4") "Profile"
-                  el (cc "bg-white shadow-lg rounded-lg p-6") $ do
-                    tag "p" (cc "text-lg text-gray-800") "Welcome to your profile page!"
-                    tag
-                      "p"
-                      (cc "text-bold")
-                      (text $ "Username:" `append` maybe "" userNameForUPR mUserInfo_)
-                    hyper (ProfileId 1) $ profileView token_
-                  tag "h1" (cc "text-3xl font-bold text-center mb-4") "Posts by users"
-                  viewThreadsList mUserInfo_ mJwtToken mUserThreadVotes 0 (threads res)
-              hyper (FooterId 1) footerView
+          case eRes of
+            Left err -> pure $ el_ $ raw (T.pack err)
+            Right res -> do
+              eUserThreadVotes <- liftIO $ getUserThreadVotes token_ (getThreadIds res)
+              pure $ col (pad 20) $ do
+                style globalCSS
+                hyper (HeaderId 1) (headerView $ HeaderOps mJwtToken (Just userInfo))
+                tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
+                  el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
+                    el (cc "mb-6") $ do
+                      tag "h1" (cc "text-3xl font-bold text-center mb-4") "Profile"
+                      el (cc "bg-white shadow-lg rounded-lg p-6") $ do
+                        tag "p" (cc "text-lg text-gray-800") "Welcome to your profile page!"
+                        tag
+                          "p"
+                          (cc "text-bold")
+                          (text $ "Username:" `append` userNameForUPR userInfo)
+                        hyper (ProfileId 1) $ profileView token_
+                      tag "h1" (cc "text-3xl font-bold text-center mb-4") "Posts by users"
+                      viewThreadsList
+                        (Just userInfo)
+                        mJwtToken
+                        (hush eUserThreadVotes)
+                        0
+                        (threads res)
+                  hyper (FooterId 1) footerView

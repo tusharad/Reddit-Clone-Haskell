@@ -21,7 +21,7 @@ module Platform.View
 import Platform.Common.Utils
 import Web.Hyperbole
 import Web.View.Style
-import Platform.Common.Types (CommunityC (..))
+import Platform.Common.Types 
 
 newtype FooterId = FooterId Int
   deriving (Show, Read, ViewId)
@@ -74,8 +74,8 @@ showCommunityNames (community : communityList) = do
     tag "hr" (cc "border-gray-300") none
     showCommunityNames communityList
 
-communityListView :: [CommunityC] -> View CommunityId ()
-communityListView communityList = do
+communityListView :: Communities -> View CommunityId ()
+communityListView (Communities communityList) = do
   el (addClass (cls "card-bg shadow-lg rounded-lg mb-6 overflow-hidden")) $ do
     el (addClass (cls "border-b p-4")) $ do
       el (addClass (cls "text-lg font-bold text-gray-800")) $ do

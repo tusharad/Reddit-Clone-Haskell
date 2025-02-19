@@ -34,10 +34,12 @@ instance IOE :> es => HyperView LiveSearchId es where
     deriving (Show, Read, ViewAction)
 
   update (SearchTerm searchTerm) = do
-    mbThreadList <- liftIO $ getAllThreadsBySearch searchTerm
-    case mbThreadList of
-      Nothing -> pure $ liveSearch searchTerm []
-      Just threadList -> do
+    eThreadList <- liftIO $ getAllThreadsBySearch searchTerm
+    case eThreadList of
+      Left err -> do 
+        liftIO $ putStrLn $ "Error while fetching threads: " <> err
+        pure $ liveSearch searchTerm []
+      Right threadList -> do
         pure $ liveSearch searchTerm (threads threadList)
 
 liveSearch :: Text -> [ThreadInfo] -> View LiveSearchId ()

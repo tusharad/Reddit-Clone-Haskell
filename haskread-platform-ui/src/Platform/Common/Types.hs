@@ -227,10 +227,17 @@ data FetchVoteComments = FetchVoteComments
   }
   deriving (Show, Eq, Generic, FromJSON)
 
+{-
+data CVote = CVote { commentIDForFetchVote :: Int, isUpvote :: Bool  } 
+    deriving (Show, Eq, Generic, FromJSON)
+newtype CVoteList = CVoteList [CVote] 
+    deriving (Show, Eq, Generic, FromJSON)
+-}
+
 newtype FetchVoteComemntsForUserResponse = FetchVoteComemntsForUserResponse
   { fetchVoteCommentsList :: [FetchVoteComments]
   }
-  deriving (Show, Generic, Eq, FromJSON)
+  deriving (Show, Eq, Generic, FromJSON)
 
 data CreateThreadReqBody = CreateThreadReqBody
   { threadTitleForCreate :: Text

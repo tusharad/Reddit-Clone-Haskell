@@ -44,10 +44,10 @@ instance (IOE :> es, Hyperbole :> es) => HyperView OTPView es where
         case otpInt_ of
           Nothing -> pure $ otpView newUserId (Just "OTP verification failed :(") vals
           Just otpInt -> do
-            mRes <- liftIO $ verifyOtp newUserId otpInt
-            case mRes of
-              Nothing -> pure $ otpView newUserId (Just "OTP verification failed :(") vals
-              Just _ -> pure userVerificationSuccessView
+            eRes <- liftIO $ verifyOtp newUserId otpInt
+            case eRes of
+              Left _ -> pure $ otpView newUserId (Just "OTP verification failed :(") vals
+              Right _ -> pure userVerificationSuccessView
 
 userVerificationSuccessView :: View OTPView ()
 userVerificationSuccessView = do
@@ -77,7 +77,7 @@ otpPage newUserId = do
   pure $ do
     style globalCSS
     el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
-      hyper (HeaderId 1) (headerView Nothing Nothing)
+      hyper (HeaderId 1) (headerView defaultHeaderOps)
       tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
         el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
           el (cc "w-full lg px-4") $ do
