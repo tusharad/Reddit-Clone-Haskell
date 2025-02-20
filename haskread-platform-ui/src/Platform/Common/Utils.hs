@@ -1,7 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Platform.Common.Utils
@@ -18,7 +16,6 @@ module Platform.Common.Utils
   , topVotedBtnCSS
   , reallyLongCSS
   , disabled 
-  , reqParamMaybe
   , getRedirectUrl 
   , hush
   ) where
@@ -28,8 +25,6 @@ import qualified Data.Text as T
 import Platform.Common.Types
 import Web.Hyperbole
 import Web.View.Style
-import Data.Text.Encoding (encodeUtf8, decodeUtf8)
-import Web.Internal.HttpApiData
 import System.Environment (getArgs)
 
 btn :: Mod id
@@ -81,13 +76,6 @@ reallyLongCSS = "px-4 py-2 rounded-full text-gray-800 hover:bg-blue-100 cursor-p
 
 disabled :: Mod id
 disabled = att "disabled" mempty
-
-reqParamMaybe :: forall a es. (Hyperbole :> es, FromHttpApiData a) => Text -> Eff es (Maybe a)
-reqParamMaybe p = do
-  q <- reqParams
-  pure $ lookup (encodeUtf8 p) q >>= \case
-    Nothing -> Nothing
-    Just v -> either (const Nothing) Just $ parseQueryParam (decodeUtf8 v)
 
 getRedirectUrl :: IO Url
 getRedirectUrl = do

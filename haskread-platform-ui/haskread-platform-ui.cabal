@@ -52,6 +52,8 @@ library
       aeson
     , base >=4.7 && <5
     , bytestring
+    , data-default >=0.8.0
+    , data-default-class >=0.2
     , effectful-core
     , http-api-data
     , http-conduit
@@ -75,6 +77,8 @@ executable haskread-platform-ui-exe
       aeson
     , base >=4.7 && <5
     , bytestring
+    , data-default >=0.8.0
+    , data-default-class >=0.2
     , effectful-core
     , haskread-platform-ui
     , http-api-data
@@ -100,6 +104,8 @@ test-suite haskread-platform-ui-test
       aeson
     , base >=4.7 && <5
     , bytestring
+    , data-default >=0.8.0
+    , data-default-class >=0.2
     , effectful-core
     , haskread-platform-ui
     , http-api-data
