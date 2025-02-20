@@ -46,8 +46,7 @@ instance (IOE :> es, Hyperbole :> es) => HyperView FormView es where
         case eRes of
           Left _ -> pure $ formView (Just "Login or password is incorrect") vals
           Right r -> do
-            liftIO $ print ("adding value to session " :: String, jwtToken r)
-            setSession "jwt_token" (jwtToken r)
+            saveSession @AuthData (AuthData $ Just r.jwtToken)
             pure loginSuccessFullView
 
 loginSuccessFullView :: View FormView ()

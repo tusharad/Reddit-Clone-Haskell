@@ -38,7 +38,7 @@ import Web.View.Types
 newtype HeaderId = HeaderId Int
   deriving (Show, Read, ViewId)
 
-instance IOE :> es => HyperView HeaderId es where
+instance (IOE :> es) => HyperView HeaderId es where
   data Action HeaderId
     = DoLogout
     | AddThread Text UserProfileResponse
@@ -48,7 +48,7 @@ instance IOE :> es => HyperView HeaderId es where
 
   type Require HeaderId = '[LiveSearchId]
   update DoLogout = do
-    clearSession "jwt_token"
+    _ <- deleteSession @AuthData
     pure $ headerView defaultHeaderOps
   update (AddThread token userInfo) = do
     eCommunityList <- liftIO getCommunityList

@@ -25,6 +25,7 @@ import Platform.View.Header
 import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
+import Web.Hyperbole.Data.QueryData (Param(Param))
 
 newtype ProfileId = ProfileId Int
   deriving (Show, Read, ViewId)
@@ -78,7 +79,7 @@ instance IOE :> es => HyperView ProfileId es where
                 }
         case mRes of
           Left e -> liftIO $ putStrLn e
-          Right _ -> clearSession "jwt_token"
+          Right _ -> deleteSession @AuthData
         redirect "/"
 
 validateDeleteAccountForm :: DeleteAccountForm Identity -> DeleteAccountForm Validated
@@ -218,14 +219,14 @@ profilePage ::
   (Hyperbole :> es, IOE :> es) =>
   Eff es (Page '[ProfileId, HeaderId, ThreadId, FooterId, LiveSearchId])
 profilePage = do
-  mJwtToken :: Maybe Text <- session "jwt_token"
+  mJwtToken <- jToken <$> session @AuthData
   case mJwtToken of
     Nothing -> redirect "/"
     Just token_ -> do
       eUserInfo_ <- liftIO $ getUserInfo token_
-      mbLimit <- reqParamMaybe "limit"
-      mbOffset <- reqParamMaybe "offset"
-      mbCommunityId <- reqParamMaybe "communityId"
+      mbLimit <- lookupParam $ Param "limit"
+      mbOffset <- lookupParam $ Param "offset"
+      mbCommunityId <- lookupParam $ Param "communityId"
       case eUserInfo_ of
         Left _ -> redirect "/"
         Right userInfo -> do

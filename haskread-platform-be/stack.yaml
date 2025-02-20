@@ -41,10 +41,8 @@ allow-newer-deps:
  - haxl
 
 extra-deps:
-## Oauth2
 - hoauth2-providers-0.8.0@sha256:78ac02bed781b7b9c28f4876fb62c8bcce62e21dd8313cdc1e0e654b189df420,3058
 - jose-jwt-0.10.0@sha256:6ed175a01c721e317ceea15eb251a81de145c03711a977517935633a5cdec1d4,3546
-## OAuth2
 - git: https://github.com/facebook/Haxl.git
   commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
 - git: https://github.com/tusharad/orville

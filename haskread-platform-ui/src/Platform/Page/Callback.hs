@@ -12,9 +12,11 @@
 
 module Platform.Page.Callback (callbackPage) where
 
+import Data.Text (Text)
 import Effectful
+import Platform.Common.Types (AuthData (..))
 import Web.Hyperbole
-import Platform.View.CommentCard (Action(DoRedirect))
+import Web.Hyperbole.Data.QueryData
 
 newtype ViewCallbackId = ViewCallbackId Int
   deriving (Show, Read, ViewId)
@@ -25,8 +27,8 @@ instance HyperView ViewCallbackId es where
 
   update (DoRedirect u) = redirect u
 
-data AuthStatus = Success | TokenNotFound | InvalidToken
-    deriving (Show, Eq)
+data AuthStatus = Success | TokenNotFound
+  deriving (Show, Eq)
 
 authStatusPage :: AuthStatus -> View ViewCallbackId ()
 authStatusPage Success = do
@@ -38,9 +40,9 @@ authStatusPage TokenNotFound = do
 
 callbackPage :: (Hyperbole :> es) => Eff es (Page '[ViewCallbackId])
 callbackPage = do
-  mbToken <- lookupParam "token"
+  mbToken <- lookupParam (Param "token")
   case mbToken of
     Nothing -> pure $ hyper (ViewCallbackId 1) (authStatusPage TokenNotFound)
-    Just token -> do
-      setSession "jwt_token" token
+    Just (token :: Text) -> do
+      saveSession (AuthData (Just token))
       pure $ hyper (ViewCallbackId 1) (authStatusPage Success)

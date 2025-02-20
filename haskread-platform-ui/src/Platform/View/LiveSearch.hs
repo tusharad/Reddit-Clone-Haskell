@@ -45,7 +45,7 @@ instance IOE :> es => HyperView LiveSearchId es where
 liveSearch :: Text -> [ThreadInfo] -> View LiveSearchId ()
 liveSearch currTerm searchResult =
   stack (cc "relative") $ do
-    layer $ el_ $ do
+    layer id $ el_ $ do
       search 
         SearchTerm 600 
         (cc "pl-2 pr-4 py-2 border rounded-full focus:ring-2 focus:ring-blue-600")
@@ -55,10 +55,10 @@ liveSearch currTerm searchResult =
 
 searchPopup :: [ThreadInfo] -> Mod LiveSearchId -> Layer LiveSearchId ()
 searchPopup [] f = do
-  popout (offset (TRBL 50 0 0 0) . border 1 . bg White . f) $ do
-    el (hover (bg Primary) . pad 5 . bg White) $ text "No results found"
+  layer (popup (TRBL 51 0 0 0) . border 1 . bg White . f) $ do
+      el (hover (bg Primary) . pad 5 . bg White) $ text "No results found"
 searchPopup threadInfoList f = do
-  popout (offset (TRBL 50 0 0 0) . border 1 . bg White . f) $ do
+  layer (popup (TRBL 50 0 0 0) . border 1 . bg White . f) $ do
     forM_ threadInfoList $ \thread -> do
       link
         (url $ "/view-thread/" `append` toText (threadIDForThreadInfo thread))

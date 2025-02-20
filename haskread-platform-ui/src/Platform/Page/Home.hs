@@ -7,6 +7,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -14,7 +15,7 @@
 module Platform.Page.Home (homePage) where
 
 import Data.Maybe
-import Data.Text (Text, append)
+import Data.Text (append)
 import qualified Data.Text as T
 import Effectful
 import Platform.Common.Request
@@ -25,6 +26,7 @@ import Platform.View.Header
 import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
+import Web.Hyperbole.Data.QueryData (Param (Param))
 
 data PageParams = PageParams
   { mbCommunityId :: Maybe Int
@@ -94,11 +96,11 @@ homePage ::
   (Hyperbole :> es, IOE :> es) =>
   Eff es (Page '[HomeId, SortMenuId, HeaderId, ThreadId, FooterId, CommunityId, LiveSearchId])
 homePage = do
-  mJwtToken :: Maybe Text <- session "jwt_token"
-  mbLimit <- reqParamMaybe "limit"
-  mbOffset <- reqParamMaybe "offset"
-  mbCommunityId <- reqParamMaybe "communityId"
-  mbUserId <- reqParamMaybe "userId"
+  mJwtToken <- jToken <$> session @AuthData
+  mbLimit <- lookupParam $ Param "limit"
+  mbOffset <- lookupParam $ Param "offset"
+  mbCommunityId <- lookupParam $ Param "communityId"
+  mbUserId <- lookupParam $ Param "userId"
   eRes <- liftIO (getAllThreads mbLimit mbOffset mbCommunityId mbUserId)
   eCommunityList <- liftIO getCommunityList
   eUserInfo <- liftIO $ maybe (pure $ Left "token not found") getUserInfo mJwtToken
@@ -122,8 +124,8 @@ homePage = do
                 hyper (SortMenuId 1) sortMenuView
                 viewThreadsList (hush eUserInfo) mJwtToken (hush eUserThreadVotes) 0 (threads res)
                 hyper (HomeId 1) (paginationView (threadsCount res) PageParams {..})
-              either 
-                (el_ . raw . T.pack ) 
+              either
+                (el_ . raw . T.pack)
                 (hyper (CommunityId 1) . communityListView)
                 eCommunityList
           hyper (FooterId 1) footerView

@@ -3,6 +3,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module Platform.Common.Types
   ( UserProfileResponse (..)
@@ -33,6 +34,7 @@ module Platform.Common.Types
   , UpdateCommentReqBody (..)
   , ChangePasswordBody (..)
   , DeleteUserBody (..)
+  , AuthData (..)
   ) where
 
 import Data.Aeson (FromJSON, ToJSON)
@@ -43,6 +45,7 @@ import Text.Read (readMaybe)
 import Web.HttpApiData
 import Web.Hyperbole
 import Web.View.Types (ClassName)
+import Web.Hyperbole.Data.QueryData (Param (..))
 
 data UserProfileResponse = UserProfileResponse
   { userIDForUPR :: Int
@@ -266,3 +269,14 @@ data DeleteUserBody = DeleteUserBody
     areUSure :: Bool
   }
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
+newtype AuthData = AuthData {
+    jToken :: Maybe Text
+ } deriving (Generic, Show, Read, ToParam, FromParam)
+
+instance Session AuthData where
+  sessionKey = Param "AuthData"
+  cookiePath = Just []
+
+instance DefaultParam AuthData where
+  defaultParam = AuthData Nothing

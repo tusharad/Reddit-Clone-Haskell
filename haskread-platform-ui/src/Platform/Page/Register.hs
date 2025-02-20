@@ -57,12 +57,8 @@ registerSuccessFullView newUserId = do
     el_ "Register successful, you will be redirected to OTP page. If not please click here. "
     link (url . pack $ "/otp/" <> show newUserId) mempty "Click here"
 
-newtype User = User {username :: Text}
-  deriving (Generic)
-  deriving newtype (FromHttpApiData)
-
 data RegisterFormData f = RegisterFormData
-  { userName :: Field f User
+  { userName :: Field f Text
   , email :: Field f Text
   , pass1 :: Field f Text
   , pass2 :: Field f Text
@@ -80,8 +76,8 @@ validateForm u =
     , pass2 = NotInvalid
     }
 
-validateUsername :: User -> Validated User
-validateUsername (User u) = validate (T.length u < 3) "Username too short"
+validateUsername :: Text -> Validated Text
+validateUsername u = validate (T.length u < 3) "Username too short"
 
 validateEmail :: Text -> Validated Text
 validateEmail e =
