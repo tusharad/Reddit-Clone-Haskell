@@ -32,6 +32,7 @@ dependencies:
 - web-view
 - bytestring
 - hyperbole 
+- wai-middleware-static 
 - data-default-class >= 0.2
 - data-default >= 0.8.0
 

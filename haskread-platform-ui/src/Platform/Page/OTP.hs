@@ -75,7 +75,7 @@ validateOTP otp_ =
 otpPage :: Int -> Eff es (Page '[OTPView, HeaderId, FooterId, LiveSearchId])
 otpPage newUserId = do
   pure $ do
-    style globalCSS
+    stylesheet "style.css"
     el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
       hyper (HeaderId 1) (headerView defaultHeaderOps)
       tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do

@@ -25,12 +25,14 @@ import Platform.View.Header
 import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
-import Web.Hyperbole.Data.QueryData (Param(Param))
+import Web.Hyperbole.Data.QueryData
+import Data.Aeson
 
 newtype ProfileId = ProfileId Int
   deriving (Show, Read, ViewId)
 
 instance IOE :> es => HyperView ProfileId es where
+
   data Action ProfileId
     = GoToHome
     | ChangePasswordBtn Text
@@ -82,6 +84,30 @@ instance IOE :> es => HyperView ProfileId es where
           Right _ -> deleteSession @AuthData
         redirect "/"
 
+data ChangePasswordForm f = ChangePasswordForm
+  { oldPasswordField :: Field f Text
+  , newPasswordField :: Field f Text
+  , confirmNewPasswordField :: Field f Text
+  }
+  deriving (Generic)
+
+instance Form ChangePasswordForm Validated
+
+data DeleteAccountForm f = DeleteAccountForm
+  { deleteAccountPasswordField :: Field f Text
+  , areYouSureField :: Field f Bool
+  }
+  deriving (Generic)
+
+instance Form DeleteAccountForm Validated
+
+newtype ChangeImageForm f = ChangeImageForm {
+    changeImageUrlField :: Field f [Object]
+ } deriving (Generic)
+
+instance Form ChangeImageForm Validated
+
+
 validateDeleteAccountForm :: DeleteAccountForm Identity -> DeleteAccountForm Validated
 validateDeleteAccountForm u =
   DeleteAccountForm
@@ -109,23 +135,6 @@ profileView token = do
       (DeleteAccount token)
       (cc "px-4 py-2 bg-red-600 text-white rounded hover:bg-red-200")
       "Delete account"
-
-data ChangePasswordForm f = ChangePasswordForm
-  { oldPasswordField :: Field f Text
-  , newPasswordField :: Field f Text
-  , confirmNewPasswordField :: Field f Text
-  }
-  deriving (Generic)
-
-instance Form ChangePasswordForm Validated
-
-data DeleteAccountForm f = DeleteAccountForm
-  { deleteAccountPasswordField :: Field f Text
-  , areYouSureField :: Field f Bool
-  }
-  deriving (Generic)
-
-instance Form DeleteAccountForm Validated
 
 changePasswordView ::
   Text ->
@@ -243,7 +252,7 @@ profilePage = do
             Right res -> do
               eUserThreadVotes <- liftIO $ getUserThreadVotes token_ (getThreadIds res)
               pure $ col (pad 20) $ do
-                style globalCSS
+                stylesheet "style.css"
                 hyper (HeaderId 1) (headerView $ HeaderOps mJwtToken (Just userInfo))
                 tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
                   el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
@@ -255,6 +264,7 @@ profilePage = do
                           "p"
                           (cc "text-bold")
                           (text $ "Username:" `append` userNameForUPR userInfo)
+                        
                         hyper (ProfileId 1) $ profileView token_
                       tag "h1" (cc "text-3xl font-bold text-center mb-4") "Posts by users"
                       viewThreadsList

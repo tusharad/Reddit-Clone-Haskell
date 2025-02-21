@@ -158,7 +158,7 @@ renderPage
   (mUserInfo, mUserThreadVotes, mUserCommentVotes)
   eCommunityList =
     col (pad 20) $ do
-      style globalCSS
+      stylesheet "style.css"
       el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
         hyper (HeaderId 1) (headerView $ HeaderOps mToken mUserInfo)
         tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do

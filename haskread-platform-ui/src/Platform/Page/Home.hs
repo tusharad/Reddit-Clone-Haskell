@@ -114,7 +114,7 @@ homePage = do
             (\jwtToken -> getUserThreadVotes jwtToken (getThreadIds res))
             mJwtToken
       pure $ col (pad 20) $ do
-        style globalCSS
+        stylesheet "style.css"
         el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
           hyper (HeaderId 1) (headerView $ HeaderOps mJwtToken (hush eUserInfo))
           tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do

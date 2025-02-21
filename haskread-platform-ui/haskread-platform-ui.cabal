@@ -61,6 +61,7 @@ library
     , string-conversions
     , text
     , time
+    , wai-middleware-static
     , web-view
   default-language: Haskell2010
 
@@ -87,6 +88,7 @@ executable haskread-platform-ui-exe
     , string-conversions
     , text
     , time
+    , wai-middleware-static
     , web-view
   default-language: Haskell2010
 
@@ -114,5 +116,6 @@ test-suite haskread-platform-ui-test
     , string-conversions
     , text
     , time
+    , wai-middleware-static
     , web-view
   default-language: Haskell2010

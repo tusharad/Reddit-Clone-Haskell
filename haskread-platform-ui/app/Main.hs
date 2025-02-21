@@ -24,6 +24,7 @@ import Platform.Page.ViewThread
 import Text.Read (readMaybe)
 import Web.Hyperbole
 import System.Environment
+import Network.Wai.Middleware.Static
 
 main :: IO ()
 main = do
@@ -31,8 +32,11 @@ main = do
   if null args then putStrLn "Please provide env"
   else do
     putStrLn "UI running on http://localhost:3000"
-    run 3000 $ do
-      liveApp (basicDocument "HaskRead-UI") (routeRequest router)
+    let app = staticPolicy (addBase "static") myApp
+    run 3000 app
+
+myApp :: Application
+myApp = liveApp (basicDocument "HaskRead-UI") (routeRequest router)
 
 data AppRoute
   = Home

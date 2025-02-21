@@ -52,11 +52,7 @@ cc txt = addClass $ cls txt
 globalCSS :: Text
 globalCSS =
   T.unlines
-    [ "body { background-color: #F4EEFF;}"
-    , ".navbar-bg { background: linear-gradient(90deg, #424874, #DCD6F7); }"
-    , ".card-bg {background: linear-gradient(120deg, #DCD6F7, #F4EEFF);}"
-    , ".footer-bg { background-color: #424874; }"
-    ]
+    [     ]
 
 toText :: Show a => a -> Text
 toText = T.pack . show
