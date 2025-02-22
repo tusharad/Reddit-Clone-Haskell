@@ -29,7 +29,7 @@ module Platform.View.CommentCard
   ) where
 
 import Control.Monad (void)
-import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.IO.Class
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, append)
 import qualified Data.Text as T
@@ -58,7 +58,7 @@ instance (IOE :> es) => HyperView CommentCardId es where
     | EditComment CommentCardOps
     | AddCommentBtn AddCommentData
     | SubmitAddComment Text Int (Maybe Int)
-    | SubmitEditComment Int Text Int 
+    | SubmitEditComment Int Text Int
     | CancelAddComment Int
     | DoRedirect Int
     | GoToLogin
@@ -123,10 +123,10 @@ instance (IOE :> es) => HyperView CommentCardId es where
       Just token -> do
         pure $
           editCommentView
-            commentId 
+            commentId
             token
             (threadIDForCommentInfo commentInfo)
-            (EditCommentForm { commentContentForEdit = Just $ commentContentForCommentInfo commentInfo })
+            (EditCommentForm {commentContentForEdit = Just $ commentContentForCommentInfo commentInfo})
 
 updateVoteCount :: Maybe [(Int, Bool)] -> Bool -> CommentInfo -> CommentInfo
 updateVoteCount Nothing True t =
@@ -191,10 +191,10 @@ disabledAddCommentButtonView = button
     "Login to add comment"
 
 addCommentButtonView :: AddCommentData -> View CommentCardId ()
-addCommentButtonView addCommentData = button
-  (AddCommentBtn addCommentData)
-  (cc "mt-4 px-4 py-2 rounded bg-green-500 text-white hover:bg-green-600")
-  $ do
+addCommentButtonView addCommentData =
+  button
+    (AddCommentBtn addCommentData)
+    (cc "mt-4 px-4 py-2 rounded bg-green-500 text-white hover:bg-green-600")
     "Add comment"
 
 newtype AddCommentForm f = AddCommentForm
@@ -217,6 +217,24 @@ newtype EditCommentForm f = EditCommentForm
 
 instance Form EditCommentForm Maybe
 
+helperCommentView cardTitle formTag inpField a = do
+  let css =
+        "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+  el (cc css) $ do
+    el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
+      tag "h2" (cc "text-2xl font-bold mb-4") $ text cardTitle
+      void $ formTag $ do
+        void inpField
+        el (cc "flex justify-end space-x-2") $ do
+          submit
+            (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
+            "Submit"
+      el (cc "flex justify-end space-x-2") $ do
+        button
+          (CancelAddComment a)
+          (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
+          "Cancel"
+
 editCommentView ::
   Int ->
   Text ->
@@ -225,30 +243,22 @@ editCommentView ::
   View CommentCardId ()
 editCommentView commentId token tId v = do
   let f = formFieldsWith v
-  let css =
-        "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-  el (cc css) $ do
-    el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
-      tag "h2" (cc "text-2xl font-bold mb-4") $ text "Add comment"
-
-      form @EditCommentForm (SubmitEditComment commentId token tId) (gap 10) $ do
-        field (commentContentForEdit f) (const mempty) $ do
-          el (cc "mb-4") $ do
-            textarea
-              ( cc "w-full px-3 py-2 border rounded"
-                  <> att "rows" "4"
-                  <> name "commentContentField"
-              )
-              (commentContentForEdit v)
-        el (cc "flex justify-end space-x-2") $ do
-          submit
-            (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
-            "Submit"
-      el (cc "flex justify-end space-x-2") $ do
-        button
-          (CancelAddComment tId)
-          (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
-          "Cancel"
+  helperCommentView
+    "Edit Comment"
+    (form @EditCommentForm (SubmitEditComment commentId token tId) (gap 10))
+    ( field (commentContentForEdit f) (const mempty) $ do
+        el (cc "mb-4") $ do
+          textarea
+            ( cc "w-full px-3 py-2 border rounded"
+                . att "maxlength" "250"
+                . att "oninput" "updateCharCount(this)"
+            )
+            (commentContentForEdit v)
+          el (cc "text-right text-sm text-green-600" . att "id" "charCountDiv") $ do
+            tag "span" (att "id" "charCount") "250"
+            "characters remaining"
+    )
+    tId
 
 addCommentView ::
   Text ->
@@ -258,31 +268,21 @@ addCommentView ::
   View CommentCardId ()
 addCommentView token tId mParentCommentId v = do
   let f = formFieldsWith v
-  let css =
-        "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-  el (cc css) $ do
-    el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
-      tag "h2" (cc "text-2xl font-bold mb-4") $ text "Add comment"
-
-      form @AddCommentForm (SubmitAddComment token tId mParentCommentId) (gap 10) $ do
-        field (commentContentField f) (const mempty) $ do
-          el (cc "mb-4") $ do
-            tag
-              "textarea"
-              ( cc "w-full px-3 py-2 border rounded"
-                  <> att "rows" "4"
-                  <> name "commentContentField"
-              )
-              none
-        el (cc "flex justify-end space-x-2") $ do
-          submit
-            (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
-            "Submit"
-      el (cc "flex justify-end space-x-2") $ do
-        button
-          (CancelAddComment tId)
-          (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
-          "Cancel"
+  helperCommentView
+    "Add Comment"
+    (form @EditCommentForm (SubmitAddComment token tId mParentCommentId) (gap 10))
+    (field (commentContentField f) (const mempty) $ do
+        el (cc "mb-4") $ do
+          textarea
+            ( cc "w-full px-3 py-2 border rounded"
+                . att "maxlength" "250"
+                . att "oninput" "updateCharCount(this)"
+            ) Nothing
+          el (cc "text-right text-sm text-green-600" . att "id" "charCountDiv") $ do
+            tag "span" (att "id" "charCount") "250"
+            "characters remaining"
+    )
+    tId
 
 commentCardView :: CommentCardOps -> View CommentCardId ()
 commentCardView commentCardOps@CommentCardOps {commentInfo = CommentInfo {..}, ..} = do

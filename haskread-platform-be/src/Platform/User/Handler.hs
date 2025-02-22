@@ -165,12 +165,7 @@ userDeleteAccountH (Authenticated UserInfo {..}) DeleteUserBody {..} = do
             else deleteUserByID
   where
     checkIfPasswordMatch uPassword =
-      when
-        ( not $
-            matchPasswords
-              uPassword
-              passwordForDeleteUser
-        )
+       unless (matchPasswords uPassword passwordForDeleteUser)
         $ throw400Err "Password is incorrect!"
     deleteUserByID = do
       eRes :: Either SomeException () <- try $ deleteUserQ userIDForUserInfo
@@ -185,12 +180,13 @@ createServerFilePath ::
   T.Text ->
   AppM m FilePath
 createServerFilePath tempFP fName = do
+  AppConfig{..} <- asks appConfig
   (eRes :: Either SomeException BSL.ByteString) <- liftIO $ try $ BSL.readFile tempFP
   case eRes of
     Left e -> throw400Err $ BSL.pack $ show e
     Right content -> do
       checkImageSize content
-      let serverFilePath = "./file-upload/" <> T.unpack fName
+      let serverFilePath = fileUploadDir <> T.unpack fName
       liftIO $ BSL.writeFile serverFilePath content
       pure serverFilePath
   where

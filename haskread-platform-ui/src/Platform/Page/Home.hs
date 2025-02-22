@@ -96,14 +96,13 @@ homePage ::
   (Hyperbole :> es, IOE :> es) =>
   Eff es (Page '[HomeId, SortMenuId, HeaderId, ThreadId, FooterId, CommunityId, LiveSearchId])
 homePage = do
-  mJwtToken <- jToken <$> session @AuthData
+  mbTokenAndUser <- getTokenAndUser
   mbLimit <- lookupParam $ Param "limit"
   mbOffset <- lookupParam $ Param "offset"
   mbCommunityId <- lookupParam $ Param "communityId"
   mbUserId <- lookupParam $ Param "userId"
   eRes <- liftIO (getAllThreads mbLimit mbOffset mbCommunityId mbUserId)
   eCommunityList <- liftIO getCommunityList
-  eUserInfo <- liftIO $ maybe (pure $ Left "token not found") getUserInfo mJwtToken
   case eRes of
     Left err -> pure . el_ $ raw (T.pack err)
     Right res -> do
@@ -111,18 +110,23 @@ homePage = do
         liftIO $
           maybe
             (pure (Left "Token not found"))
-            (\jwtToken -> getUserThreadVotes jwtToken (getThreadIds res))
-            mJwtToken
+            (\tokenAndUser -> getUserThreadVotes (fst tokenAndUser) (getThreadIds res))
+            mbTokenAndUser
       pure $ col (pad 20) $ do
         stylesheet "style.css"
         el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
-          hyper (HeaderId 1) (headerView $ HeaderOps mJwtToken (hush eUserInfo))
+          hyper (HeaderId 1) (headerView $ HeaderOps (fst <$> mbTokenAndUser) (snd <$> mbTokenAndUser))
           tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
             el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
               el (cc "w-full lg:w-3/4 px-4") $ do
                 tag "p" (cc "text-3xl text-center mb-6 text-gray-800") "Threads"
                 hyper (SortMenuId 1) sortMenuView
-                viewThreadsList (hush eUserInfo) mJwtToken (hush eUserThreadVotes) 0 (threads res)
+                viewThreadsList
+                  (snd <$> mbTokenAndUser)
+                  (fst <$> mbTokenAndUser)
+                  (hush eUserThreadVotes)
+                  0
+                  (threads res)
                 hyper (HomeId 1) (paginationView (threadsCount res) PageParams {..})
               either
                 (el_ . raw . T.pack)

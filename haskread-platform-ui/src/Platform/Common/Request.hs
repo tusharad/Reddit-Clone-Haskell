@@ -73,7 +73,9 @@ doRequest RequestOptions {..} = do
           ]
   eResp <- try $ httpLbs request
   case eResp of
-    Left err -> pure $ Left (show (err :: HttpException))
+    Left err -> do 
+        print ("err:" :: String, err)
+        pure $ Left (show (err :: HttpException))
     Right resp -> do
       let respStatus = getResponseStatusCode resp
           respBody = getResponseBody resp

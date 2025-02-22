@@ -26,13 +26,11 @@ import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
 import Web.Hyperbole.Data.QueryData
-import Data.Aeson
 
 newtype ProfileId = ProfileId Int
   deriving (Show, Read, ViewId)
 
 instance IOE :> es => HyperView ProfileId es where
-
   data Action ProfileId
     = GoToHome
     | ChangePasswordBtn Text
@@ -100,13 +98,6 @@ data DeleteAccountForm f = DeleteAccountForm
   deriving (Generic)
 
 instance Form DeleteAccountForm Validated
-
-newtype ChangeImageForm f = ChangeImageForm {
-    changeImageUrlField :: Field f [Object]
- } deriving (Generic)
-
-instance Form ChangeImageForm Validated
-
 
 validateDeleteAccountForm :: DeleteAccountForm Identity -> DeleteAccountForm Validated
 validateDeleteAccountForm u =
@@ -228,49 +219,46 @@ profilePage ::
   (Hyperbole :> es, IOE :> es) =>
   Eff es (Page '[ProfileId, HeaderId, ThreadId, FooterId, LiveSearchId])
 profilePage = do
-  mJwtToken <- jToken <$> session @AuthData
-  case mJwtToken of
+  mbTokenAndUser <- getTokenAndUser
+  case mbTokenAndUser of
     Nothing -> redirect "/"
-    Just token_ -> do
-      eUserInfo_ <- liftIO $ getUserInfo token_
+    Just (token_, userInfo) -> do
       mbLimit <- lookupParam $ Param "limit"
       mbOffset <- lookupParam $ Param "offset"
       mbCommunityId <- lookupParam $ Param "communityId"
-      case eUserInfo_ of
-        Left _ -> redirect "/"
-        Right userInfo -> do
-          eRes <-
-            liftIO
-              ( getAllThreads
-                  mbLimit
-                  mbOffset
-                  mbCommunityId
-                  (Just $ userIDForUPR userInfo)
-              )
-          case eRes of
-            Left err -> pure $ el_ $ raw (T.pack err)
-            Right res -> do
-              eUserThreadVotes <- liftIO $ getUserThreadVotes token_ (getThreadIds res)
-              pure $ col (pad 20) $ do
-                stylesheet "style.css"
-                hyper (HeaderId 1) (headerView $ HeaderOps mJwtToken (Just userInfo))
-                tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-                  el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
-                    el (cc "mb-6") $ do
-                      tag "h1" (cc "text-3xl font-bold text-center mb-4") "Profile"
-                      el (cc "bg-white shadow-lg rounded-lg p-6") $ do
-                        tag "p" (cc "text-lg text-gray-800") "Welcome to your profile page!"
-                        tag
-                          "p"
-                          (cc "text-bold")
-                          (text $ "Username:" `append` userNameForUPR userInfo)
-                        
-                        hyper (ProfileId 1) $ profileView token_
-                      tag "h1" (cc "text-3xl font-bold text-center mb-4") "Posts by users"
-                      viewThreadsList
-                        (Just userInfo)
-                        mJwtToken
-                        (hush eUserThreadVotes)
-                        0
-                        (threads res)
-                  hyper (FooterId 1) footerView
+      eRes <-
+        liftIO
+          ( getAllThreads
+              mbLimit
+              mbOffset
+              mbCommunityId
+              (Just $ userIDForUPR userInfo)
+          )
+      case eRes of
+        Left err -> pure $ el_ $ raw (T.pack err)
+        Right res -> do
+          eUserThreadVotes <- liftIO $ getUserThreadVotes token_ (getThreadIds res)
+          pure $ col (pad 20) $ do
+            stylesheet "style.css"
+            script "myjs.js"
+            hyper (HeaderId 1) (headerView $ HeaderOps (Just token_) (Just userInfo))
+            tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
+              el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
+                el (cc "mb-6") $ do
+                  tag "h1" (cc "text-3xl font-bold text-center mb-4") "Profile"
+                  el (cc "bg-white shadow-lg rounded-lg p-6") $ do
+                    tag "p" (cc "text-lg text-gray-800") "Welcome to your profile page!"
+                    tag
+                      "p"
+                      (cc "text-bold")
+                      (text $ "Username:" `append` userNameForUPR userInfo)
+
+                    hyper (ProfileId 1) $ profileView token_
+                  tag "h1" (cc "text-3xl font-bold text-center mb-4") "Posts by users"
+                  viewThreadsList
+                    (Just userInfo)
+                    (Just token_)
+                    (hush eUserThreadVotes)
+                    0
+                    (threads res)
+              hyper (FooterId 1) footerView

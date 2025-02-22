@@ -17,7 +17,6 @@
 module Platform.Page.ViewThread (viewThreadPage) where
 
 import Control.Monad (unless)
-import Data.Either (fromLeft)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Effectful
@@ -117,7 +116,7 @@ viewThreadPage ::
          ]
     )
 viewThreadPage threadId = do
-  mToken <- jToken <$> session @AuthData
+  mbTokenAndUser <- getTokenAndUser
   eThreadInfo <- liftIO $ getThreadByThreadId threadId
   eCommentList <- liftIO $ getCommentsByThreadId threadId
   eCommunityList <- liftIO getCommunityList
@@ -125,8 +124,8 @@ viewThreadPage threadId = do
   case eThreadInfo of
     Left err -> pure $ el_ $ raw (T.pack err)
     Right threadInfo -> do
-      userData <- fetchUserData mToken eCommentList threadInfo
-      pure $ renderPage mToken threadInfo eCommentList userData eCommunityList
+      userData <- fetchUserData (fst <$> mbTokenAndUser) eCommentList threadInfo
+      pure $ renderPage (fst <$> mbTokenAndUser) threadInfo eCommentList userData eCommunityList
 
 fetchUserData ::
   (IOE :> es) =>
@@ -139,9 +138,6 @@ fetchUserData (Just token) eCommentList threadInfo = do
   eUserInfo <- liftIO $ getUserInfo token
   eUserThreadVotes <- liftIO $ getUserThreadVotes token [threadIDForThreadInfo threadInfo]
   eUserCommentVotes <- liftIO $ getUserCommentVotes token (flattenCommentIds eCommentList)
-  liftIO $ putStrLn $ fromLeft "" eUserInfo
-  liftIO $ putStrLn $ fromLeft "" eUserThreadVotes
-  liftIO $ putStrLn $ fromLeft "" eUserCommentVotes
   return (hush eUserInfo, hush eUserThreadVotes, hush eUserCommentVotes)
 
 renderPage ::
@@ -158,7 +154,8 @@ renderPage
   (mUserInfo, mUserThreadVotes, mUserCommentVotes)
   eCommunityList =
     col (pad 20) $ do
-      stylesheet "style.css"
+      stylesheet "/style.css"
+      script "/myjs.js"
       el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
         hyper (HeaderId 1) (headerView $ HeaderOps mToken mUserInfo)
         tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
