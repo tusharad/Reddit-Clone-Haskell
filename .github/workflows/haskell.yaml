@@ -2,7 +2,7 @@ name: Haskell CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
     branches: [ "main" ]
 
@@ -74,10 +74,70 @@ jobs:
     - name: stop test database
       run: make stopTestDB
 
+  test-ui:
+    needs: [build-ui, build-be]
+    environment: Test Env
+    runs-on: ubuntu-22.04
+    env:
+      MailFromEmail: ${{ vars.MailFromEmail }}
+      MailAPIToken: ${{ secrets.MailAPIToken }}
+      GoogleOAuth2ClientID: ${{ secrets.GoogleOAuth2ClientID }}
+      GoogleOAuth2ClientSecret: ${{ secrets.GoogleOAuth2ClientSecret }}
+      HaskReadJwtSecret: ${{ secrets.HaskReadJwtSecret }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Start test database
+        run: |
+          docker run \
+                --name haskread_test_pg_db \
+                -e POSTGRES_PASSWORD=1234 \
+                -e POSTGRES_USER=tushar \
+                -e POSTGRES_DB=haskread_test_db \
+                -v ./haskread-platform-be/Scripts/DB/schema.sql:/docker-entrypoint-initdb.d/schema.sql \
+                -p 5434:5432 \
+                --rm -d \
+                postgres:16.3-alpine3.20
+
+      - name: Run backend
+        run: |
+          chmod +x ./artifacts/be-binary/haskread-platform-be-exe
+          mkdir file-upload
+          mkdir .logs
+          touch ./.logs/dev_logs.txt
+          ./artifacts/be-binary/haskread-platform-be-exe ./haskread-platform-be/testEnv.dhall &
+
+      - name: Run frontend
+        run: |
+          chmod +x ./artifacts/ui-binary/haskread-platform-ui-exe
+          ./artifacts/ui-binary/haskread-platform-ui-exe local &
+
+      - name: Wait for frontend
+        run: |
+          until curl --output /dev/null --silent --head --fail http://localhost:3000; do
+            printf '.'
+            sleep 5
+          done
+
+      - name: Test UI
+        run: |
+          bash ./haskread-platform-ui/test_ui.sh
+
+      - name: Stop test database
+        if: always()
+        run: docker stop haskread_test_pg_db
+
   deploy:
     needs : [build-be, build-ui]
     environment: Test Env
     runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
