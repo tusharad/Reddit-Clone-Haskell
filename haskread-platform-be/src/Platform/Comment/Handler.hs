@@ -223,16 +223,16 @@ fetchVoteCommentsForUserH ::
   MonadUnliftIO m =>
   AuthResult UserInfo ->
   FetchVoteComemntsForUserReq ->
-  AppM m FetchVoteComemntsForUserResponse
+  AppM m FetchVoteCommentsForUserResponse
 fetchVoteCommentsForUserH
   (Authenticated UserInfo {..})
   (FetchVoteComemntsForUserReq commentList) = do
     if null commentList
-      then return $ FetchVoteComemntsForUserResponse []
+      then return $ FetchVoteCommentsForUserResponse []
       else do
         res <- fetchVoteCommentsByUser userIDForUserInfo commentList
         pure $
-          FetchVoteComemntsForUserResponse $
+          FetchVoteCommentsForUserResponse $
             (\CommentVote {..} -> FetchVoteComments commentIDForCommentVote commentVote)
               <$> res
 fetchVoteCommentsForUserH _ _ = throw401Err "Please login first"

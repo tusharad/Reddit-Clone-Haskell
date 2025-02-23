@@ -12,7 +12,7 @@ module Platform.Comment.Types
     VoteCommentResponse (..),
     FetchCommentsResponse (..),
     FetchVoteComemntsForUserReq (..),
-    FetchVoteComemntsForUserResponse (..),
+    FetchVoteCommentsForUserResponse (..),
     FetchVoteComments (..)
   )
 where
@@ -67,6 +67,6 @@ data FetchVoteComments = FetchVoteComments {
   , isUpvote :: Bool
 } deriving (Show, Eq, Generic, ToJSON)
 
-newtype FetchVoteComemntsForUserResponse = FetchVoteComemntsForUserResponse {
+newtype FetchVoteCommentsForUserResponse = FetchVoteCommentsForUserResponse {
     fetchVoteCommentsList :: [FetchVoteComments]
 } deriving newtype (Show, Eq, ToJSON)

@@ -164,7 +164,7 @@ editThread token EditThreadData {..} = do
           }
   doRequestJSON reqOps
 
-getUserCommentVotes :: Text -> [Int] -> IO (Either String FetchVoteComemntsForUserResponse)
+getUserCommentVotes :: Text -> [Int] -> IO (Either String FetchVoteCommentsForUserResponse)
 getUserCommentVotes token threadIds = do
   let myData = threadIds
   url <- getUrl
@@ -182,7 +182,7 @@ getUserCommentVotes token threadIds = do
   case eRes of
     Left err -> pure $ Left err
     Right r -> do 
-        pure $ Right $ FetchVoteComemntsForUserResponse r
+        pure $ Right $ FetchVoteCommentsForUserResponse r
 
 getUserThreadVotes :: Text -> [Int] -> IO (Either String [(Int, Bool)])
 getUserThreadVotes token threadIds = do

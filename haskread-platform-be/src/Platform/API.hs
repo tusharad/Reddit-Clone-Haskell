@@ -419,7 +419,7 @@ type FetchVoteCommentsForUser =
         :> "user"
         :> "comment_votes"
         :> ReqBody '[JSON] FetchVoteComemntsForUserReq
-        :> Post '[JSON] FetchVoteComemntsForUserResponse
+        :> Post '[JSON] FetchVoteCommentsForUserResponse
 
 type FetchAllThreadsBySearch = 
   "api" 

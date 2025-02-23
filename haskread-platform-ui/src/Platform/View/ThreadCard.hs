@@ -191,7 +191,7 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
         tag "p" mempty $ do
           text "Created by:"
           tag "span" (cc "font-semibold") (text userNameForThreadInfo)
-        tag "p" mempty "30/02/1997"
+        tag "p" mempty (text createdAtForThreadInfo)
     el (cc "p-4") $ do
       tag "p" mempty (text $ fromMaybe "" description)
     el (cc "flex justify-between items-center p-4 border-t") $ do

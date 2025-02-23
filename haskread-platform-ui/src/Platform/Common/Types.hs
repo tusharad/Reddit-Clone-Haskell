@@ -27,7 +27,7 @@ module Platform.Common.Types
   , FetchVoteThreadsForUserReq (..)
   , FetchVoteComemntsForUserReq (..)
   , FetchVoteComments (..)
-  , FetchVoteComemntsForUserResponse (..)
+  , FetchVoteCommentsForUserResponse (..)
   , CreateThreadReqBody (..)
   , EditThreadData (..)
   , UpdateThreadReqBody (..)
@@ -84,7 +84,7 @@ data ThreadInfo = ThreadInfo
   { threadIDForThreadInfo :: Int
   , title :: Text
   , description :: Maybe Text
-  , createdAtForThreadInfo :: UTCTime
+  , createdAtForThreadInfo :: Text
   , userIDForThreadInfo :: Int
   , userNameForThreadInfo :: Text
   , communityIDForThreadInfo :: Int
@@ -237,7 +237,7 @@ newtype CVoteList = CVoteList [CVote]
     deriving (Show, Eq, Generic, FromJSON)
 -}
 
-newtype FetchVoteComemntsForUserResponse = FetchVoteComemntsForUserResponse
+newtype FetchVoteCommentsForUserResponse = FetchVoteCommentsForUserResponse
   { fetchVoteCommentsList :: [FetchVoteComments]
   }
   deriving (Show, Eq, Generic, FromJSON)
