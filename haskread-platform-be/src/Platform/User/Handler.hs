@@ -7,12 +7,14 @@ module Platform.User.Handler
     userChangePasswordH,
     userDeleteAccountH,
     userUpdateProfileImageH,
+    fetchUserProfileImageH,
   )
 where
 
 import Control.Monad (unless, when)
 import Control.Monad.Reader
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce (coerce)
 import Data.Password.Bcrypt
 import qualified Data.Text as T
@@ -29,6 +31,26 @@ import Platform.User.DB
 import Platform.User.Types
 import Servant.Auth.Server
 import UnliftIO
+import System.FilePath
+import System.Directory
+import System.Posix.Files (getFileStatus, fileSize)
+import System.Posix.Types (COff(COff))
+
+fetchUserProfileImageH ::
+  (MonadUnliftIO m) =>
+    UserID ->
+    AppM m LBS.ByteString
+fetchUserProfileImageH uId = do
+   mbUserImage <- fetchUserProfileImage uId
+   case mbUserImage of
+    Nothing -> throw400Err "Not available"
+    Just UserProfileImage{..} -> do
+      let filePath = T.unpack userImage
+      exists <- liftIO $ doesFileExist filePath
+      if exists
+        then do
+          liftIO $ LBS.readFile filePath
+        else throw400Err "Not available"
 
 fetchUserByIDHaxl ::
   (MonadUnliftIO m) =>
@@ -85,7 +107,7 @@ userDashboardH (Authenticated UserInfo {..}) = do
           { userIDForUPR = coerce userIDForUserInfo,
             userNameForUPR = uName,
             userEmail = e,
-            userCreatedAt = T.pack $ show c 
+            userCreatedAt = T.pack $ show c
           }
 userDashboardH _ = throw401Err "Please login first"
 
@@ -99,7 +121,7 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
   case mUser of
     Nothing -> throw400Err "User is invalid!"
     Just u@User {userPassword = mUPassword} -> do
-      logDebug $ "changing user password of " <> (T.pack $ show u)
+      logDebug $ "changing user password of " <> T.pack (show u)
       case mUPassword of
         Nothing -> throw400Err "Password not setup in the first place"
         Just uPassword -> do
@@ -110,12 +132,9 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
           changePassword u
   where
     checkOldPasswordMatch uPassword =
-      when
-        ( not $
-            matchPasswords
+      unless (matchPasswords
               uPassword
-              oldPasswordForChangePass
-        )
+              oldPasswordForChangePass)
         $ throw400Err "Old password is incorrect!"
     checkOldNewPasswordNotMatch =
       when (oldPasswordForChangePass == newPasswordForChangePass) $
@@ -130,8 +149,8 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
         throw400Err passwordConstraintMessage
     changePassword u = do
       hashedPass <- hashPassword (mkPassword newPasswordForChangePass)
-      let newPassUsr = (passwordUpdatedUser u hashedPass)
-      logDebug $ "new password user : " <> (T.pack $ show newPassUsr)
+      let newPassUsr = passwordUpdatedUser u hashedPass
+      logDebug $ "new password user : " <> T.pack (show newPassUsr)
       eRes :: Either SomeException () <-
         try $
           updateUser
@@ -186,7 +205,7 @@ createServerFilePath tempFP fName = do
     Left e -> throw400Err $ BSL.pack $ show e
     Right content -> do
       checkImageSize content
-      let serverFilePath = fileUploadDir <> T.unpack fName
+      let serverFilePath = fileUploadDir </> T.unpack fName
       liftIO $ BSL.writeFile serverFilePath content
       pure serverFilePath
   where
@@ -203,6 +222,11 @@ userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} =
   checkValidImageType fType
   mUserProfile <- fetchUserProfileImage userIDForUserInfo
   serverFilePath <- createServerFilePath tempFP fName
+  imageSize <- liftIO $ getFileSize tempFP
+  let maxSizeKB = 300
+      maxSizeBytes = maxSizeKB * 1024
+  when (imageSize > maxSizeBytes) $ 
+    throw400Err $ BSL.pack $ "Image size exceeds " ++ show maxSizeKB ++ "KB limit (" ++ show (imageSize `div` 1024) ++ "KB)"
   let userProfileImage =
         UserProfileImage
           { userIDForProfileImage = userIDForUserInfo,
@@ -221,4 +245,9 @@ userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} =
     checkValidImageType fType = do
       let validImageTypes = ["image/png", "image/jpeg", "image/jpg"]
       unless (fType `elem` validImageTypes) $ throw400Err "Invalid image type!"
+    getFileSize :: FilePath -> IO Integer
+    getFileSize path = do
+      stat <- getFileStatus path
+      let (COff fSize) = fileSize stat
+      return $ fromIntegral fSize
 userUpdateProfileImageH _ _ = throw401Err "Please login first"

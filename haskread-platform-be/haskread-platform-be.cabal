@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -83,6 +83,7 @@ library
     , hoauth2-providers
     , http-api-data
     , http-conduit
+    , http-media
     , http-types
     , mtl
     , orville-postgresql
@@ -100,6 +101,7 @@ library
     , text
     , time
     , transformers
+    , unix
     , unliftio
     , uri-bytestring
     , wai
@@ -132,6 +134,7 @@ executable haskread-platform-be-exe
     , hoauth2-providers
     , http-api-data
     , http-conduit
+    , http-media
     , http-types
     , mtl
     , orville-postgresql
@@ -149,6 +152,7 @@ executable haskread-platform-be-exe
     , text
     , time
     , transformers
+    , unix
     , unliftio
     , uri-bytestring
     , wai
@@ -190,6 +194,7 @@ test-suite haskread-platform-be-test
     , hoauth2-providers
     , http-api-data
     , http-conduit
+    , http-media
     , http-types
     , mtl
     , orville-postgresql
@@ -207,6 +212,7 @@ test-suite haskread-platform-be-test
     , text
     , time
     , transformers
+    , unix
     , unliftio
     , uri-bytestring
     , wai

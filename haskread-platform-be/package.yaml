@@ -62,6 +62,8 @@ dependencies:
 - http-conduit
 - wai-cors
 - wai
+- http-media
+- unix
 
 ghc-options:
 - -Wall

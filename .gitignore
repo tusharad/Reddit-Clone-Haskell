@@ -3,3 +3,4 @@ haskread-platform-be/dist-newstyle/cache/compiler
 haskread-platform-be/dist-newstyle/cache/config
 haskread-platform-be/.logs/dev_logs.txt
 .psc-ide-port
+haskread-platform-be/file-upload

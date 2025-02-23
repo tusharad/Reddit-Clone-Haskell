@@ -27,12 +27,14 @@ module Platform.Common.Request
   , editComment
   , changePassword
   , deleteUser
+  , getUserProfileImage
   ) where
 
 import Control.Exception
 import Data.Aeson
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toLower)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
@@ -510,3 +512,19 @@ deleteUser token deleteUserBody = do
           , mbAuthToken = Just $ TE.encodeUtf8 token
           }
   doRequestJSON reqOps
+
+getUserProfileImage :: Int -> IO (Either String LBS.ByteString)
+getUserProfileImage uId = do
+  url <- getUrl
+  doRequest RequestOptions {
+    reqMethod = GET
+          , reqUrl = url
+          , mbReqHeaders = Nothing
+          , mbQueryParams = Nothing
+          , mbReqBody = Nothing
+          , mbReqPath =
+              Just $
+                toPath
+                  [ "api", "v1", "user", "profile-image", show uId]
+          , mbAuthToken = Nothing
+  }

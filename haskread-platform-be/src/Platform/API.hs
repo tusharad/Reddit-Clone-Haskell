@@ -1,5 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Platform.API
   ( MainAPI,
@@ -30,6 +32,8 @@ import Servant
 import Servant.Auth.Server
 import Servant.Multipart
 import UnliftIO
+import qualified Data.ByteString.Lazy as LBS
+import Network.HTTP.Media ((//))
 
 mainServer :: (MonadUnliftIO m) => ServerT (MainAPI auths) (AppM m)
 mainServer =
@@ -67,6 +71,7 @@ mainServer =
     :<|> fetchCommentsByThreadH
     :<|> fetchCommunitiesH
     :<|> fetchAllThreadsBySearchH
+    :<|> fetchUserProfileImageH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -103,6 +108,7 @@ type MainAPI auths =
     :<|> FetchCommentsByThreadAPI
     :<|> FetchCommunitiesAPI
     :<|> FetchAllThreadsBySearch 
+    :<|> GetProfileImage
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -422,3 +428,19 @@ type FetchAllThreadsBySearch =
     :> "thread"
     :> QueryParam "search_term" Text
     :> Get '[JSON] FetchAllThreadsResponse
+
+data ImagePNG
+
+instance Accept ImagePNG where
+  contentType _ = "image" // "png"
+
+instance MimeRender ImagePNG LBS.ByteString where
+  mimeRender _ val = val
+
+-- API type definition
+type GetProfileImage = "api" 
+    :> "v1"
+    :> "user"
+    :> "profile-image"
+    :> Capture "UserID" UserID
+    :> Get '[ImagePNG] LBS.ByteString
