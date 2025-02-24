@@ -70,6 +70,9 @@ passwordField = coerceField (unboundedTextField "password")
 communityIDField :: FieldDefinition NotNull CommunityID
 communityIDField = coerceField $ serialField "community_id"
 
+threadAttachmentField :: FieldDefinition Nullable (Maybe Text)
+threadAttachmentField = nullableField $ unboundedTextField "attachment"
+
 communityNameField :: FieldDefinition NotNull Text
 communityNameField = boundedTextField "community_name" 255
 
@@ -217,6 +220,7 @@ threadMarshaller =
     <*> marshallField (\Thread {..} -> threadDescription) (nullableField threadDescriptionField)
     <*> marshallField (\Thread {..} -> threadUserID) userIDField
     <*> marshallField (\Thread {..} -> threadCommunityID) communityIDField
+    <*> marshallField (\Thread {..} -> threadAttachment) threadAttachmentField
     <*> marshallReadOnly (marshallField (\Thread {..} -> threadCreatedAt) createdAtField)
     <*> marshallReadOnly (marshallField (\Thread {..} -> threadUpdatedAt) updatedAtField)
 

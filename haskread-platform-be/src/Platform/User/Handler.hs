@@ -193,25 +193,6 @@ userDeleteAccountH (Authenticated UserInfo {..}) DeleteUserBody {..} = do
         Right _ -> return $ DeleteUserResponse "Sad to see you go :L"
 userDeleteAccountH _ _ = throw401Err "Please login first"
 
-createServerFilePath ::
-  (MonadUnliftIO m) =>
-  FilePath ->
-  T.Text ->
-  AppM m FilePath
-createServerFilePath tempFP fName = do
-  AppConfig{..} <- asks appConfig
-  (eRes :: Either SomeException BSL.ByteString) <- liftIO $ try $ BSL.readFile tempFP
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right content -> do
-      checkImageSize content
-      let serverFilePath = fileUploadDir </> T.unpack fName
-      liftIO $ BSL.writeFile serverFilePath content
-      pure serverFilePath
-  where
-    checkImageSize imageContent = do
-      unless (BSL.length imageContent < 1000000) $ throw400Err "Image to large :("
-
 userUpdateProfileImageH ::
   (MonadUnliftIO m) =>
   AuthResult UserInfo ->
@@ -221,7 +202,7 @@ userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} =
   let (tempFP, fType, fName) = userImageInfo
   checkValidImageType fType
   mUserProfile <- fetchUserProfileImage userIDForUserInfo
-  serverFilePath <- createServerFilePath tempFP fName
+  serverFilePath <- createServerFilePath 30000 tempFP fName
   imageSize <- liftIO $ getFileSize tempFP
   let maxSizeKB = 300
       maxSizeBytes = maxSizeKB * 1024

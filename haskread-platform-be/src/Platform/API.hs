@@ -251,7 +251,7 @@ type CreateThreadAPI =
     :> "user"
     :> "thread"
     :> "create"
-    :> ReqBody '[JSON] CreateThreadReqBody
+    :> MultipartForm Tmp CreateThreadReqBody
     :> Post '[JSON] CreateThreadResponse
 
 type UpdateThreadAPI =
@@ -260,7 +260,7 @@ type UpdateThreadAPI =
     :> "user"
     :> "thread"
     :> "update"
-    :> ReqBody '[JSON] UpdateThreadReqBody
+    :> MultipartForm Tmp UpdateThreadReqBody
     :> Put '[JSON] UpdateThreadResponse
 
 type DeleteThreadAPI =

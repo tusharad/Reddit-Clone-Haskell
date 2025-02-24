@@ -134,6 +134,7 @@ data Thread a b = Thread
     threadDescription :: Maybe Text,
     threadUserID :: UserID,
     threadCommunityID :: CommunityID,
+    threadAttachment :: Maybe Text,
     threadCreatedAt :: b,
     threadUpdatedAt :: b
   }

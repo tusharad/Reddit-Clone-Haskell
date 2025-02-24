@@ -26,6 +26,7 @@ import Platform.User.Thread.DB
 import Platform.User.Thread.Types
 import Servant.Auth.Server
 import UnliftIO
+import Servant.Multipart
 
 checkIfCommunityExists :: (MonadUnliftIO m) => CommunityID -> AppM m ()
 checkIfCommunityExists cID = do
@@ -44,11 +45,13 @@ checkThreadTitleNotEmpty tTitle =
 
 addThread :: (MonadUnliftIO m) => UserID -> CreateThreadReqBody -> AppM m CreateThreadResponse
 addThread userID CreateThreadReqBody {..} = do
+  mbServerFilePath <- storeAttachmentIfExist threadAttachment
   let threadWrite =
         Thread
           { threadTitle = threadTitleForCreate
           , threadDescription = threadDescriptionForCreate
           , threadCommunityID = threadCommunityIDForCreate
+          , threadAttachment = T.pack <$> mbServerFilePath
           , threadUserID = userID
           , threadCreatedAt = ()
           , threadUpdatedAt = ()
@@ -59,6 +62,30 @@ addThread userID CreateThreadReqBody {..} = do
     Left e -> throw400Err $ BSL.pack $ show e
     Right _ -> return $ CreateThreadResponse "Thread added successfully!"
 
+supportedFileTypes :: [Text]
+supportedFileTypes = [
+  "application/zip"
+  , "application/x-zip-compressed"
+  , "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  , "application/vnd.ms-excel"
+  , "text/plain"
+  , "application/x-tar"
+  , "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+  , "application/vnd.ms-powerpoint"
+  , "application/pdf"
+  , "image/png"
+  , "application/vnd.oasis.opendocument.text"
+  , "image/jpeg"
+ ]
+
+storeAttachmentIfExist :: MonadUnliftIO m =>  Maybe (FileData Tmp) -> AppM m (Maybe FilePath)
+storeAttachmentIfExist Nothing = pure Nothing
+storeAttachmentIfExist (Just FileData{..}) =
+  if fdFileCType `notElem` supportedFileTypes then
+    throw400Err "File type not supported"
+  else 
+    Just <$> createServerFilePath 1000000 fdPayload fdFileName 
+    
 checkIfUserOwnsThread :: (MonadUnliftIO m) => ThreadID -> UserID -> AppM m ()
 checkIfUserOwnsThread tID uID = do
   eRes :: Either SomeException (Maybe ThreadRead) <-
@@ -88,6 +115,7 @@ updateThreadH (Authenticated UserInfo {..}) UpdateThreadReqBody {..} = do
   void $ checkIfCommunityExists threadCommunityIDForUpdate
   void $ checkThreadTitleNotEmpty threadTitleForUpdate
   void $ checkIfUserOwnsThread threadIDForUpdate userIDForUserInfo
+  mbNewServerFile <- storeAttachmentIfExist threadAttachmentForUpdate
   let threadWrite =
         Thread
           { threadTitle = threadTitleForUpdate
@@ -97,6 +125,7 @@ updateThreadH (Authenticated UserInfo {..}) UpdateThreadReqBody {..} = do
           , threadCreatedAt = ()
           , threadUpdatedAt = ()
           , threadID = ()
+          , threadAttachment = T.pack <$> mbNewServerFile
           }
   (eRes :: Either SomeException ()) <- try $ updateThreadQ threadIDForUpdate threadWrite
   case eRes of

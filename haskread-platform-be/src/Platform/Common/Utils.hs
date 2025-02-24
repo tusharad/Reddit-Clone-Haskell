@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Platform.Common.Utils
   ( toUserInfo
@@ -18,6 +19,7 @@ module Platform.Common.Utils
   , queryWrapper
   , redirects
   , genRandomUserName
+  , createServerFilePath
   )
 where
 
@@ -41,6 +43,10 @@ import Servant as S
 import Servant.Auth.Server
 import System.Log.FastLogger
 import UnliftIO
+import Control.Monad.Reader
+import System.FilePath
+import Control.Monad
+import Data.Int (Int64)
 
 toUserInfo :: UserRead -> UserInfo
 toUserInfo User {..} = UserInfo userID userName
@@ -222,3 +228,23 @@ toEnv "development" = Development
 toEnv "sandbox" = Sandbox
 toEnv "production" = Production
 toEnv _ = Local -- Shouldn't happen
+
+createServerFilePath ::
+  (MonadUnliftIO m) =>
+  Int64 ->
+  FilePath ->
+  T.Text ->
+  AppM m FilePath
+createServerFilePath maxFileSize tempFP fName = do
+  AppConfig{..} <- asks appConfig
+  (eRes :: Either SomeException BSL.ByteString) <- liftIO $ try $ BSL.readFile tempFP
+  case eRes of
+    Left e -> throw400Err $ BSL.pack $ show e
+    Right content -> do
+      checkImageSize content
+      let serverFilePath = fileUploadDir </> T.unpack fName
+      liftIO $ BSL.writeFile serverFilePath content
+      pure serverFilePath
+  where
+    checkImageSize imageContent = do
+      unless (BSL.length imageContent < maxFileSize) $ throw400Err "File to large :("

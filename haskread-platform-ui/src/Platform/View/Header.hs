@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
@@ -16,7 +15,6 @@ module Platform.View.Header
   ( HeaderId (..)
   , HeaderOps (..)
   , headerView
-  , defaultCreateThreadData
   , CreateThreadData (..)
   , headerButtonCSS
   , showUserName
@@ -26,7 +24,6 @@ module Platform.View.Header
 
 import Control.Monad (forM_)
 import Data.Text (Text)
-import qualified Data.Text as T
 import Effectful
 import Platform.Common.Request
 import Platform.Common.Types
@@ -40,136 +37,67 @@ newtype HeaderId = HeaderId Int
 
 instance (IOE :> es) => HyperView HeaderId es where
   data Action HeaderId
-    = DoLogout
-    | AddThread Text UserProfileResponse
-    | SubmitCreateThreadForm Text UserProfileResponse
-    | CancelCreateThreadForm
+    = DoLogout | AddThread
     deriving (Show, Read, ViewAction)
 
   type Require HeaderId = '[LiveSearchId]
   update DoLogout = do
     _ <- deleteSession @AuthData
     pure $ headerView defaultHeaderOps
-  update (AddThread token userInfo) = do
+  update AddThread = do
     eCommunityList <- liftIO getCommunityList
     case eCommunityList of
       Left err -> do
         liftIO $ putStrLn $ "Error: " <> err
-        pure $ headerView $ HeaderOps (Just token) (Just userInfo)
+        redirect "/"
       Right communityList -> do
         pure $
           createThreadView
             communityList
-            token
-            userInfo
-            Nothing
-            genForm
-  update (SubmitCreateThreadForm token userInfo) = do
-    eCommunityList <- liftIO getCommunityList
-    case eCommunityList of
-      Left err -> do 
-        liftIO $ putStrLn $ "Error:" <> err
-        redirect "/"
-      Right communityList -> do
-        uf <- formData @CreateThreadForm
-        let vals = validateForm uf
-        if anyInvalid vals
-          then
-            pure $ createThreadView communityList token userInfo Nothing vals
-          else do
-            eRes <-
-              liftIO $
-                addThread
-                  CreateThreadData
-                    { titleForCreateThread = titleField uf
-                    , content = descriptionField uf
-                    , mToken = Just token
-                    , mUserInfo = Just userInfo
-                    , communityId = communityIdField uf
-                    }
-            case eRes of
-              Left err -> liftIO $ putStrLn $ "Couldn't insert thread: " <> err
-              Right _ -> pure ()
-            redirect "/"
-
-  update CancelCreateThreadForm = do
-    redirect "/"
-
-data CreateThreadForm f = CreateThreadForm
-  { communityIdField :: Field f Int
-  , titleField :: Field f Text
-  , descriptionField :: Field f Text
-  }
-  deriving (Generic)
-
-instance Form CreateThreadForm Validated
-
-validateForm :: CreateThreadForm Identity -> CreateThreadForm Validated
-validateForm u =
-  CreateThreadForm
-    { communityIdField = NotInvalid
-    , titleField = validateTitle (titleField u)
-    , descriptionField = NotInvalid
-    }
-
-validateTitle :: Text -> Validated Text
-validateTitle e =
-  mconcat
-    [ validate (T.null e) "Title cannot be empty"
-    ]
 
 createThreadView ::
   Communities ->
-  Text ->
-  UserProfileResponse ->
-  Maybe Text ->
-  CreateThreadForm Validated ->
   View HeaderId ()
-createThreadView (Communities communityList) token userInfo mErrorMsg v = do
-  let f = formFieldsWith v
+createThreadView (Communities communityList) = do
   let css = "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
   el (cc css) $ do
     el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
       tag "h2" (cc "text-2xl font-bold mb-4") $ text "Create Thread"
-      form @CreateThreadForm (SubmitCreateThreadForm token userInfo) (gap 10) $ do
-        field (communityIdField f) (const mempty) $ do
-          el (cc "mb-4") $ do
-            tag "label" (cc "block text-gray-700") "Select community"
-            tag "select" (name "communityIdField" . cc "w-full px-2 py-2 border rounded") $
+      tag "div" (gap 10) $ do 
+        el (cc "mb-4") $ do
+          tag "span" (att "id" "statusMessage" . cc "text-green-500") none
+        el (cc "mb-4") $ do
+          tag "label" (cc "block text-gray-700") "Select community"
+          tag "select" (cc "w-full px-2 py-2 border rounded"
+                      . att "id" "threadCommunityID"
+                      ) $
               do
                 forM_ communityList $ \c -> do
                   tag
                     "option"
                     (att "value" (toText $ communityID c))
                     (raw $ communityName c)
-        field (titleField f) valStyle $ do
-          el (cc "mb-4") $ do
-            tag "label" (cc "block text-gray-700") "Enter title"
-            input TextInput (placeholder "Title" . cc "w-full px-3 py-2 border rounded")
-            el_ invalidText
+        el (cc "mb-4") $ do
+          tag "label" (cc "block text-gray-700") "Enter title"
+          tag "input" (att "type" "text" . placeholder "Title" 
+                      . cc "w-full px-3 py-2 border rounded" 
+                      . att "id" "threadTitle"
+                      ) none
 
-        field (descriptionField f) valStyle $ do
-          el (cc "mb-4") $ do
+        el (cc "mb-4") $ do
             tag "label" (cc "block text-gray-700") "Enter Description"
-            tag "textarea" (name "descriptionField" . cc "w-full px-3 py-2 border rounded") none
-            el_ invalidText
-
-        case mErrorMsg of
-          Nothing -> pure ()
-          Just errMsg -> el invalid (text errMsg)
-
-        submit
-          (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
-          "Submit"
-
-      button
-        CancelCreateThreadForm
-        (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
-        "Cancel"
-  where
-    valStyle (Invalid _) = invalid
-    valStyle Valid = success
-    valStyle _ = id
+            tag "textarea" (att "id" "threadDescription" . cc "w-full px-3 py-2 border rounded") none
+        
+        el (cc "mb-4") $ do
+          tag "label" (cc "block text-gray-700") "Select File"
+          tag "input" (att "id" "threadAttachment" . cc "w-full px-3 py-2 border rounded" . att "type" "file") none
+        
+        el (cc "mb-4") $ do
+          tag "button" (att "onClick" "createThread()"
+                        . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
+                        ) "Create"
+          tag "button" (att "onClick" "cancelForm()" 
+                    . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500") "Cancel"
 
 showLoginAndSignup :: View c ()
 showLoginAndSignup = do
@@ -196,16 +124,6 @@ showUserName (userName, _) = do
     (headerButtonCSS "bg-blue-600")
     (text userName)
 
-defaultCreateThreadData :: Maybe Text -> Maybe UserProfileResponse -> CreateThreadData
-defaultCreateThreadData mToken mUserInfo =
-  CreateThreadData
-    { mToken = mToken
-    , mUserInfo = mUserInfo
-    , communityId = 6
-    , titleForCreateThread = ""
-    , content = ""
-    }
-
 data HeaderOps = HeaderOps {
     mbToken :: Maybe Text
   , mbUserInfo :: Maybe UserProfileResponse
@@ -221,6 +139,7 @@ headerView :: HeaderOps -> View HeaderId ()
 headerView HeaderOps{..} = do
   stylesheet "https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
   script "https://cdn.tailwindcss.com"
+  script "/myjs.js"
   tag "header" (cc "navbar-bg shadow-lg w-full z-50") $ do
     el (cc "container mx-auto px-6 py-4 flex justify-between items-center") $ do
       link "/" (cc "text-3xl font-bold text-white") "HaskRead"
@@ -228,9 +147,9 @@ headerView HeaderOps{..} = do
         hyper (LiveSearchId 1) (liveSearch mempty [])
       el (cc "ml-4 flex items-center space-x-2") $ do
         case (mbToken,mbUserInfo) of
-          (Just token, Just userInfo@UserProfileResponse{..}) -> do 
+          (Just _, Just UserProfileResponse{..}) -> do 
             button
-                  (AddThread token userInfo)
+                  AddThread
                   (headerButtonCSS "bg-blue-600")
                   "Add Thread"
             showUserName (userNameForUPR, userIDForUPR)

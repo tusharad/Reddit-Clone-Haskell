@@ -317,4 +317,6 @@ INSERT INTO vote_comment
 (comment_id, user_id, vote, created_at, updated_at)
 VALUES(13, 14, true, '2025-02-23 15:43:49.775', '2025-02-23 15:43:49.775');
 
+ALTER TABLE thread ADD COLUMN attachment text;
+
 commit;
