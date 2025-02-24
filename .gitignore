@@ -4,3 +4,5 @@ haskread-platform-be/dist-newstyle/cache/config
 haskread-platform-be/.logs/dev_logs.txt
 .psc-ide-port
 haskread-platform-be/file-upload
+haskread-platform-be/stack.yaml.lock
+haskread-platform-ui/stack.yaml.lock

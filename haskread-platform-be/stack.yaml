@@ -8,8 +8,8 @@
 # A snapshot resolver dictates the compiler version and the set of packages
 # to be used for project dependencies. For example:
 #
-# resolver: lts-22.21
-# resolver: nightly-2024-05-06
+# resolver: lts-23.10
+snapshot: nightly-2025-02-24
 # resolver: ghc-9.6.5
 #
 # The location of a snapshot can be provided as a file or url. Stack assumes
@@ -17,8 +17,6 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2023-01-01.yaml
-resolver:
-  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/43.yaml
 
 allow-newer: true
 # User packages to be built.
@@ -37,12 +35,16 @@ packages:
 # forks / in-progress versions pinned to a git hash. For example:
 #
 allow-newer-deps:
- - hoauth2
- - haxl
+#  - hoauth2
+#  - haxl
 
 extra-deps:
+- dhall-1.42.2@sha256:2c5b6b63ff63b6267af65b0f85f2cdd6708068854c3e2d6c67e0a8acbeb94a69,16962
 - hoauth2-providers-0.8.0@sha256:78ac02bed781b7b9c28f4876fb62c8bcce62e21dd8313cdc1e0e654b189df420,3058
-- jose-jwt-0.10.0@sha256:6ed175a01c721e317ceea15eb251a81de145c03711a977517935633a5cdec1d4,3546
+- servant-auth-server-0.4.9.0@sha256:dff8a46a1491b9102323094b3a715ceaaa0b2d450cb81e2e0784bd5c19a7199f,5397
+- tasty-wai-0.1.2.0@sha256:06cc057d500aed373fb945e8b263363518ffefab5eface3524c1ccccad541390,2089
+- atomic-write-0.2.1.1@sha256:1863c94cef87b4cf52b0064fd696201ebc747843d72daa3de2b2ce947a66e898,4773
+- repline-0.4.2.0@sha256:3d863dedf6d840d0578b597bb3b85c95e400c895c67e77a0c286b184d8be51b2,2179
 - git: https://github.com/facebook/Haxl.git
   commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
 - git: https://github.com/tusharad/orville
@@ -78,3 +80,5 @@ extra-deps:
 #
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
+notify-if-nix-on-path: false
+allow-newer: true

@@ -28,6 +28,7 @@ import Platform.View.ThreadCard
 import Web.Hyperbole
 import Web.Hyperbole.Data.QueryData
 import Data.ByteString.Lazy.Base64
+import Data.Base64.Types
 
 newtype ProfileId = ProfileId Int
   deriving (Show, Read, ViewId)
@@ -288,7 +289,7 @@ profilePage = do
                       Right imgBytes -> do
                         el (cc "mb-4") $ do
                           tag "img" 
-                            ( att "src" (TL.toStrict $ "data:image/jpeg;base64," <> encodeBase64 imgBytes)
+                            ( att "src" (TL.toStrict $ "data:image/jpeg;base64," <> extractBase64 (encodeBase64 imgBytes))
                             . att "alt" "Profile Image"
                             . cc "w-32 h-32 rounded-full object-cover"
                             ) 
