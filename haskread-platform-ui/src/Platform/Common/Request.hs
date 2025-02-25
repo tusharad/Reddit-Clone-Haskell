@@ -28,6 +28,7 @@ module Platform.Common.Request
   , changePassword
   , deleteUser
   , getUserProfileImage
+  , getAttachment
   ) where
 
 import Control.Exception
@@ -83,7 +84,9 @@ doRequest RequestOptions {..} = do
           respBody = getResponseBody resp
       if respStatus <= 299 && respStatus >= 200
         then return $ Right respBody
-        else return $ Left (BSL.unpack respBody)
+        else do 
+          print ("err:" :: String, respBody)
+          return $ Left (BSL.unpack respBody)
 
 doRequestJSON :: (FromJSON b) => RequestOptions -> IO (Either String b)
 doRequestJSON reqOpts = do
@@ -526,5 +529,21 @@ getUserProfileImage uId = do
               Just $
                 toPath
                   [ "api", "v1", "user", "profile-image", show uId]
+          , mbAuthToken = Nothing
+  }
+
+getAttachment :: Int -> IO (Either String LBS.ByteString)
+getAttachment threadId = do
+  url <- getUrl
+  doRequest RequestOptions {
+    reqMethod = GET
+          , reqUrl = url
+          , mbReqHeaders = Nothing
+          , mbQueryParams = Nothing
+          , mbReqBody = Nothing
+          , mbReqPath =
+              Just $
+                toPath
+                  [ "api", "v1", "thread", "attachment", show threadId]
           , mbAuthToken = Nothing
   }

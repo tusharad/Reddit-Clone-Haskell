@@ -84,6 +84,7 @@ data ThreadInfo = ThreadInfo
   { threadIDForThreadInfo :: Int
   , title :: Text
   , description :: Maybe Text
+  , doesAttachmentExistForThreadInfo :: Bool
   , createdAtForThreadInfo :: Text
   , userIDForThreadInfo :: Int
   , userNameForThreadInfo :: Text

@@ -54,6 +54,7 @@ showCommentsList ::
         , FooterId
         , CommentCardId
         , LiveSearchId
+        , AttachmentViewId
         ]
     )
     ()
@@ -103,6 +104,7 @@ viewThreadPage ::
          , FooterId
          , CommentCardId
          , LiveSearchId
+         , AttachmentViewId
          ]
     )
 viewThreadPage threadId = do
@@ -138,29 +140,43 @@ renderPage ::
   Either String FetchCommentsResponse ->
   (Maybe UserProfileResponse, Maybe [(Int, Bool)], Maybe FetchVoteCommentsForUserResponse) ->
   Either String Communities ->
-  Page '[ViewThreadId, HeaderId, ThreadId, CommunityId, FooterId, CommentCardId, LiveSearchId]
-renderPage mToken threadInfo eCommentList (mUserInfo, mUserThreadVotes, mUserCommentVotes) eCommunityList =
-  col (pad 20) $ do
-    stylesheet "/style.css"
-    script "/myjs.js"
-    el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
-      hyper (HeaderId 1) (headerView $ HeaderOps mToken mUserInfo)
-      tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-        el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
-          el (cc "w-full lg:w-3/4 px-4") $ do
-            hyper
-              (ThreadId 1)
-              ( threadView
-                  ThreadCardOps
-                    { threadInfo = threadInfo
-                    , currUserVotesForThreads = mUserThreadVotes
-                    , tokenForThreadCard = mToken
-                    , mbUserInfo = mUserInfo
-                    }
-              )
-            renderCommentsSection mToken threadInfo eCommentList mUserInfo mUserCommentVotes
-          renderCommunitySection eCommunityList
-      hyper (FooterId 1) footerView
+  Page
+    '[ ViewThreadId
+     , HeaderId
+     , ThreadId
+     , CommunityId
+     , FooterId
+     , CommentCardId
+     , LiveSearchId
+    , AttachmentViewId
+     ]
+renderPage
+  mToken
+  threadInfo
+  eCommentList
+  (mUserInfo, mUserThreadVotes, mUserCommentVotes)
+  eCommunityList =
+    col (pad 20) $ do
+      stylesheet "/style.css"
+      script "/myjs.js"
+      el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
+        hyper (HeaderId 1) (headerView $ HeaderOps mToken mUserInfo)
+        tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
+          el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
+            el (cc "w-full lg:w-3/4 px-4") $ do
+              hyper
+                (ThreadId 1)
+                ( threadView
+                    ThreadCardOps
+                      { threadInfo = threadInfo
+                      , currUserVotesForThreads = mUserThreadVotes
+                      , tokenForThreadCard = mToken
+                      , mbUserInfo = mUserInfo
+                      }
+                )
+              renderCommentsSection mToken threadInfo eCommentList mUserInfo mUserCommentVotes
+            renderCommunitySection eCommunityList
+        hyper (FooterId 1) footerView
 
 -- | Render the comments section.
 renderCommentsSection ::
@@ -178,6 +194,7 @@ renderCommentsSection ::
         , FooterId
         , CommentCardId
         , LiveSearchId
+        , AttachmentViewId
         ]
     )
     ()
@@ -211,6 +228,7 @@ renderCommunitySection ::
         , FooterId
         , CommentCardId
         , LiveSearchId
+        , AttachmentViewId
         ]
     )
     ()

@@ -225,6 +225,7 @@ data ThreadInfo = ThreadInfo
     title :: Text,
     description :: Maybe Text,
     createdAtForThreadInfo :: UTCTime,
+    doesAttachmentExistForThreadInfo :: Bool,
     userIDForThreadInfo :: UserID,
     userNameForThreadInfo :: Text,
     communityIDForThreadInfo :: CommunityID,

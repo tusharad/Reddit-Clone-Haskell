@@ -32,6 +32,7 @@ module Platform.DB.Marshaller
     commentInfoMarshaller,
     commentContentField,
     parentCommentIDField,
+    threadAttachmentField
   )
 where
 
@@ -42,6 +43,7 @@ import GHC.Int (Int32)
 import Orville.PostgreSQL
 import Platform.Common.Types (MyPassword (..))
 import Platform.DB.Model
+import Data.Maybe (isJust)
 
 otpField :: FieldDefinition NotNull Int32
 otpField = integerField "otp"
@@ -71,7 +73,7 @@ communityIDField :: FieldDefinition NotNull CommunityID
 communityIDField = coerceField $ serialField "community_id"
 
 threadAttachmentField :: FieldDefinition Nullable (Maybe Text)
-threadAttachmentField = nullableField $ unboundedTextField "attachment"
+threadAttachmentField =  nullableField $ unboundedTextField "attachment"
 
 communityNameField :: FieldDefinition NotNull Text
 communityNameField = boundedTextField "community_name" 255
@@ -320,6 +322,7 @@ threadInfoMarshaller =
       (\ThreadInfo {..} -> description)
       (nullableField threadDescriptionField)
     <*> marshallField (\ThreadInfo {..} -> createdAtForThreadInfo) createdAtField
+    <*> marshallField (\ThreadInfo {..} -> doesAttachmentExistForThreadInfo) (toBoolField $ threadAttachmentField)
     <*> marshallField (\ThreadInfo {..} -> userIDForThreadInfo) userIDField
     <*> marshallField (\ThreadInfo {..} -> userNameForThreadInfo) userNameField
     <*> marshallField (\ThreadInfo {..} -> communityIDForThreadInfo) communityIDField
@@ -333,3 +336,6 @@ threadInfoMarshaller =
     <*> marshallField
       (\ThreadInfo {..} -> commentCount)
       (nullableField commentCountField)
+
+toBoolField :: FieldDefinition Nullable (Maybe Text) -> FieldDefinition Nullable Bool
+toBoolField = convertField (convertSqlType (const Nothing) isJust)

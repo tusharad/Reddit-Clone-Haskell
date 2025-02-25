@@ -9,11 +9,13 @@ module Platform.User.Thread.Handler
   , fetchAllThreadsH
   , fetchThreadH
   , fetchAllThreadsBySearchH
+  , fetchThreadAttachmentImageH
   )
 where
 
 import Control.Monad (void, when)
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import qualified Data.ByteString.Lazy as LBS
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -27,6 +29,28 @@ import Platform.User.Thread.Types
 import Servant.Auth.Server
 import UnliftIO
 import Servant.Multipart
+import Data.UUID.V4
+import System.FilePath
+import System.Directory (doesFileExist)
+
+fetchThreadAttachmentImageH :: 
+  (MonadUnliftIO m) =>
+    ThreadID ->
+    AppM m LBS.ByteString
+fetchThreadAttachmentImageH tId = do
+  mbThreadRead <- queryWrapper $ fetchThreadByIDQ tId
+  case mbThreadRead of
+   Nothing -> throw400Err "Not available"
+   Just Thread{..} -> do
+    case threadAttachment of
+      Nothing -> throw400Err "No attachment found"
+      Just attachmentPath -> do
+         let filePath = T.unpack attachmentPath
+         exists <- liftIO $ doesFileExist filePath
+         if exists
+           then do
+             liftIO $ LBS.readFile filePath
+           else throw400Err "Not available"
 
 checkIfCommunityExists :: (MonadUnliftIO m) => CommunityID -> AppM m ()
 checkIfCommunityExists cID = do
@@ -83,8 +107,10 @@ storeAttachmentIfExist Nothing = pure Nothing
 storeAttachmentIfExist (Just FileData{..}) =
   if fdFileCType `notElem` supportedFileTypes then
     throw400Err "File type not supported"
-  else 
-    Just <$> createServerFilePath 1000000 fdPayload fdFileName 
+  else do
+    uuid <- liftIO $ nextRandom
+    Just <$> createServerFilePath 1000000 fdPayload 
+                ("attachment_" <> show uuid <> takeExtension (T.unpack fdFileName)) 
     
 checkIfUserOwnsThread :: (MonadUnliftIO m) => ThreadID -> UserID -> AppM m ()
 checkIfUserOwnsThread tID uID = do

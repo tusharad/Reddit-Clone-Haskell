@@ -233,7 +233,7 @@ createServerFilePath ::
   (MonadUnliftIO m) =>
   Int64 ->
   FilePath ->
-  T.Text ->
+  String ->
   AppM m FilePath
 createServerFilePath maxFileSize tempFP fName = do
   AppConfig{..} <- asks appConfig
@@ -242,7 +242,7 @@ createServerFilePath maxFileSize tempFP fName = do
     Left e -> throw400Err $ BSL.pack $ show e
     Right content -> do
       checkImageSize content
-      let serverFilePath = fileUploadDir </> T.unpack fName
+      let serverFilePath = fileUploadDir </> fName
       liftIO $ BSL.writeFile serverFilePath content
       pure serverFilePath
   where

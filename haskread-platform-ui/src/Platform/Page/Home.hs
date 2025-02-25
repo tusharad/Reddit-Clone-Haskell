@@ -94,7 +94,19 @@ paginationView threadCount pageParams@PageParams {..} =
 
 homePage ::
   (Hyperbole :> es, IOE :> es) =>
-  Eff es (Page '[HomeId, SortMenuId, HeaderId, ThreadId, FooterId, CommunityId, LiveSearchId])
+  Eff
+    es
+    ( Page
+        '[ HomeId
+         , SortMenuId
+         , HeaderId
+         , ThreadId
+         , FooterId
+         , CommunityId
+         , LiveSearchId
+         , AttachmentViewId
+         ]
+    )
 homePage = do
   mbTokenAndUser <- getTokenAndUser
   mbLimit <- lookupParam $ Param "limit"

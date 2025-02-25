@@ -47,3 +47,6 @@ The application will be a monolithic application. The application will have a fr
 ### Some Notes:
 
 - All password must be hashed before storing in the database.
+- Uploaded file naming convention.
+  For user profile: <user_id>_profile.ext / <user_id>_profile_thumb.ext
+  For thread attachment: attachment_uuid.ext

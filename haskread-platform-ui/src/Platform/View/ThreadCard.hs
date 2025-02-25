@@ -15,6 +15,7 @@
 module Platform.View.ThreadCard
   ( ThreadCardOps (..)
   , ThreadId (..)
+  , AttachmentViewId (..)
   , threadView
   , showDislikeIcon
   , showLikeIcon
@@ -26,15 +27,18 @@ module Platform.View.ThreadCard
   , viewThreadsList
   ) where
 
+import Control.Monad (forM_, void)
+import Data.Base64.Types
+import Data.ByteString.Lazy.Base64
 import Data.Maybe
 import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
 import Effectful
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
 import Web.Hyperbole
-import Control.Monad (void, forM_)
-import qualified Data.Text as T
 
 data ThreadCardOps = ThreadCardOps
   { tokenForThreadCard :: Maybe Text
@@ -47,34 +51,64 @@ data ThreadCardOps = ThreadCardOps
 newtype ThreadId = ThreadId Int
   deriving (Show, Read, ViewId)
 
+newtype AttachmentViewId = AttachmentViewId Int
+  deriving (Show, Read, ViewId)
+
+instance IOE :> es => HyperView AttachmentViewId es where
+  data Action AttachmentViewId = LoadImage Int
+    deriving (Show, Read, ViewAction)
+
+  update (LoadImage threadId) = do
+    eRes <- liftIO $ getAttachment threadId
+    case eRes of
+      Left _ -> pure $ el_ "Failed to load attachment"
+      Right docContent -> pure $
+        el (cc "mb-4") $ do
+          tag
+            "img"
+            ( att "src" 
+                (TL.toStrict $ "data:image/jpeg;base64," 
+                    <> extractBase64 (encodeBase64 docContent))
+                . att "alt" "Attachment image"
+                . cc "w-full h-1/2"
+            )
+            none
+
 instance IOE :> es => HyperView ThreadId es where
   data Action ThreadId
     = UpdateUpVote ThreadCardOps
     | UpdateDownVote ThreadCardOps
     | DeleteThread ThreadCardOps
     | EditThread ThreadCardOps
-    | SubmitEditThreadForm Int Text UserProfileResponse
     | CancelEditThreadForm
     deriving (Show, Read, ViewAction)
 
+  type Require ThreadId = '[AttachmentViewId]
+
   update (UpdateUpVote threadCardOps@ThreadCardOps {..}) = do
-    let threadId = threadIDForThreadInfo threadInfo
-    void . liftIO $ upvoteThread tokenForThreadCard threadId
-    pure $
-      threadView
-        threadCardOps
-          { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId True
-          , threadInfo = updateVoteCount currUserVotesForThreads True threadInfo
-          }
+    if isNothing tokenForThreadCard
+      then pure $ threadView threadCardOps
+      else do
+        let threadId = threadIDForThreadInfo threadInfo
+        void . liftIO $ upvoteThread tokenForThreadCard threadId
+        pure $
+          threadView
+            threadCardOps
+              { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId True
+              , threadInfo = updateVoteCount currUserVotesForThreads True threadInfo
+              }
   update (UpdateDownVote threadCardOps@ThreadCardOps {..}) = do
-    let threadId = threadIDForThreadInfo threadInfo
-    void . liftIO $ downvoteThread tokenForThreadCard threadId
-    pure $
-      threadView
-        threadCardOps
-          { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId False
-          , threadInfo = updateVoteCount currUserVotesForThreads False threadInfo
-          }
+    if isNothing tokenForThreadCard
+      then pure $ threadView threadCardOps
+      else do
+        let threadId = threadIDForThreadInfo threadInfo
+        void . liftIO $ downvoteThread tokenForThreadCard threadId
+        pure $
+          threadView
+            threadCardOps
+              { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId False
+              , threadInfo = updateVoteCount currUserVotesForThreads False threadInfo
+              }
   update (DeleteThread ThreadCardOps {..}) = do
     let threadId = threadIDForThreadInfo threadInfo
     case tokenForThreadCard of
@@ -83,18 +117,6 @@ instance IOE :> es => HyperView ThreadId es where
         _ <- liftIO $ deleteThread threadId t
         redirect "/"
   update CancelEditThreadForm = redirect "/"
-  update (SubmitEditThreadForm tId token userInfo) = do
-    uf <- formData @EditThreadForm
-    _ <- liftIO $ editThread
-      token
-      EditThreadData
-        { threadIdForEditThread = tId
-        , userIdForEditThread = userIDForUPR userInfo
-        , titleForEditThread = pure $ titleField uf
-        , descriptionForEditThread = pure $ descriptionField uf
-        , communityIdForEditThread = pure $ communityIdField uf
-        }
-    redirect "/"
   update (EditThread ThreadCardOps {..}) = do
     eCommunityList <- liftIO getCommunityList
     case eCommunityList of
@@ -110,14 +132,6 @@ instance IOE :> es => HyperView ThreadId es where
                 threadInfo
                 communityList
 
-genEditThreadForm :: ThreadInfo -> EditThreadForm Maybe
-genEditThreadForm ThreadInfo {..} =
-  EditThreadForm
-    { communityIdField = Just communityIDForThreadInfo
-    , titleField = Just title
-    , descriptionField = pure $ fromMaybe "" description
-    }
-
 updateVoteCount :: Maybe [(Int, Bool)] -> Bool -> ThreadInfo -> ThreadInfo
 updateVoteCount vals isUpvote t =
   let threadId = threadIDForThreadInfo t
@@ -131,9 +145,12 @@ voteChanges Nothing True _ = (1, 0)
 voteChanges Nothing False _ = (0, 1)
 voteChanges (Just vals) isUpvote threadId =
   case lookup threadId vals of
-    Just True -> if isUpvote then (-1, 0) else (-1, 1) -- If user has already upvoted, then downvote will cancel out the upvote
-    Just False -> if isUpvote then (1, -1) else (0, -1) -- If user has already downvoted, then upvote will cancel out the downvote
-    Nothing -> if isUpvote then (1, 0) else (0, 1) -- If user has not voted yet, then new vote will be added
+    Just True -> if isUpvote then (-1, 0) else (-1, 1) 
+    -- If user has already upvoted, then downvote will cancel out the upvote
+    Just False -> if isUpvote then (1, -1) else (0, -1) 
+    -- If user has already downvoted, then upvote will cancel out the downvote
+    Nothing -> if isUpvote then (1, 0) else (0, 1) 
+    -- If user has not voted yet, then new vote will be added
 
 updateCurrUserVotes :: Maybe [(Int, Bool)] -> Int -> Bool -> Maybe [(Int, Bool)]
 updateCurrUserVotes Nothing tId newVote = Just [(tId, newVote)]
@@ -176,6 +193,11 @@ viewThreadsList mUserInfo mToken_ mUserThreadVotes n (t : ts) = do
     )
   viewThreadsList mUserInfo mToken_ mUserThreadVotes (n + 1) ts
 
+attachmentView :: Int -> View AttachmentViewId ()
+attachmentView threadId =
+  el (cc "mb-4" . onLoad (LoadImage threadId) 500) $ do
+    text "Loading attachment..."
+
 threadView :: ThreadCardOps -> View ThreadId ()
 threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
   el (cc "card-bg shadow-lg rounded-lg mb-6 overflow-hidden") $ do
@@ -195,6 +217,10 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
         tag "p" mempty (text createdAtForThreadInfo)
     el (cc "p-4") $ do
       tag "p" mempty (text $ fromMaybe "" description)
+      if doesAttachmentExistForThreadInfo
+        then
+          hyper (AttachmentViewId threadIDForThreadInfo) (attachmentView threadIDForThreadInfo)
+        else none
     el (cc "flex justify-between items-center p-4 border-t") $ do
       el (cc "flex space-x-2 items-center") $ do
         button
@@ -227,19 +253,7 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
           tag "i" (cc "bx bx-comment") none
           tag "span" mempty . text $ toText (fromMaybe 0 commentCount)
 
--- Edit thread code
-data EditThreadForm f = EditThreadForm
-  { communityIdField :: Field f Int
-  , titleField :: Field f Text
-  , descriptionField :: Field f Text
-  }
-  deriving (Generic)
-
-instance Form EditThreadForm Maybe
-
--- editThreadView ::
---   ThreadInfo -> [CommunityC] ->
-editThreadView ThreadInfo{..} (Communities communityList) = do
+editThreadView ThreadInfo {..} (Communities communityList) = do
   let css = "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
       funcName = "updateThread(" <> show threadIDForThreadInfo <> ")"
   el (cc css) $ do
@@ -250,35 +264,53 @@ editThreadView ThreadInfo{..} (Communities communityList) = do
           tag "span" (att "id" "statusMessage" . cc "text-green-500") none
         el (cc "mb-4") $ do
           tag "label" (cc "block text-gray-700") "Select community"
-          tag "select" (cc "w-full px-2 py-2 border rounded"
-                      . att "id" "threadCommunityID"
-                      ) $
-              do
-                forM_ communityList $ \c -> do
-                  tag
-                    "option"
-                    (att "value" (toText $ communityID c))
-                    (raw $ communityName c)
+          tag
+            "select"
+            ( cc "w-full px-2 py-2 border rounded"
+                . att "id" "threadCommunityID"
+            )
+            $ do
+              forM_ communityList $ \c -> do
+                tag
+                  "option"
+                  (att "value" (toText $ communityID c))
+                  (raw $ communityName c)
         el (cc "mb-4") $ do
           tag "label" (cc "block text-gray-700") "Enter title"
-          tag "input" (att "type" "text" . placeholder "Title"
-                      . cc "w-full px-3 py-2 border rounded"
-                      . att "id" "threadTitle"
-                      . att "value" title
-                      ) none
+          tag
+            "input"
+            ( att "type" "text"
+                . placeholder "Title"
+                . cc "w-full px-3 py-2 border rounded"
+                . att "id" "threadTitle"
+                . att "value" title
+            )
+            none
 
         el (cc "mb-4") $ do
-            tag "label" (cc "block text-gray-700") "Enter Description"
-            tag "textarea" (att "id" "threadDescription"
-                      . maybe mempty (att "value") description
-                      . cc "w-full px-3 py-2 border rounded") none
+          tag "label" (cc "block text-gray-700") "Enter Description"
+          tag
+            "textarea"
+            ( att "id" "threadDescription"
+                . maybe mempty (att "value") description
+                . cc "w-full px-3 py-2 border rounded"
+            )
+            none
 
         el (cc "mb-4") $ do
-          tag "label" (cc "block text-gray-700") "Cannot update file, if want to update, please delete post"
+          tag "label" (cc "block text-gray-700") 
+            "Cannot update file, if want to update, please delete post"
 
         el (cc "mb-4") $ do
-          tag "button" (att "onClick" (T.pack funcName)
-                        . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
-                        ) "Create"
-          tag "button" (att "onClick" "cancelForm()"
-                    . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500") "Cancel"
+          tag
+            "button"
+            ( att "onClick" (T.pack funcName)
+                . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
+            )
+            "Create"
+          tag
+            "button"
+            ( att "onClick" "cancelForm()"
+                . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
+            )
+            "Cancel"

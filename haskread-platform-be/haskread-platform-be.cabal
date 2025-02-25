@@ -104,6 +104,7 @@ library
     , unix
     , unliftio
     , uri-bytestring
+    , uuid
     , wai
     , wai-cors
     , warp
@@ -155,6 +156,7 @@ executable haskread-platform-be-exe
     , unix
     , unliftio
     , uri-bytestring
+    , uuid
     , wai
     , wai-cors
     , warp
@@ -215,6 +217,7 @@ test-suite haskread-platform-be-test
     , unix
     , unliftio
     , uri-bytestring
+    , uuid
     , wai
     , wai-cors
     , warp

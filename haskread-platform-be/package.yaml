@@ -64,6 +64,7 @@ dependencies:
 - wai
 - http-media
 - unix
+- uuid
 
 ghc-options:
 - -Wall

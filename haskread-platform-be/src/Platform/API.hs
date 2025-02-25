@@ -72,6 +72,7 @@ mainServer =
     :<|> fetchCommunitiesH
     :<|> fetchAllThreadsBySearchH
     :<|> fetchUserProfileImageH
+    :<|> fetchThreadAttachmentImageH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -109,6 +110,7 @@ type MainAPI auths =
     :<|> FetchCommunitiesAPI
     :<|> FetchAllThreadsBySearch 
     :<|> GetProfileImage
+    :<|> GetThreadAttachment
 
 type CheckHealthAPI = "check-health" :> Get '[JSON] String
 
@@ -443,4 +445,11 @@ type GetProfileImage = "api"
     :> "user"
     :> "profile-image"
     :> Capture "UserID" UserID
+    :> Get '[ImagePNG] LBS.ByteString
+
+type GetThreadAttachment = "api" 
+    :> "v1"
+    :> "thread"
+    :> "attachment"
+    :> Capture "ThreadID" ThreadID
     :> Get '[ImagePNG] LBS.ByteString

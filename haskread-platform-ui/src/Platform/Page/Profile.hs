@@ -14,6 +14,8 @@
 
 module Platform.Page.Profile (profilePage) where
 
+import Data.Base64.Types
+import Data.ByteString.Lazy.Base64
 import Data.Text (Text, append)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -27,8 +29,6 @@ import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
 import Web.Hyperbole.Data.QueryData
-import Data.ByteString.Lazy.Base64
-import Data.Base64.Types
 
 newtype ProfileId = ProfileId Int
   deriving (Show, Read, ViewId)
@@ -232,28 +232,36 @@ updateImageView = do
     el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
       tag "h2" (cc "text-2xl font-bold mb-4") $ text "Update/upload image"
       el (cc "mb-4") $ do
-          tag "label" (cc "block text-gray-700") "Choose image"
-          tag "input" (att "type" "file"
-                     . att "id" "imageInput"
-                     . att "accept" "image/*"
-                     . att "required" ""
-                     . att "onChange" "previewImage()"
-                     )
-                     none
+        tag "label" (cc "block text-gray-700") "Choose image"
+        tag
+          "input"
+          ( att "type" "file"
+              . att "id" "imageInput"
+              . att "accept" "image/*"
+              . att "required" ""
+              . att "onChange" "previewImage()"
+          )
+          none
       el (cc "flex justify-end space-x-2") $ do
-        tag "button" (cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
-            . att "onClick" "uploadImage()")
-            "Upload image"
+        tag
+          "button"
+          ( cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
+              . att "onClick" "uploadImage()"
+          )
+          "Upload image"
         button
           CancelChangePassword
           (cc "px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
           "Cancel"
-      tag "img" (att "id" "imagePreview" . att "style" "display: none; max-width: 100%; height: auto;") none
+      tag
+        "img"
+        (att "id" "imagePreview" . att "style" "display: none; max-width: 100%; height: auto;")
+        none
       tag "p" (att "id" "statusMessage") none
 
 profilePage ::
   (Hyperbole :> es, IOE :> es) =>
-  Eff es (Page '[ProfileId, HeaderId, ThreadId, FooterId, LiveSearchId])
+  Eff es (Page '[ProfileId, HeaderId, ThreadId, FooterId, LiveSearchId, AttachmentViewId])
 profilePage = do
   mbTokenAndUser <- getTokenAndUser
   case mbTokenAndUser of
@@ -288,13 +296,19 @@ profilePage = do
                     case eImage of
                       Right imgBytes -> do
                         el (cc "mb-4") $ do
-                          tag "img" 
-                            ( att "src" (TL.toStrict $ "data:image/jpeg;base64," <> extractBase64 (encodeBase64 imgBytes))
-                            . att "alt" "Profile Image"
-                            . cc "w-32 h-32 rounded-full object-cover"
-                            ) 
+                          tag
+                            "img"
+                            ( att
+                                "src"
+                                ( TL.toStrict $
+                                    "data:image/jpeg;base64,"
+                                      <> extractBase64 (encodeBase64 imgBytes)
+                                )
+                                . att "alt" "Profile Image"
+                                . cc "w-32 h-32 rounded-full object-cover"
+                            )
                             none
-                      Left _ -> 
+                      Left _ ->
                         tag "p" (cc "text-gray-600 italic") "No profile image available"
                     tag
                       "p"

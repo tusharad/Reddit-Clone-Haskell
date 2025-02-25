@@ -76,13 +76,6 @@ fetchUserByIDHaxl uID0 = do
     Left e -> throw400Err $ BSL.pack $ show e
     Right r -> pure r
 
-{-
- eRes :: Either SomeException (Maybe UserRead) <- try $ fetchUserByIDQ uID0
- case eRes of
-   Left e -> throw400Err $ BSL.pack $ show e
-   Right mUser -> pure mUser
--}
-
 fetchUserProfileImage ::
   (MonadUnliftIO m) =>
   UserID ->
@@ -202,7 +195,8 @@ userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} =
   let (tempFP, fType, fName) = userImageInfo
   checkValidImageType fType
   mUserProfile <- fetchUserProfileImage userIDForUserInfo
-  serverFilePath <- createServerFilePath 30000 tempFP fName
+  serverFilePath <- createServerFilePath 300000 tempFP 
+                      (show userIDForUserInfo <> "_profile_" <> takeExtension (T.unpack fName))
   imageSize <- liftIO $ getFileSize tempFP
   let maxSizeKB = 300
       maxSizeBytes = maxSizeKB * 1024
