@@ -142,6 +142,8 @@ fetchThreadInfoExpr wClause lClause oClause orderClause =
         , fieldToAliasQualifiedColumnName (stringToAliasName "t") threadDescriptionField
         , fieldToAliasQualifiedColumnName (stringToAliasName "t") createdAtField
         , fieldToAliasQualifiedColumnName (stringToAliasName "t") threadAttachmentField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "t") threadAttachmentNameField
+        , fieldToAliasQualifiedColumnName (stringToAliasName "t") threadAttachmentSizeField
         , fieldToAliasQualifiedColumnName (stringToAliasName "u") userIDField
         , fieldToAliasQualifiedColumnName (stringToAliasName "u") userNameField
         , fieldToAliasQualifiedColumnName (stringToAliasName "c") communityIDField

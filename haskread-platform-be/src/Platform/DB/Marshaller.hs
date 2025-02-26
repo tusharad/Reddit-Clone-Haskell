@@ -32,7 +32,9 @@ module Platform.DB.Marshaller
     commentInfoMarshaller,
     commentContentField,
     parentCommentIDField,
-    threadAttachmentField
+    threadAttachmentField,
+    threadAttachmentNameField,
+    threadAttachmentSizeField,
   )
 where
 
@@ -43,7 +45,6 @@ import GHC.Int (Int32)
 import Orville.PostgreSQL
 import Platform.Common.Types (MyPassword (..))
 import Platform.DB.Model
-import Data.Maybe (isJust)
 
 otpField :: FieldDefinition NotNull Int32
 otpField = integerField "otp"
@@ -223,6 +224,8 @@ threadMarshaller =
     <*> marshallField (\Thread {..} -> threadUserID) userIDField
     <*> marshallField (\Thread {..} -> threadCommunityID) communityIDField
     <*> marshallField (\Thread {..} -> threadAttachment) threadAttachmentField
+    <*> marshallField (\Thread {..} -> threadAttachmentSize) threadAttachmentSizeField
+    <*> marshallField (\Thread {..} -> threadAttachmentName) threadAttachmentNameField
     <*> marshallReadOnly (marshallField (\Thread {..} -> threadCreatedAt) createdAtField)
     <*> marshallReadOnly (marshallField (\Thread {..} -> threadUpdatedAt) updatedAtField)
 
@@ -322,7 +325,8 @@ threadInfoMarshaller =
       (\ThreadInfo {..} -> description)
       (nullableField threadDescriptionField)
     <*> marshallField (\ThreadInfo {..} -> createdAtForThreadInfo) createdAtField
-    <*> marshallField (\ThreadInfo {..} -> doesAttachmentExistForThreadInfo) (toBoolField $ threadAttachmentField)
+    <*> marshallField (\ThreadInfo {..} -> attachmentSize) threadAttachmentSizeField
+    <*> marshallField (\ThreadInfo {..} -> attachmentName) threadAttachmentNameField
     <*> marshallField (\ThreadInfo {..} -> userIDForThreadInfo) userIDField
     <*> marshallField (\ThreadInfo {..} -> userNameForThreadInfo) userNameField
     <*> marshallField (\ThreadInfo {..} -> communityIDForThreadInfo) communityIDField
@@ -337,5 +341,8 @@ threadInfoMarshaller =
       (\ThreadInfo {..} -> commentCount)
       (nullableField commentCountField)
 
-toBoolField :: FieldDefinition Nullable (Maybe Text) -> FieldDefinition Nullable Bool
-toBoolField = convertField (convertSqlType (const Nothing) isJust)
+threadAttachmentSizeField :: FieldDefinition Nullable (Maybe Int32)
+threadAttachmentSizeField = nullableField $ integerField "attachment_size"
+
+threadAttachmentNameField :: FieldDefinition Nullable (Maybe Text)
+threadAttachmentNameField = nullableField $ boundedTextField "attachment_name" 500

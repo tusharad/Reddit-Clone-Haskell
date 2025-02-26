@@ -300,3 +300,42 @@ function updateThread(tId) {
 function cancelForm() {
     window.location.href = '/';
 }
+function downloadAttachment(threadId, attachmentName) {
+    return __awaiter(this, void 0, void 0, function () {
+        var apiUrl, response, blob, url, a, err_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    console.log("downloading attachment");
+                    apiUrl = "http://localhost:8085/api/v1/thread/attachment/".concat(threadId);
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 4, , 5]);
+                    return [4 /*yield*/, fetch(apiUrl, {
+                            method: 'GET'
+                        })];
+                case 2:
+                    response = _a.sent();
+                    if (!response.ok)
+                        throw new Error("Network response was not ok");
+                    return [4 /*yield*/, response.blob()];
+                case 3:
+                    blob = _a.sent();
+                    url = window.URL.createObjectURL(blob);
+                    a = document.createElement('a');
+                    a.href = url;
+                    a.download = attachmentName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    return [3 /*break*/, 5];
+                case 4:
+                    err_1 = _a.sent();
+                    console.log("Error while downloading: ", err_1);
+                    return [2 /*return*/];
+                case 5: return [2 /*return*/];
+            }
+        });
+    });
+}

@@ -19,7 +19,7 @@ module Platform.Common.Utils
   , queryWrapper
   , redirects
   , genRandomUserName
-  , createServerFilePath
+  , createServerFilePathAndSize
   )
 where
 
@@ -229,22 +229,20 @@ toEnv "sandbox" = Sandbox
 toEnv "production" = Production
 toEnv _ = Local -- Shouldn't happen
 
-createServerFilePath ::
+createServerFilePathAndSize ::
   (MonadUnliftIO m) =>
   Int64 ->
   FilePath ->
   String ->
-  AppM m FilePath
-createServerFilePath maxFileSize tempFP fName = do
+  AppM m (FilePath, Int)
+createServerFilePathAndSize maxFileSize tempFP fName = do
   AppConfig{..} <- asks appConfig
   (eRes :: Either SomeException BSL.ByteString) <- liftIO $ try $ BSL.readFile tempFP
   case eRes of
     Left e -> throw400Err $ BSL.pack $ show e
     Right content -> do
-      checkImageSize content
+      let fileSize = BSL.length content
+      unless (fileSize < maxFileSize) $ throw400Err "File to large :("
       let serverFilePath = fileUploadDir </> fName
       liftIO $ BSL.writeFile serverFilePath content
-      pure serverFilePath
-  where
-    checkImageSize imageContent = do
-      unless (BSL.length imageContent < maxFileSize) $ throw400Err "File to large :("
+      pure (serverFilePath, fromIntegral fileSize)

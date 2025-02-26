@@ -318,5 +318,7 @@ INSERT INTO vote_comment
 VALUES(13, 14, true, '2025-02-23 15:43:49.775', '2025-02-23 15:43:49.775');
 
 ALTER TABLE thread ADD COLUMN attachment text;
+ALTER TABLE thread ADD COLUMN attachment_size integer;
+ALTER TABLE thread ADD COLUMN attachment_name varchar(500);
 
 commit;

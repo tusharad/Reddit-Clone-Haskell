@@ -19,6 +19,8 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TE
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Utils
@@ -40,7 +42,8 @@ fetchThreadAttachmentImageH ::
 fetchThreadAttachmentImageH tId = do
   mbThreadRead <- queryWrapper $ fetchThreadByIDQ tId
   case mbThreadRead of
-   Nothing -> throw400Err "Not available"
+   Nothing -> throw400Err $ 
+        "No thread found with given threadId " <> (TE.encodeUtf8 . TL.pack $ show tId)
    Just Thread{..} -> do
     case threadAttachment of
       Nothing -> throw400Err "No attachment found"
@@ -50,7 +53,8 @@ fetchThreadAttachmentImageH tId = do
          if exists
            then do
              liftIO $ LBS.readFile filePath
-           else throw400Err "Not available"
+           else throw400Err $ "File path not found " 
+                <> (TE.encodeUtf8 $ TL.pack filePath)
 
 checkIfCommunityExists :: (MonadUnliftIO m) => CommunityID -> AppM m ()
 checkIfCommunityExists cID = do
@@ -67,15 +71,23 @@ checkThreadTitleNotEmpty tTitle =
   when (T.null tTitle) $
     throw400Err "Thread title cannot be empty!"
 
+data AttachmentInfo = AttachmentInfo {
+    serverFilePath :: FilePath
+  , attachmentName_ :: Text
+  , attachmentSize_ :: Int
+ }
+
 addThread :: (MonadUnliftIO m) => UserID -> CreateThreadReqBody -> AppM m CreateThreadResponse
 addThread userID CreateThreadReqBody {..} = do
-  mbServerFilePath <- storeAttachmentIfExist threadAttachment
+  mbAttachmentInfo <- storeAttachmentIfExist threadAttachment
   let threadWrite =
         Thread
           { threadTitle = threadTitleForCreate
           , threadDescription = threadDescriptionForCreate
           , threadCommunityID = threadCommunityIDForCreate
-          , threadAttachment = T.pack <$> mbServerFilePath
+          , threadAttachment = T.pack <$> serverFilePath <$> mbAttachmentInfo
+          , threadAttachmentName = attachmentName_ <$> mbAttachmentInfo 
+          , threadAttachmentSize = fromIntegral . attachmentSize_ <$> mbAttachmentInfo
           , threadUserID = userID
           , threadCreatedAt = ()
           , threadUpdatedAt = ()
@@ -102,15 +114,16 @@ supportedFileTypes = [
   , "image/jpeg"
  ]
 
-storeAttachmentIfExist :: MonadUnliftIO m =>  Maybe (FileData Tmp) -> AppM m (Maybe FilePath)
+storeAttachmentIfExist :: MonadUnliftIO m =>  Maybe (FileData Tmp) -> AppM m (Maybe AttachmentInfo)
 storeAttachmentIfExist Nothing = pure Nothing
 storeAttachmentIfExist (Just FileData{..}) =
   if fdFileCType `notElem` supportedFileTypes then
     throw400Err "File type not supported"
   else do
     uuid <- liftIO $ nextRandom
-    Just <$> createServerFilePath 1000000 fdPayload 
+    (serverFilePath, fileSize) <- createServerFilePathAndSize 1000000 fdPayload 
                 ("attachment_" <> show uuid <> takeExtension (T.unpack fdFileName)) 
+    pure $ Just (AttachmentInfo serverFilePath fdFileName fileSize)
     
 checkIfUserOwnsThread :: (MonadUnliftIO m) => ThreadID -> UserID -> AppM m ()
 checkIfUserOwnsThread tID uID = do
@@ -141,17 +154,19 @@ updateThreadH (Authenticated UserInfo {..}) UpdateThreadReqBody {..} = do
   void $ checkIfCommunityExists threadCommunityIDForUpdate
   void $ checkThreadTitleNotEmpty threadTitleForUpdate
   void $ checkIfUserOwnsThread threadIDForUpdate userIDForUserInfo
-  mbNewServerFile <- storeAttachmentIfExist threadAttachmentForUpdate
+  mbAttachmentInfo  <- storeAttachmentIfExist threadAttachmentForUpdate
   let threadWrite =
         Thread
           { threadTitle = threadTitleForUpdate
           , threadDescription = threadDescriptionForUpdate
           , threadCommunityID = threadCommunityIDForUpdate
           , threadUserID = userIDForUserInfo
+          , threadAttachment = T.pack <$> serverFilePath <$> mbAttachmentInfo
+          , threadAttachmentName = attachmentName_ <$> mbAttachmentInfo 
+          , threadAttachmentSize = fromIntegral . attachmentSize_ <$> mbAttachmentInfo
           , threadCreatedAt = ()
           , threadUpdatedAt = ()
           , threadID = ()
-          , threadAttachment = T.pack <$> mbNewServerFile
           }
   (eRes :: Either SomeException ()) <- try $ updateThreadQ threadIDForUpdate threadWrite
   case eRes of

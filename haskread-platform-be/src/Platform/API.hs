@@ -452,4 +452,4 @@ type GetThreadAttachment = "api"
     :> "thread"
     :> "attachment"
     :> Capture "ThreadID" ThreadID
-    :> Get '[ImagePNG] LBS.ByteString
+    :> Get '[OctetStream] LBS.ByteString

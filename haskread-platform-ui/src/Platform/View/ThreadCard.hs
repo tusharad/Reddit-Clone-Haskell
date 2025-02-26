@@ -38,6 +38,7 @@ import Effectful
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
+import System.FilePath
 import Web.Hyperbole
 
 data ThreadCardOps = ThreadCardOps
@@ -66,9 +67,12 @@ instance IOE :> es => HyperView AttachmentViewId es where
         el (cc "mb-4") $ do
           tag
             "img"
-            ( att "src" 
-                (TL.toStrict $ "data:image/jpeg;base64," 
-                    <> extractBase64 (encodeBase64 docContent))
+            ( att
+                "src"
+                ( TL.toStrict $
+                    "data:image/jpeg;base64,"
+                      <> extractBase64 (encodeBase64 docContent)
+                )
                 . att "alt" "Attachment image"
                 . cc "w-full h-1/2"
             )
@@ -145,12 +149,13 @@ voteChanges Nothing True _ = (1, 0)
 voteChanges Nothing False _ = (0, 1)
 voteChanges (Just vals) isUpvote threadId =
   case lookup threadId vals of
-    Just True -> if isUpvote then (-1, 0) else (-1, 1) 
+    Just True -> if isUpvote then (-1, 0) else (-1, 1)
     -- If user has already upvoted, then downvote will cancel out the upvote
-    Just False -> if isUpvote then (1, -1) else (0, -1) 
+    Just False -> if isUpvote then (1, -1) else (0, -1)
     -- If user has already downvoted, then upvote will cancel out the downvote
-    Nothing -> if isUpvote then (1, 0) else (0, 1) 
-    -- If user has not voted yet, then new vote will be added
+    Nothing -> if isUpvote then (1, 0) else (0, 1)
+
+-- If user has not voted yet, then new vote will be added
 
 updateCurrUserVotes :: Maybe [(Int, Bool)] -> Int -> Bool -> Maybe [(Int, Bool)]
 updateCurrUserVotes Nothing tId newVote = Just [(tId, newVote)]
@@ -193,10 +198,20 @@ viewThreadsList mUserInfo mToken_ mUserThreadVotes n (t : ts) = do
     )
   viewThreadsList mUserInfo mToken_ mUserThreadVotes (n + 1) ts
 
-attachmentView :: Int -> View AttachmentViewId ()
-attachmentView threadId =
-  el (cc "mb-4" . onLoad (LoadImage threadId) 500) $ do
-    text "Loading attachment..."
+attachmentView :: Text -> Int -> View AttachmentViewId ()
+attachmentView attachmentName threadId
+  | isImage = el (cc "mb-4" . onLoad (LoadImage threadId) 500) $ text "Loading attachment..."
+  | otherwise = el (cc "mb-4") $ do
+      let funcName = mconcat ["downloadAttachment(", T.pack (show threadId), ",'", attachmentName, "')"]
+      tag
+        "button"
+        (cc "text-blue-500" . att "onClick" funcName)
+        (text attachmentName)
+  where
+    isImage =
+      takeExtension
+        (T.unpack attachmentName)
+        `elem` [".png", ".jpeg", ".jpg", ".svg", ".gif"]
 
 threadView :: ThreadCardOps -> View ThreadId ()
 threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
@@ -217,10 +232,12 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
         tag "p" mempty (text createdAtForThreadInfo)
     el (cc "p-4") $ do
       tag "p" mempty (text $ fromMaybe "" description)
-      if doesAttachmentExistForThreadInfo
-        then
-          hyper (AttachmentViewId threadIDForThreadInfo) (attachmentView threadIDForThreadInfo)
-        else none
+      case attachmentName of
+        (Just attName) ->
+          hyper
+            (AttachmentViewId threadIDForThreadInfo)
+            (attachmentView attName threadIDForThreadInfo)
+        Nothing -> none
     el (cc "flex justify-between items-center p-4 border-t") $ do
       el (cc "flex space-x-2 items-center") $ do
         button
@@ -298,7 +315,9 @@ editThreadView ThreadInfo {..} (Communities communityList) = do
             none
 
         el (cc "mb-4") $ do
-          tag "label" (cc "block text-gray-700") 
+          tag
+            "label"
+            (cc "block text-gray-700")
             "Cannot update file, if want to update, please delete post"
 
         el (cc "mb-4") $ do

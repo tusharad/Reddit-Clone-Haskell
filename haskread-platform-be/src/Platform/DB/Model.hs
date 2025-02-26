@@ -135,6 +135,8 @@ data Thread a b = Thread
     threadUserID :: UserID,
     threadCommunityID :: CommunityID,
     threadAttachment :: Maybe Text,
+    threadAttachmentSize :: Maybe Int32,
+    threadAttachmentName :: Maybe Text,
     threadCreatedAt :: b,
     threadUpdatedAt :: b
   }
@@ -225,7 +227,8 @@ data ThreadInfo = ThreadInfo
     title :: Text,
     description :: Maybe Text,
     createdAtForThreadInfo :: UTCTime,
-    doesAttachmentExistForThreadInfo :: Bool,
+    attachmentSize :: Maybe Int32,
+    attachmentName :: Maybe Text,
     userIDForThreadInfo :: UserID,
     userNameForThreadInfo :: Text,
     communityIDForThreadInfo :: CommunityID,

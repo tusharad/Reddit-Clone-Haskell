@@ -36,6 +36,7 @@ dependencies:
 - data-default-class >= 0.2
 - data-default >= 0.8.0
 - base64
+- filepath
 
 ghc-options:
 - -Wall

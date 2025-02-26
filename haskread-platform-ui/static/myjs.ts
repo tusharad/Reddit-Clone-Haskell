@@ -231,3 +231,29 @@ async function updateThread(tId : number): Promise<void> {
 function cancelForm() {
     window.location.href = '/';
 }
+
+async function downloadAttachment (threadId : number, attachmentName: string) {
+    console.log("downloading attachment")
+    const apiUrl = `http://localhost:8085/api/v1/thread/attachment/${threadId}`
+    try {
+        const response = await fetch(apiUrl,{
+            method : 'GET'
+        });
+        if (!response.ok)
+            throw new Error("Network response was not ok")
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = attachmentName;
+        document.body.appendChild(a);
+        a.click();
+
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    }catch (err) {
+        console.log("Error while downloading: ",err)
+        return;
+    }
+ }

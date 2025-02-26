@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DuplicateRecordFields #-}
 
 module Platform.Common.Types
   ( UserProfileResponse (..)
@@ -44,8 +44,8 @@ import Data.Time
 import Text.Read (readMaybe)
 import Web.HttpApiData
 import Web.Hyperbole
-import Web.View.Types (ClassName)
 import Web.Hyperbole.Data.QueryData (Param (..))
+import Web.View.Types (ClassName)
 
 data UserProfileResponse = UserProfileResponse
   { userIDForUPR :: Int
@@ -64,13 +64,14 @@ data CreateThreadData = CreateThreadData
   }
   deriving (Eq, Show, Read)
 
-data EditThreadData = EditThreadData {
-    threadIdForEditThread :: Int
+data EditThreadData = EditThreadData
+  { threadIdForEditThread :: Int
   , titleForEditThread :: Maybe Text
   , userIdForEditThread :: Int
   , descriptionForEditThread :: Maybe Text
   , communityIdForEditThread :: Maybe Int
-} deriving (Eq, Show, Read)
+  }
+  deriving (Eq, Show, Read)
 
 data AddCommentData = AddCommentData
   { contentForAddComment :: Text
@@ -84,7 +85,8 @@ data ThreadInfo = ThreadInfo
   { threadIDForThreadInfo :: Int
   , title :: Text
   , description :: Maybe Text
-  , doesAttachmentExistForThreadInfo :: Bool
+  , attachmentName :: Maybe Text
+  , attachmentSize :: Maybe Int
   , createdAtForThreadInfo :: Text
   , userIDForThreadInfo :: Int
   , userNameForThreadInfo :: Text
@@ -232,9 +234,9 @@ data FetchVoteComments = FetchVoteComments
   deriving (Show, Eq, Generic, FromJSON)
 
 {-
-data CVote = CVote { commentIDForFetchVote :: Int, isUpvote :: Bool  } 
+data CVote = CVote { commentIDForFetchVote :: Int, isUpvote :: Bool  }
     deriving (Show, Eq, Generic, FromJSON)
-newtype CVoteList = CVoteList [CVote] 
+newtype CVoteList = CVoteList [CVote]
     deriving (Show, Eq, Generic, FromJSON)
 -}
 
@@ -251,29 +253,30 @@ data CreateThreadReqBody = CreateThreadReqBody
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 data UpdateThreadReqBody = UpdateThreadReqBody
-  { threadIDForUpdate :: Int,
-    threadTitleForUpdate :: Text,
-    threadDescriptionForUpdate :: Maybe Text,
-    threadCommunityIDForUpdate :: Int
+  { threadIDForUpdate :: Int
+  , threadTitleForUpdate :: Text
+  , threadDescriptionForUpdate :: Maybe Text
+  , threadCommunityIDForUpdate :: Int
   }
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 data ChangePasswordBody = ChangePasswordBody
-  { oldPasswordForChangePass :: Text,
-    newPasswordForChangePass :: Text,
-    confirmPasswordForChangePass :: Text
+  { oldPasswordForChangePass :: Text
+  , newPasswordForChangePass :: Text
+  , confirmPasswordForChangePass :: Text
   }
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 data DeleteUserBody = DeleteUserBody
-  { passwordForDeleteUser :: Text,
-    areUSure :: Bool
+  { passwordForDeleteUser :: Text
+  , areUSure :: Bool
   }
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
-newtype AuthData = AuthData {
-    jToken :: Maybe Text
- } deriving (Generic, Show, Read, ToParam, FromParam)
+newtype AuthData = AuthData
+  { jToken :: Maybe Text
+  }
+  deriving (Generic, Show, Read, ToParam, FromParam)
 
 instance Session AuthData where
   sessionKey = Param "AuthData"

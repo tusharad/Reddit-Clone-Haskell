@@ -56,6 +56,7 @@ library
     , data-default >=0.8.0
     , data-default-class >=0.2
     , effectful-core
+    , filepath
     , http-api-data
     , http-conduit
     , hyperbole
@@ -83,6 +84,7 @@ executable haskread-platform-ui-exe
     , data-default >=0.8.0
     , data-default-class >=0.2
     , effectful-core
+    , filepath
     , haskread-platform-ui
     , http-api-data
     , http-conduit
@@ -112,6 +114,7 @@ test-suite haskread-platform-ui-test
     , data-default >=0.8.0
     , data-default-class >=0.2
     , effectful-core
+    , filepath
     , haskread-platform-ui
     , http-api-data
     , http-conduit

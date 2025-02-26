@@ -3,18 +3,18 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Platform.User.Handler
-  ( userDashboardH,
-    userChangePasswordH,
-    userDeleteAccountH,
-    userUpdateProfileImageH,
-    fetchUserProfileImageH,
+  ( userDashboardH
+  , userChangePasswordH
+  , userDeleteAccountH
+  , userUpdateProfileImageH
+  , fetchUserProfileImageH
   )
 where
 
 import Control.Monad (unless, when)
 import Control.Monad.Reader
-import qualified Data.ByteString.Lazy.Char8 as BSL
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Coerce (coerce)
 import Data.Password.Bcrypt
 import qualified Data.Text as T
@@ -30,21 +30,21 @@ import Platform.Log
 import Platform.User.DB
 import Platform.User.Types
 import Servant.Auth.Server
-import UnliftIO
-import System.FilePath
 import System.Directory
-import System.Posix.Files (getFileStatus, fileSize)
-import System.Posix.Types (COff(COff))
+import System.FilePath
+import System.Posix.Files (fileSize, getFileStatus)
+import System.Posix.Types (COff(..))
+import UnliftIO
 
 fetchUserProfileImageH ::
   (MonadUnliftIO m) =>
-    UserID ->
-    AppM m LBS.ByteString
+  UserID ->
+  AppM m LBS.ByteString
 fetchUserProfileImageH uId = do
-   mbUserImage <- fetchUserProfileImage uId
-   case mbUserImage of
+  mbUserImage <- fetchUserProfileImage uId
+  case mbUserImage of
     Nothing -> throw400Err "Not available"
-    Just UserProfileImage{..} -> do
+    Just UserProfileImage {..} -> do
       let filePath = T.unpack userImage
       exists <- liftIO $ doesFileExist filePath
       if exists
@@ -59,10 +59,10 @@ fetchUserByIDHaxl ::
 fetchUserByIDHaxl uID0 = do
   MyAppState
     { haxlConfig =
-        HaxlConfig
-          { pgConnectionPool = pool,
-            numOfThreads = sem
-          }
+      HaxlConfig
+        { pgConnectionPool = pool
+        , numOfThreads = sem
+        }
     } <-
     ask
   let st = HaskReadState pool sem
@@ -97,10 +97,10 @@ userDashboardH (Authenticated UserInfo {..}) = do
     Just User {userName = uName, email = e, createdAt = c} -> do
       return
         UserProfileResponse
-          { userIDForUPR = coerce userIDForUserInfo,
-            userNameForUPR = uName,
-            userEmail = e,
-            userCreatedAt = T.pack $ show c
+          { userIDForUPR = coerce userIDForUserInfo
+          , userNameForUPR = uName
+          , userEmail = e
+          , userCreatedAt = T.pack $ show c
           }
 userDashboardH _ = throw401Err "Please login first"
 
@@ -125,9 +125,11 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
           changePassword u
   where
     checkOldPasswordMatch uPassword =
-      unless (matchPasswords
-              uPassword
-              oldPasswordForChangePass)
+      unless
+        ( matchPasswords
+            uPassword
+            oldPasswordForChangePass
+        )
         $ throw400Err "Old password is incorrect!"
     checkOldNewPasswordNotMatch =
       when (oldPasswordForChangePass == newPasswordForChangePass) $
@@ -177,8 +179,8 @@ userDeleteAccountH (Authenticated UserInfo {..}) DeleteUserBody {..} = do
             else deleteUserByID
   where
     checkIfPasswordMatch uPassword =
-       unless (matchPasswords uPassword passwordForDeleteUser)
-        $ throw400Err "Password is incorrect!"
+      unless (matchPasswords uPassword passwordForDeleteUser) $
+        throw400Err "Password is incorrect!"
     deleteUserByID = do
       eRes :: Either SomeException () <- try $ deleteUserQ userIDForUserInfo
       case eRes of
@@ -195,19 +197,31 @@ userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} =
   let (tempFP, fType, fName) = userImageInfo
   checkValidImageType fType
   mUserProfile <- fetchUserProfileImage userIDForUserInfo
-  serverFilePath <- createServerFilePath 300000 tempFP 
-                      (show userIDForUserInfo <> "_profile_" <> takeExtension (T.unpack fName))
+  (serverFilePath, _) <-
+    createServerFilePathAndSize
+      300000
+      tempFP
+      ( show userIDForUserInfo
+          <> "_profile_"
+          <> takeExtension (T.unpack fName)
+      )
   imageSize <- liftIO $ getFileSize tempFP
   let maxSizeKB = 300
       maxSizeBytes = maxSizeKB * 1024
-  when (imageSize > maxSizeBytes) $ 
-    throw400Err $ BSL.pack $ "Image size exceeds " ++ show maxSizeKB ++ "KB limit (" ++ show (imageSize `div` 1024) ++ "KB)"
+  when (imageSize > maxSizeBytes) $
+    throw400Err $
+      BSL.pack $
+        "Image size exceeds "
+          ++ show maxSizeKB
+          ++ "KB limit ("
+          ++ show (imageSize `div` 1024)
+          ++ "KB)"
   let userProfileImage =
         UserProfileImage
-          { userIDForProfileImage = userIDForUserInfo,
-            userImage = T.pack serverFilePath,
-            createdAtForProfileImage = (),
-            updatedAtForProfileImage = ()
+          { userIDForProfileImage = userIDForUserInfo
+          , userImage = T.pack serverFilePath
+          , createdAtForProfileImage = ()
+          , updatedAtForProfileImage = ()
           }
   case mUserProfile of
     Nothing -> do

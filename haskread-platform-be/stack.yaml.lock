@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: dhall-1.42.2@sha256:2c5b6b63ff63b6267af65b0f85f2cdd6708068854c3e2d6c67e0a8acbeb94a69,16962
+    pantry-tree:
+      sha256: a4e096f71c1211e55ae6685d2d33a5dbf198cf03ffc9a92ec9747e8fadb16216
+      size: 353205
+  original:
+    hackage: dhall-1.42.2@sha256:2c5b6b63ff63b6267af65b0f85f2cdd6708068854c3e2d6c67e0a8acbeb94a69,16962
+- completed:
     hackage: hoauth2-providers-0.8.0@sha256:78ac02bed781b7b9c28f4876fb62c8bcce62e21dd8313cdc1e0e654b189df420,3058
     pantry-tree:
       sha256: 763c270af90342e60c9d8290fc525528bab64bcb2e970ce96f0d944d447526c9
@@ -12,12 +19,33 @@ packages:
   original:
     hackage: hoauth2-providers-0.8.0@sha256:78ac02bed781b7b9c28f4876fb62c8bcce62e21dd8313cdc1e0e654b189df420,3058
 - completed:
-    hackage: jose-jwt-0.10.0@sha256:6ed175a01c721e317ceea15eb251a81de145c03711a977517935633a5cdec1d4,3546
+    hackage: servant-auth-server-0.4.9.0@sha256:dff8a46a1491b9102323094b3a715ceaaa0b2d450cb81e2e0784bd5c19a7199f,5397
     pantry-tree:
-      sha256: 58649e68e2d1adb47d8ed8741bd27ac23a2f19e3ee62bc28a68ac8642b3e0858
-      size: 1231
+      sha256: 7625d590d3349090eba88faec5187fede4c4302c8567255e675a592feaa55035
+      size: 1376
   original:
-    hackage: jose-jwt-0.10.0@sha256:6ed175a01c721e317ceea15eb251a81de145c03711a977517935633a5cdec1d4,3546
+    hackage: servant-auth-server-0.4.9.0@sha256:dff8a46a1491b9102323094b3a715ceaaa0b2d450cb81e2e0784bd5c19a7199f,5397
+- completed:
+    hackage: tasty-wai-0.1.2.0@sha256:06cc057d500aed373fb945e8b263363518ffefab5eface3524c1ccccad541390,2089
+    pantry-tree:
+      sha256: bf3bb90896581f1a7df1bc21c6b8e326a894d2a515f730730f9aceb66f291dce
+      size: 369
+  original:
+    hackage: tasty-wai-0.1.2.0@sha256:06cc057d500aed373fb945e8b263363518ffefab5eface3524c1ccccad541390,2089
+- completed:
+    hackage: atomic-write-0.2.1.1@sha256:1863c94cef87b4cf52b0064fd696201ebc747843d72daa3de2b2ce947a66e898,4773
+    pantry-tree:
+      sha256: 5f2b9e87ccdf1290785343abbb7e14df27e012cef7cea620cc110a45a3a34364
+      size: 2237
+  original:
+    hackage: atomic-write-0.2.1.1@sha256:1863c94cef87b4cf52b0064fd696201ebc747843d72daa3de2b2ce947a66e898,4773
+- completed:
+    hackage: repline-0.4.2.0@sha256:3d863dedf6d840d0578b597bb3b85c95e400c895c67e77a0c286b184d8be51b2,2179
+    pantry-tree:
+      sha256: 000a079f17a76e103311c262e907d3624c73efcfdeafdd2aabc2d2160e0523cf
+      size: 564
+  original:
+    hackage: repline-0.4.2.0@sha256:3d863dedf6d840d0578b597bb3b85c95e400c895c67e77a0c286b184d8be51b2,2179
 - completed:
     commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
     git: https://github.com/facebook/Haxl.git
@@ -44,8 +72,7 @@ packages:
     subdir: orville-postgresql
 snapshots:
 - completed:
-    sha256: 08bd13ce621b41a8f5e51456b38d5b46d7783ce114a50ab604d6bbab0d002146
-    size: 720271
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/43.yaml
-  original:
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/43.yaml
+    sha256: 00544e83718bcc51fc3783254aa1813205e1a723074bb0e2fb625879147445c0
+    size: 654477
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/2/24.yaml
+  original: nightly-2025-02-24
