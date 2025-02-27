@@ -37,6 +37,7 @@ library
       Platform.Comment.Types
       Platform.Comment.Utils
       Platform.Common.AppM
+      Platform.Common.Middleware
       Platform.Common.Types
       Platform.Common.Utils
       Platform.Community.DB
@@ -93,6 +94,7 @@ library
     , servant-auth-server
     , servant-multipart
     , servant-server
+    , sqlite-simple
     , string-interpolate
     , text
     , time
@@ -103,6 +105,7 @@ library
     , uuid
     , wai
     , wai-cors
+    , wai-rate-limit
     , warp
   default-language: Haskell2010
 
@@ -141,6 +144,7 @@ executable haskread-platform-be-exe
     , servant-auth-server
     , servant-multipart
     , servant-server
+    , sqlite-simple
     , string-interpolate
     , text
     , time
@@ -151,6 +155,7 @@ executable haskread-platform-be-exe
     , uuid
     , wai
     , wai-cors
+    , wai-rate-limit
     , warp
   default-language: Haskell2010
 
@@ -198,6 +203,7 @@ test-suite haskread-platform-be-test
     , servant-auth-server
     , servant-multipart
     , servant-server
+    , sqlite-simple
     , string-interpolate
     , tasty
     , tasty-hedgehog
@@ -212,5 +218,6 @@ test-suite haskread-platform-be-test
     , uuid
     , wai
     , wai-cors
+    , wai-rate-limit
     , warp
   default-language: Haskell2010

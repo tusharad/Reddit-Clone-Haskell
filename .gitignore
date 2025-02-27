@@ -6,3 +6,4 @@ haskread-platform-be/.logs/dev_logs.txt
 haskread-platform-be/file-upload
 haskread-platform-be/stack.yaml.lock
 haskread-platform-ui/stack.yaml.lock
+haskread-platform-be/rate_limit.db

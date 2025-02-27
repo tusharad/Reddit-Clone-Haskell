@@ -7,11 +7,10 @@ module Platform.Core (startApp, app) where
 -- Starting point of the Application
 
 import Control.Monad.Reader
-import Network.Wai (Middleware)
 import Network.Wai.Handler.Warp
-import Network.Wai.Middleware.Cors
 import Platform.API
 import Platform.Common.AppM
+import Platform.Common.Middleware
 import Platform.Common.Types
 import Platform.Common.Utils
 import Servant
@@ -31,25 +30,11 @@ allServer myAppState =
     (runAppM myAppState)
     mainServer
 
-myCorsPolicy :: CorsResourcePolicy
-myCorsPolicy =
-  simpleCorsResourcePolicy
-    { corsOrigins = Nothing,
-      corsMethods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      corsRequestHeaders = ["Authorization", "Content-Type"]
-    }
-
--- Apply the CORS middleware to your application
-myCorsMiddleware :: Middleware
-myCorsMiddleware = cors (const $ Just myCorsPolicy)
-
 startApp :: IO ()
 startApp = do
   argList <- getArgs
-  if null argList
-    then putStrLn "please provide argument" >> exitFailure
-    else do
-      let envFilePath = head argList
+  case argList of
+    (envFilePath : _) -> do
       fileExists <- doesFileExist envFilePath
       if not fileExists
         then putStrLn "please provide argument" >> exitFailure
@@ -58,8 +43,15 @@ startApp = do
           case eEnv of
             Left e -> putStrLn ("error happened: " <> show e) >> exitFailure
             Right (appST, _, ctx, appPort, _) -> do
+              initRateLimitTable "rate_limit.db"
               putStrLn $ "Application running at pot " <> show appPort
-              run appPort $ myCorsMiddleware (app appST ctx)
+              run appPort $
+                concatMiddleware
+                  [ myCorsMiddleware
+                  , rateLimitMiddleware 60 25 -- At max 30 requests in 1 minute
+                  ]
+                  (app appST ctx)
+    _ -> putStrLn "please provide argument" >> exitFailure
 
 app :: MyAppState -> Context [CookieSettings, JWTSettings] -> Application
 app appST ctx =

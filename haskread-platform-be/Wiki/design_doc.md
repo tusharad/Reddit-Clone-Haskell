@@ -50,3 +50,4 @@ The application will be a monolithic application. The application will have a fr
 - Uploaded file naming convention.
   For user profile: <user_id>_profile.ext / <user_id>_profile_thumb.ext
   For thread attachment: attachment_uuid.ext
+- Make sure sqlite3 is installed on Environment in which the app is running.
