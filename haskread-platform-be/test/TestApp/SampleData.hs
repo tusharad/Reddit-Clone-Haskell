@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module TestApp.SampleData
   ( sampleAdmins,
@@ -39,6 +41,7 @@ import Platform.DB.Model
 import Platform.User.Thread.Types
 import Platform.User.Types
 import System.IO.Unsafe
+import Servant.Multipart
 
 {-
 import           Hedgehog
@@ -226,6 +229,9 @@ sampleThreads =
         threadDescription = Just "A Reddit Clone in Haskell",
         threadCommunityID = CommunityID 1,
         threadUserID = UserID 1,
+        threadAttachment = Nothing,
+        threadAttachmentSize = Nothing,
+        threadAttachmentName = Nothing,
         threadCreatedAt = (),
         threadUpdatedAt = ()
       },
@@ -235,6 +241,9 @@ sampleThreads =
         threadDescription = Just "A Reddit Clone in Haskell updated.",
         threadCommunityID = CommunityID 1,
         threadUserID = UserID 1,
+        threadAttachment = Nothing,
+        threadAttachmentSize = Nothing,
+        threadAttachmentName = Nothing,
         threadCreatedAt = (),
         threadUpdatedAt = ()
       },
@@ -244,6 +253,9 @@ sampleThreads =
         threadDescription = Just "A Reddit Clone in Haskell updated again.",
         threadCommunityID = CommunityID 2,
         threadUserID = UserID 1,
+        threadAttachment = Nothing,
+        threadAttachmentSize = Nothing,
+        threadAttachmentName = Nothing,
         threadCreatedAt = (),
         threadUpdatedAt = ()
       },
@@ -253,6 +265,9 @@ sampleThreads =
         threadDescription = Just "A Reddit Clone in Haskell updated again.",
         threadCommunityID = CommunityID 2,
         threadUserID = UserID 1,
+        threadAttachment = Nothing,
+        threadAttachmentSize = Nothing,
+        threadAttachmentName = Nothing,
         threadCreatedAt = (),
         threadUpdatedAt = ()
       }
@@ -392,21 +407,30 @@ sampleUpdateUserProfileImageBody :: IO ByteString
 sampleUpdateUserProfileImageBody =
   BSL.readFile "./test/_sampleData/random_image.png"
 
-threadCreateReqBody :: ByteString
-threadCreateReqBody =
-  encode
-    CreateThreadReqBody
-      { threadTitleForCreate = "HaskRead",
-        threadDescriptionForCreate = Just "A Reddit Clone in Haskell",
-        threadCommunityIDForCreate = CommunityID 1
-      }
+threadCreateReqBody :: BSL.ByteString
+threadCreateReqBody = 
+    let boundary = "------------------------boundary123456789"
+        addField name value = 
+            "--" <> boundary <> "\r\n" <>
+            "Content-Disposition: form-data; name=\"" <> name <> "\"\r\n\r\n" <>
+            value <> "\r\n"
+    in
+    addField "threadTitleForCreate" "Test Thread Title" <>
+    addField "threadCommunityIDForCreate" "1" <>
+    addField "threadDescriptionForCreate" "This is a test thread description." <>
+    "--" <> boundary <> "--\r\n"
 
 threadUpdateReqBody :: ByteString
 threadUpdateReqBody =
-  encode
-    UpdateThreadReqBody
-      { threadIDForUpdate = ThreadID 2,
-        threadTitleForUpdate = "HaskRead 2",
-        threadDescriptionForUpdate = Just "A Reddit Clone in Haskell updated.",
-        threadCommunityIDForUpdate = CommunityID 1
-      }
+  let boundary = "------------------------boundary123456789"
+      contentType = "multipart/form-data; boundary=" <> boundary
+      addField name value = 
+            "--" <> boundary <> "\r\n" <>
+            "Content-Disposition: form-data; name=\"" <> name <> "\"\r\n\r\n" <>
+            value <> "\r\n"
+    in
+    addField "threadIDForUpdate" "2" <>
+    addField "threadTitleForUpdate" "Test Thread Title 2" <>
+    addField "threadCommunityIDForUpdate" "1" <>
+    addField "threadDescriptionForUpdate" "This is a test thread description." <>
+    "--" <> boundary <> "--\r\n"

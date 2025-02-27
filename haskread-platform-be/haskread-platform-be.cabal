@@ -94,10 +94,6 @@ library
     , servant-multipart
     , servant-server
     , string-interpolate
-    , tasty
-    , tasty-hedgehog
-    , tasty-hunit
-    , tasty-wai
     , text
     , time
     , transformers
@@ -146,10 +142,6 @@ executable haskread-platform-be-exe
     , servant-multipart
     , servant-server
     , string-interpolate
-    , tasty
-    , tasty-hedgehog
-    , tasty-hunit
-    , tasty-wai
     , text
     , time
     , transformers

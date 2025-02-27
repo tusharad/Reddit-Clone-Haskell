@@ -7,7 +7,6 @@ import Network.HTTP.Types
 import Test.Tasty
 import Test.Tasty.Wai
 import TestApp.SampleData
-import Control.Monad.IO.Class (liftIO)
 import Servant (Application)
 
 voteThreadAPITests :: Application -> [BSL.ByteString] -> TestTree
@@ -49,8 +48,9 @@ testCreateThreadAPI app token = do
             POST
             "/api/v1/user/thread/create"
             threadCreateReqBody
-            [ ("Content-Type", "application/json"),
-              (hAuthorization, "Bearer " <> BSL.toStrict token)
+            [ 
+              (hAuthorization, "Bearer " <> BSL.toStrict token),
+              (hContentType, "multipart/form-data; boundary=------------------------boundary123456789")
             ]
         )
     assertStatus' status200 res
@@ -64,7 +64,7 @@ testUpdateThreadAPI app token = do
             PUT
             "/api/v1/user/thread/update"
             threadUpdateReqBody
-            [ ("Content-Type", "application/json"),
+            [               (hContentType, "multipart/form-data; boundary=------------------------boundary123456789"),
               (hAuthorization, "Bearer " <> BSL.toStrict token)
             ]
         )

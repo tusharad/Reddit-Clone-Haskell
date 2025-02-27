@@ -36,11 +36,7 @@ dependencies:
 - orville-postgresql
 - unliftio
 - time
-- tasty
 - hedgehog
-- tasty-hedgehog
-- tasty-hunit
-- tasty-wai
 - http-types
 - string-interpolate
 - servant-multipart
@@ -101,3 +97,9 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - haskread-platform-be
+    - tasty
+    - tasty-hedgehog
+    - tasty-hunit
+    - tasty-wai
+    - servant-multipart
+
