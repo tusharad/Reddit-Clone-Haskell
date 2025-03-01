@@ -11,7 +11,7 @@ module Platform.Common.Types
   , AddCommentData (..)
   , AppColor (..)
   , ToColor (..)
-  , ClassName
+  -- , ClassName
   , ThreadInfo (..)
   , FetchAllThreadsResponse (..)
   , Communities (..)
@@ -45,7 +45,8 @@ import Text.Read (readMaybe)
 import Web.HttpApiData
 import Web.Hyperbole
 import Web.Hyperbole.Data.QueryData (Param (..))
-import Web.View.Types (ClassName)
+
+-- import Web.View.Types (ClassName)
 
 data UserProfileResponse = UserProfileResponse
   { userIDForUPR :: Int
@@ -148,7 +149,7 @@ newtype Communities = Communities
   }
   deriving (Show, Eq, Generic, FromJSON)
 
-data CommunityC = CommuniyC
+data CommunityC = CommunityC
   { communityName :: Text
   , communityID :: Int
   }

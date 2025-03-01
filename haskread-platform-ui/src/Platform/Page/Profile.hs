@@ -145,39 +145,46 @@ changePasswordView token v = do
   let css =
         "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
       inputFieldCSS = "w-full px-3 py-2 border rounded"
+      containerCss =
+        "bg-white dark:bg-gray-700 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
+      textCss = "text-2xl font-bold mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
   el (cc css) $ do
-    el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
-      tag "h2" (cc "text-2xl font-bold mb-4") $ text "Change Password"
+    el (cc containerCss) $ do
+      el (cc "p-6") $ do
+        tag "h2" (cc textCss) $ text "Change Password"
 
-      form @ChangePasswordForm (SubmitChangePassword token) (gap 10) $ do
-        field (oldPasswordField f) valStyle $ do
-          el (cc "mb-4") $ do
-            tag "label" (cc "block text-gray-700") "Enter Old Password"
-            input TextInput (placeholder "Old Password" . cc inputFieldCSS)
-            el_ invalidText
+        form @ChangePasswordForm (SubmitChangePassword token) (cc "flex flex-col space-y-4") $ do
+          field (oldPasswordField f) valStyle $ do
+            el (cc "mb-4") $ do
+              tag "label" (cc "flex flex-col space-y-1") $
+                tag "span" (cc "text-gray-700 dark:text-gray-300") "Enter Old Password"
+              input TextInput (placeholder "Old Password" . cc inputFieldCSS)
+              el_ invalidText
 
-        field (newPasswordField f) valStyle $ do
-          el (cc "mb-4") $ do
-            tag "label" (cc "block text-gray-700") "Enter new Password"
-            input TextInput (placeholder "new Password" . cc inputFieldCSS)
-            el_ invalidText
+          field (newPasswordField f) valStyle $ do
+            el (cc "mb-4") $ do
+              tag "label" (cc "flex flex-col space-y-1") $
+                tag "span" (cc "text-gray-700 dark:text-gray-300") "Enter new Password"
+              input TextInput (placeholder "new Password" . cc inputFieldCSS)
+              el_ invalidText
 
-        field (confirmNewPasswordField f) valStyle $ do
-          el (cc "mb-4") $ do
-            tag "label" (cc "block text-gray-700") "Re-enter new Password"
-            input TextInput (placeholder "confirm new Password" . cc inputFieldCSS)
-            el_ invalidText
+          field (confirmNewPasswordField f) valStyle $ do
+            el (cc "mb-4") $ do
+              tag "label" (cc "flex flex-col space-y-1") $
+                tag "span" (cc "text-gray-700 dark:text-gray-300") "Re-enter new Password"
+              input TextInput (placeholder "confirm new Password" . cc inputFieldCSS)
+              el_ invalidText
+
+          el (cc "flex justify-end space-x-2") $ do
+            submit
+              (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
+              "Submit"
 
         el (cc "flex justify-end space-x-2") $ do
-          submit
-            (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
-            "Submit"
-
-      el (cc "flex justify-end space-x-2") $ do
-        button
-          CancelChangePassword
-          (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
-          "Cancel"
+          button
+            CancelChangePassword
+            (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
+            "Cancel"
   where
     valStyle (Invalid _) = invalid
     valStyle Valid = success
@@ -189,36 +196,42 @@ deleteAccountView token v = do
   let css =
         "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
       inputFieldCSS = "w-full px-3 py-2 border rounded"
+      containerCss =
+        "bg-white dark:bg-gray-700 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
+      textCss = "text-2xl font-bold mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
   el (cc css) $ do
-    el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
-      tag "h2" (cc "text-2xl font-bold mb-4") $ text "Delete account"
+    el (cc containerCss) $ do
+      el (cc "p-6") $ do
+        tag "h2" (cc textCss) $ text "Delete account"
 
-      form @DeleteAccountForm (SubmitDeleteAccount token) (gap 10) $ do
-        field (deleteAccountPasswordField f) valStyle $ do
-          el (cc "mb-4") $ do
-            tag "label" (cc "block text-gray-700") "Enter Password"
-            input TextInput (placeholder "Password" . cc inputFieldCSS)
-            el_ invalidText
+        form @DeleteAccountForm (SubmitDeleteAccount token) (cc "flex flex-col space-y-4") $ do
+          field (deleteAccountPasswordField f) valStyle $ do
+            el (cc "mb-4") $ do
+              tag "label" (cc "flex flex-col space-y-1") $
+                tag "span" (cc "text-gray-700 dark:text-gray-300") "Enter Password"
+              input TextInput (placeholder "Password" . cc inputFieldCSS)
+              el_ invalidText
 
-        field (areYouSureField f) valStyle $ do
-          el (cc "mb-4") $ do
-            tag "label" (cc "block text-gray-700") "Are you sure"
-            tag
-              "input"
-              (att "type" "checkbox" . att "value" "true" . att "name" "areYouSureField")
-              none
-            el_ invalidText
+          field (areYouSureField f) valStyle $ do
+            el (cc "mb-4") $ do
+              tag "label" (cc "flex flex-col space-y-1") $
+                tag "span" (cc "text-gray-700 dark:text-gray-300") "Are you sure"
+              tag
+                "input"
+                (att "type" "checkbox" . att "value" "true" . att "name" "areYouSureField")
+                none
+              el_ invalidText
+
+          el (cc "flex justify-end space-x-2") $ do
+            submit
+              (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
+              "Delete"
 
         el (cc "flex justify-end space-x-2") $ do
-          submit
-            (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
-            "Delete"
-
-      el (cc "flex justify-end space-x-2") $ do
-        button
-          CancelChangePassword
-          (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
-          "Cancel"
+          button
+            CancelChangePassword
+            (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
+            "Cancel"
   where
     valStyle (Invalid _) = invalid
     valStyle Valid = success
@@ -228,36 +241,41 @@ updateImageView :: View ProfileId ()
 updateImageView = do
   let css =
         "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+      containerCss =
+        "bg-white dark:bg-gray-700 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
+      textCss = "text-2xl font-bold mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
   el (cc css) $ do
-    el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
-      tag "h2" (cc "text-2xl font-bold mb-4") $ text "Update/upload image"
-      el (cc "mb-4") $ do
-        tag "label" (cc "block text-gray-700") "Choose image"
+    el (cc containerCss) $ do
+      el (cc "p-6") $ do
+        tag "h2" (cc textCss) $ text "Update/upload image"
+        el (cc "mb-4") $ do
+          tag "label" (cc "flex flex-col space-y-1") $
+            tag "span" (cc "text-gray-700 dark:text-gray-300") "Choose image"
+          tag
+            "input"
+            ( att "type" "file"
+                . att "id" "imageInput"
+                . att "accept" "image/*"
+                . att "required" ""
+                . att "onChange" "previewImage()"
+            )
+            none
+        el (cc "flex justify-end space-x-2") $ do
+          tag
+            "button"
+            ( cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
+                . att "onClick" "uploadImage()"
+            )
+            "Upload image"
+          button
+            CancelChangePassword
+            (cc "px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
+            "Cancel"
         tag
-          "input"
-          ( att "type" "file"
-              . att "id" "imageInput"
-              . att "accept" "image/*"
-              . att "required" ""
-              . att "onChange" "previewImage()"
-          )
+          "img"
+          (att "id" "imagePreview" . att "style" "display: none; max-width: 100%; height: auto;")
           none
-      el (cc "flex justify-end space-x-2") $ do
-        tag
-          "button"
-          ( cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
-              . att "onClick" "uploadImage()"
-          )
-          "Upload image"
-        button
-          CancelChangePassword
-          (cc "px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
-          "Cancel"
-      tag
-        "img"
-        (att "id" "imagePreview" . att "style" "display: none; max-width: 100%; height: auto;")
-        none
-      tag "p" (att "id" "statusMessage") none
+        tag "p" (att "id" "statusMessage") none
 
 profilePage ::
   (Hyperbole :> es, IOE :> es) =>
@@ -283,16 +301,19 @@ profilePage = do
         Left err -> pure $ el_ $ raw (T.pack err)
         Right res -> do
           eUserThreadVotes <- liftIO $ getUserThreadVotes token_ (getThreadIds res)
-          pure $ col (pad 20) $ do
+          pure $ el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
             stylesheet "style.css"
             script "myjs.js"
             hyper (HeaderId 1) (headerView $ HeaderOps (Just token_) (Just userInfo))
             tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-              el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
-                el (cc "mb-6") $ do
-                  tag "h1" (cc "text-3xl font-bold text-center mb-4") "Profile"
-                  el (cc "bg-white shadow-lg rounded-lg p-6") $ do
-                    tag "p" (cc "text-lg text-gray-800") "Welcome to your profile page!"
+              el (cc "flex flex-col lg:flex-row gap-6") $ do
+                el (cc "w-full px-4") $ do
+                  tag "p" (cc "text-3xl text-center mb-6 text-gray-800 dark:text-gray-200") "Profile"
+                  el_ $ do
+                    tag
+                      "p"
+                      (cc "text-lg text-center mb-6 text-gray-800 dark:text-gray-200")
+                      "Welcome to your profile page!"
                     case eImage of
                       Right imgBytes -> do
                         el (cc "mb-4") $ do

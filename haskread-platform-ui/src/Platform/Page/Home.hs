@@ -74,25 +74,21 @@ pageParamsToUrl PageParams {..} = do
 
 paginationView :: Int -> PageParams -> View HomeId ()
 paginationView threadCount pageParams@PageParams {..} =
-  tag
-    "nav"
-    (cc "flex justify-center items-center mt-8 py-2 px-2")
-    $ do
-      button
-        (HandlePrev pageParams)
-        ( cc
-            "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1"
-            . maybe 
-                disabled (\offset_ -> if offset_ == 0 then disabled else const mempty) 
-                mbOffset
-        )
-        "Previous"
-      button
-        (HandleNext pageParams)
-        ( cc "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1"
-            . if threadCount < 10 then disabled else mempty
-        )
-        "Next"
+  let btnCSS =
+        cc
+          "px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition transform hover:scale-105"
+   in tag "nav" (cc "flex justify-center items-center mt-8 py-2 px-2 space-x-2") $ do
+        button
+          (HandlePrev pageParams)
+          (btnCSS . prevFunc)
+          "Previous"
+        button
+          (HandleNext pageParams)
+          (btnCSS . nextFunc)
+          "Next"
+  where
+    prevFunc = maybe disabled (\offset_ -> if offset_ == 0 then disabled else const mempty) mbOffset
+    nextFunc = if threadCount < 10 then disabled else mempty
 
 homePage ::
   (Hyperbole :> es, IOE :> es) =>
@@ -126,14 +122,14 @@ homePage = do
             (pure (Left "Token not found"))
             (\tokenAndUser -> getUserThreadVotes (fst tokenAndUser) (getThreadIds res))
             mbTokenAndUser
-      pure $ col (pad 20) $ do
+      pure $ el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
         stylesheet "style.css"
-        el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
+        el (cc "flex flex-col min-h-screen") $ do
           hyper (HeaderId 1) (headerView $ HeaderOps (fst <$> mbTokenAndUser) (snd <$> mbTokenAndUser))
           tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-            el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
+            el (cc "flex flex-col lg:flex-row gap-6") $ do
               el (cc "w-full lg:w-3/4 px-4") $ do
-                tag "p" (cc "text-3xl text-center mb-6 text-gray-800") "Threads"
+                tag "p" (cc "text-3xl text-center mb-6 text-gray-800 dark:text-gray-200") "Threads"
                 hyper (SortMenuId 1) sortMenuView
                 viewThreadsList
                   (snd <$> mbTokenAndUser)

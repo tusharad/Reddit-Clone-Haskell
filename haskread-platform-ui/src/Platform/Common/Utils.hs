@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -25,6 +25,7 @@ module Platform.Common.Utils
   ) where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Data.Either (isLeft)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Effectful (IOE)
@@ -33,7 +34,7 @@ import Platform.Common.Types
 import System.Environment (getArgs)
 import Web.Hyperbole
 import Web.View.Style
-import Data.Either (isLeft)
+import Web.View.Types (ClassName)
 
 btn :: Mod id
 btn = btn' Primary
@@ -73,10 +74,11 @@ getThreadIds (FetchAllThreadsResponse {threads = t}) = map threadIDForThreadInfo
 
 topVotedBtnCSS :: ClassName
 topVotedBtnCSS =
-  "px-4 py-2 rounded-full bg-blue-600 text-white font-semibold cursor-pointer shadow"
+  "px-4 py-2 rounded-full bg-blue-600 text-white font-semibold cursor-pointer shadow transition transform hover:scale-105"
 
 reallyLongCSS :: ClassName
-reallyLongCSS = "px-4 py-2 rounded-full text-gray-800 hover:bg-blue-100 cursor-pointer transition shadow"
+reallyLongCSS =
+  "px-4 py-2 rounded-full text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-700 cursor-pointer transition shadow"
 
 disabled :: Mod id
 disabled = att "disabled" mempty
@@ -98,8 +100,9 @@ getTokenAndUser ::
 getTokenAndUser = do
   mJwtToken <- jToken <$> session @AuthData
   eUserInfo <- liftIO $ maybe (pure $ Left "token not found") getUserInfo mJwtToken
-  if isLeft eUserInfo then do 
-    (deleteSession @AuthData)
-    pure Nothing
-  else
-    pure $ mJwtToken >>= (\token -> (token,) <$> hush eUserInfo)
+  if isLeft eUserInfo
+    then do
+      (deleteSession @AuthData)
+      pure Nothing
+    else
+      pure $ mJwtToken >>= (\token -> (token,) <$> hush eUserInfo)

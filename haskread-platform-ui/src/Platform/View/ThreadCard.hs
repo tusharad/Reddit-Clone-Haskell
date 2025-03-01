@@ -64,7 +64,7 @@ instance IOE :> es => HyperView AttachmentViewId es where
     case eRes of
       Left _ -> pure $ el_ "Failed to load attachment"
       Right docContent -> pure $
-        el (cc "mb-4") $ do
+        el (cc "p-4") $ do
           tag
             "img"
             ( att
@@ -73,8 +73,8 @@ instance IOE :> es => HyperView AttachmentViewId es where
                     "data:image/jpeg;base64,"
                       <> extractBase64 (encodeBase64 docContent)
                 )
-                . att "alt" "Attachment image"
-                . cc "w-full h-1/2"
+                . att "alt" "error...image supposed to be here"
+                . cc "w-full h-auto rounded-md"
             )
             none
 
@@ -171,18 +171,18 @@ modifyMap ((k, v) : xs) tId newVal
   | otherwise = (k, v) : modifyMap xs tId newVal
 
 showDislikeIcon :: Maybe [(Int, Bool)] -> Int -> View ThreadId ()
-showDislikeIcon Nothing _ = tag "i" (cc "bx bx-dislike") none
+showDislikeIcon Nothing _ = tag "i" (cc "bx bx-dislike text-gray-600 dark:text-gray-300") none
 showDislikeIcon (Just vals) tId = do
   case lookup tId vals of
-    Just False -> tag "i" (cc "bx bxs-dislike") none
-    _ -> tag "i" (cc "bx bx-dislike") none
+    Just False -> tag "i" (cc "bx bxs-dislike text-gray-600 dark:text-gray-300") none
+    _ -> tag "i" (cc "bx bx-dislike text-gray-600 dark:text-gray-300") none
 
 showLikeIcon :: Maybe [(Int, Bool)] -> Int -> View ThreadId ()
-showLikeIcon Nothing _ = tag "i" (cc "bx bx-like") none
+showLikeIcon Nothing _ = tag "i" (cc "bx bx-like text-gray-600 dark:text-gray-300") none
 showLikeIcon (Just vals) tId = do
   case lookup tId vals of
-    Just True -> tag "i" (cc "bx bxs-like") none
-    _ -> tag "i" (cc "bx bx-like") none
+    Just True -> tag "i" (cc "bx bxs-like text-gray-600 dark:text-gray-300") none
+    _ -> tag "i" (cc "bx bx-like text-gray-600 dark:text-gray-300") none
 
 viewThreadsList _ _ _ _ [] = none
 viewThreadsList mUserInfo mToken_ mUserThreadVotes n (t : ts) = do
@@ -215,17 +215,23 @@ attachmentView attachmentName threadId
 
 threadView :: ThreadCardOps -> View ThreadId ()
 threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
-  el (cc "card-bg shadow-lg rounded-lg mb-6 overflow-hidden") $ do
-    el (cc "flex justify-between items-center p-4 border-b") $ do
-      tag "h2" (cc "text-lg font-bold text-gray-800") $ do
+  el
+    ( cc
+        "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
+    ) $ do
+    el
+      ( cc
+          "flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b dark:border-gray-700"
+      ) $ do
+      tag "h2" (cc "text-lg font-bold text-gray-800 dark:text-gray-200") $ do
         link
           (stringToUrl $ "/view-thread/" <> show threadIDForThreadInfo)
-          mempty
+          (cc "truncate block hover:text-blue-600 dark:hover:text-blue-400 transition")
           (text title)
-      el (cc "text-sm text-right text-gray-500") $ do
+      el (cc "text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-0") $ do
         tag "p" mempty $ do
           text "Community:"
-          tag "span" (cc "font-semibold") (text communityNameForThreadInfo)
+        tag "span" (cc "font-semibold") (text communityNameForThreadInfo)
         tag "p" mempty $ do
           text "Created by:"
           tag "span" (cc "font-semibold") (text userNameForThreadInfo)
@@ -238,20 +244,24 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
             (AttachmentViewId threadIDForThreadInfo)
             (attachmentView attName threadIDForThreadInfo)
         Nothing -> none
-    el (cc "flex justify-between items-center p-4 border-t") $ do
+    el (cc "flex justify-between items-center p-4 border-t dark:border-gray-700") $ do
       el (cc "flex space-x-2 items-center") $ do
         button
           (UpdateUpVote threadCardOps)
-          (cc "flex items-center space-x-1 hover:text-blue-500")
+          ( cc
+              "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
+          )
           $ do
             showLikeIcon currUserVotesForThreads threadIDForThreadInfo
-            tag "span" mempty . text $ toText (fromMaybe 0 upvoteCount)
+            tag "span" (cc "text-gray-600 dark:text-gray-300") . text $ toText (fromMaybe 0 upvoteCount)
         button
           (UpdateDownVote threadCardOps)
-          (cc "flex items-center space-x-1 hover:text-blue-500")
+          ( cc
+              "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
+          )
           $ do
             showDislikeIcon currUserVotesForThreads threadIDForThreadInfo
-            tag "span" mempty . text $ toText (fromMaybe 0 downvoteCount)
+            tag "span" (cc "text-gray-600 dark:text-gray-300") . text $ toText (fromMaybe 0 downvoteCount)
         case mbUserInfo of
           Nothing -> none
           Just userInfo -> do
@@ -259,14 +269,18 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
               then do
                 button
                   (DeleteThread threadCardOps)
-                  (cc "text-sm flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1")
+                  ( cc
+                      "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
+                  )
                   "delete"
                 button
                   (EditThread threadCardOps)
-                  (cc "text-sm flex hover:bg-gray-900 text-white bg-gray-700 rounded-md px-1 py-1")
+                  ( cc
+                      "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
+                  )
                   "edit"
               else none
-        tag "span" (cc "flex items-center space-x-1") $ do
+        tag "span" (cc "flex items-center space-x-1 text-gray-600 dark:text-gray-300") $ do
           tag "i" (cc "bx bx-comment") none
           tag "span" mempty . text $ toText (fromMaybe 0 commentCount)
 

@@ -26,8 +26,8 @@ import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.View
 import Platform.View.Header
-import Web.Hyperbole
 import Platform.View.LiveSearch (LiveSearchId)
+import Web.Hyperbole
 
 data RegisterForm = RegisterForm
   deriving (Show, Read, ViewId)
@@ -95,9 +95,9 @@ validatePass p1 p2 =
 
 registerPage :: Eff es (Page '[RegisterForm, HeaderId, FooterId, LiveSearchId])
 registerPage = do
-  pure $ do
+  pure $ el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
     stylesheet "style.css"
-    el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
+    el (cc "flex flex-col min-h-screen") $ do
       hyper (HeaderId 1) (headerView defaultHeaderOps)
       tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
         el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
@@ -105,40 +105,59 @@ registerPage = do
             el (cc "flex flex-col min-h-screen") $ do
               tag "main" (cc "container mx-auto mt-20 px-6 flex-grow") $ do
                 tag "h1" (cc "text-2xl font-bold mb-4 text-center") "Register"
-                el (cc "card-bg px-6 py-6 shadow-lg rounded-lg mb-6 overflow-hidden") $ do
-                  hyper RegisterForm $ registerFormView Nothing genForm
+                hyper RegisterForm $ registerFormView Nothing genForm
         hyper (FooterId 1) footerView
 
 registerFormView :: Maybe Text -> RegisterFormData Validated -> View RegisterForm ()
 registerFormView mErrorMsg v = do
   let f = formFieldsWith v
-  form @RegisterFormData Submit (gap 10) $ do
-    field f.userName valStyle $ do
-      input Username (inp . placeholder "Enter user name")
-      invalidText
+  el
+    ( cc
+        "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
+    ) $ do
+    el (cc "p-6") $ do
+      form @RegisterFormData Submit (cc "flex flex-col space-y-4") $ do
+        field f.userName valStyle $ do
+          input
+            Username
+            ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                . placeholder "Enter user name"
+            )
+          invalidText
 
-    field (email f) valStyle $ do
-      input Email (inp . placeholder "Enter email")
-      invalidText
+        field (email f) valStyle $ do
+          input
+            Email
+            ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                . placeholder "Enter email"
+            )
+          invalidText
 
-    field f.pass1 valStyle $ do
-      input NewPassword (inp . placeholder "password")
-      el_ invalidText
+        field f.pass1 valStyle $ do
+          input
+            NewPassword
+            ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                . placeholder "password"
+            )
+          el_ invalidText
 
-    field f.pass2 valStyle $ do
-      input NewPassword (inp . placeholder "confirm password")
-      el_ invalidText
+        field f.pass2 valStyle $ do
+          input
+            NewPassword
+            ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                . placeholder "confirm password"
+            )
+          el_ invalidText
 
-    case mErrorMsg of
-      Nothing -> pure ()
-      Just errMsg -> el invalid (text errMsg)
-    submit (btn . cc "rounded") "Submit"
-  button
-    OauthPage
-    (cc "mt-2 w-full bg-red-600 text-white py-2 rounded hover:bg-red-700")
-    "Continue with Google"
+        case mErrorMsg of
+          Nothing -> pure ()
+          Just errMsg -> el invalid (text errMsg)
+        submit (btn . cc "rounded transition transform hover:scale-105 text-2xl mr-2") "Submit"
+      button
+        OauthPage
+        (btn . cc "mt-2 w-full rounded transition transform hover:scale-105")
+        $ tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"
   where
-    inp = inputS
     valStyle (Invalid _) = invalid
     valStyle Valid = success
     valStyle _ = id

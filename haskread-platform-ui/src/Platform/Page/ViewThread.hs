@@ -59,7 +59,7 @@ showCommentsList ::
     )
     ()
 showCommentsList mbUserInfo n mUserCommentVotes mToken nestedComments = do
-  el (cc "ml-4 border-l-2 border-gray-300 pl-4") $ do
+  el (cc "replies ml-4 border-l-2") $ do
     go n nestedComments
   where
     go _ [] = none
@@ -148,7 +148,7 @@ renderPage ::
      , FooterId
      , CommentCardId
      , LiveSearchId
-    , AttachmentViewId
+     , AttachmentViewId
      ]
 renderPage
   mToken
@@ -156,13 +156,13 @@ renderPage
   eCommentList
   (mUserInfo, mUserThreadVotes, mUserCommentVotes)
   eCommunityList =
-    col (pad 20) $ do
+    el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
       stylesheet "/style.css"
       script "/myjs.js"
-      el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
+      el (cc "flex flex-col min-h-screen") $ do
         hyper (HeaderId 1) (headerView $ HeaderOps mToken mUserInfo)
         tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-          el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
+          el (cc "flex flex-col lg:flex-row gap-6") $ do
             el (cc "w-full lg:w-3/4 px-4") $ do
               hyper
                 (ThreadId 1)
@@ -208,7 +208,7 @@ renderCommentsSection mToken threadInfo commentList mUserInfo mUserCommentVotes 
           ( addCommentButtonView
               (AddCommentData "" (threadIDForThreadInfo threadInfo) token Nothing)
           )
-    tag "h2" (cc "text-2xl font-bold mb-4 text-gray-900") "Comments"
+    tag "h2" (cc "text-2xl text-center mb-6 text-gray-800 dark:text-gray-200") "Comments"
     showCommentsList
       mUserInfo
       0
@@ -234,4 +234,4 @@ renderCommunitySection ::
     ()
 renderCommunitySection (Left err) = el_ $ raw $ T.pack err
 renderCommunitySection (Right communityList) =
-  el (cc "w-1/4 pl-4") $ hyper (CommunityId 1) $ communityListView communityList
+  el_ $ hyper (CommunityId 1) $ communityListView communityList

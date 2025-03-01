@@ -22,14 +22,14 @@ import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.View
 import Platform.View.Header
-import Web.Hyperbole
 import Platform.View.LiveSearch (LiveSearchId)
+import Web.Hyperbole
 
 data FormView = FormView
   deriving (Show, Read, ViewId)
 
 instance (IOE :> es, Hyperbole :> es) => HyperView FormView es where
-  data Action FormView = Submit | DoRedirect | OAuthPage 
+  data Action FormView = Submit | DoRedirect | OAuthPage
     deriving (Show, Read, ViewAction)
 
   update DoRedirect = redirect "/"
@@ -82,46 +82,60 @@ validatePass p1 =
 
 loginPage :: Eff es (Page '[FormView, HeaderId, FooterId, LiveSearchId])
 loginPage = do
-  pure $ do
+  pure $ el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
     stylesheet "style.css"
-    el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
+    el (cc "flex flex-col min-h-screen") $ do
       hyper (HeaderId 1) (headerView defaultHeaderOps)
       tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
         el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
           el (cc "w-full lg px-4") $ do
             el (cc "flex flex-col min-h-screen") $ do
               tag "main" (cc "container mx-auto mt-20 px-6 flex-grow") $ do
-                tag "h1" (cc "text-2xl font-bold mb-4 text-center") "Login"
-                el (cc "card-bg px-6 py-6 shadow-lg rounded-lg mb-6 overflow-hidden") $ do
-                  hyper FormView $ formView Nothing genForm
+                tag "p" (cc "text-2xl font-bold mb-4 text-center") "Login"
+                hyper FormView $ formView Nothing genForm
         hyper (FooterId 1) footerView
 
 formView :: Maybe Text -> UserForm Validated -> View FormView ()
 formView mErrorMsg v = do
   let f = formFieldsWith v
-  form @UserForm Submit (gap 10) $ do
-    field (email f) valStyle $ do
-      label "email"
-      input Email (inp . placeholder "email")
-      fv <- fieldValid
-      case fv of
-        Invalid t -> el_ (text t)
-        Valid -> el_ ""
-        _ -> none
-    field f.pass valStyle $ do
-      label "Password"
-      input NewPassword (inp . placeholder "password")
-      el_ invalidText
-    case mErrorMsg of
-      Nothing -> pure ()
-      Just errMsg -> el invalid (text errMsg)
-    submit (btn . cc "rounded") "Submit"
-  button
-    OAuthPage
-    (cc "mt-2 w-full bg-red-600 text-white py-2 rounded hover:bg-red-700")
-    "Continue with Google"
+  el
+    ( cc
+        "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
+    )
+    $ do
+      el (cc "p-6") $ do
+        form @UserForm Submit (cc "flex flex-col space-y-4") $ do
+          field (email f) valStyle $ do
+            tag "label" (cc "flex flex-col space-y-1") $
+              tag "span" (cc "text-gray-700 dark:text-gray-300") "email"
+            input
+              Email
+              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  . placeholder "email"
+              )
+            fv <- fieldValid
+            case fv of
+              Invalid t -> el_ (text t)
+              Valid -> el_ ""
+              _ -> none
+          field f.pass valStyle $ do
+            tag "label" (cc "flex flex-col space-y-1") $
+              tag "span" (cc "text-gray-700 dark:text-gray-300") "Password"
+            input
+              NewPassword
+              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  . placeholder "password"
+              )
+            el_ invalidText
+          case mErrorMsg of
+            Nothing -> pure ()
+            Just errMsg -> el invalid (text errMsg)
+          submit (btn . cc "rounded transition transform hover:scale-105 text-xl mr-2") "Submit"
+        button
+          OAuthPage
+          (btn . cc "mt-2 w-full rounded transition transform hover:scale-105")
+          $ tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"
   where
-    inp = inputS
     valStyle (Invalid _) = invalid
     valStyle Valid = success
     valStyle _ = id
