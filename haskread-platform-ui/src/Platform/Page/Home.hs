@@ -82,13 +82,15 @@ paginationView threadCount pageParams@PageParams {..} =
         (HandlePrev pageParams)
         ( cc
             "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1"
-            . maybe disabled (const mempty) mbOffset
+            . maybe 
+                disabled (\offset_ -> if offset_ == 0 then disabled else const mempty) 
+                mbOffset
         )
         "Previous"
       button
         (HandleNext pageParams)
         ( cc "px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 mx-1"
-            . if threadCount < 3 then disabled else mempty
+            . if threadCount < 10 then disabled else mempty
         )
         "Next"
 
