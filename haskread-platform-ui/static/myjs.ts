@@ -1,5 +1,11 @@
 console.log("custom js loaded!");
 
+const url_path = () => {
+    const hostUrl = window.location.hostname
+    return hostUrl.includes("localhost")
+        ? "http://localhost:8085" : "https://haskread.tushar-adhatrao.in"
+}
+
 // Function to extract JWT token from cookie
 function extractJwtToken(): string | null {
     const getCookie = (name: string): string | undefined => {
@@ -16,7 +22,8 @@ function extractJwtToken(): string | null {
 
     try {
         const decoded: string = decodeURIComponent(authCookie);
-        const jwtMatch: RegExpMatchArray | null = decoded.match(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/);
+        const jwtMatch: RegExpMatchArray | null = 
+            decoded.match(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/);
         if (jwtMatch) {
             const jwtToken: string = jwtMatch[0];
             console.log("Parsed Object:", `AuthData { jToken : "Just \"${jwtToken}\"" }`);
@@ -54,13 +61,15 @@ function updateCharCount(textarea: HTMLTextAreaElement): void {
 
 // Function to preview image
 function previewImage(): void {
-    const imageInput: HTMLInputElement | null = document.getElementById('imageInput') as HTMLInputElement;
+    const imageInput: HTMLInputElement | null = 
+            document.getElementById('imageInput') as HTMLInputElement;
     if (!imageInput?.files || imageInput.files.length === 0) return;
 
     const file: File = imageInput.files[0];
     if (!file.type.startsWith('image/')) return;
 
-    const imagePreview: HTMLImageElement | null = document.getElementById('imagePreview') as HTMLImageElement;
+    const imagePreview: HTMLImageElement | null = 
+        document.getElementById('imagePreview') as HTMLImageElement;
     if (!imagePreview) return;
 
     const reader: FileReader = new FileReader();
@@ -76,7 +85,8 @@ function previewImage(): void {
 // Function to upload image
 async function uploadImage(): Promise<void> {
     console.log("uploading image");
-    const imageInput: HTMLInputElement | null = document.getElementById('imageInput') as HTMLInputElement;
+    const imageInput: HTMLInputElement | null = 
+        document.getElementById('imageInput') as HTMLInputElement;
     const statusMessage: HTMLElement | null = document.getElementById('statusMessage');
 
     if (!imageInput?.files || imageInput.files.length === 0) {
@@ -103,7 +113,9 @@ async function uploadImage(): Promise<void> {
     if (statusMessage) statusMessage.textContent = "Uploading image...";
 
     try {
-        const response: Response = await fetch('http://localhost:8085/api/v1/user/profile/update-image', {
+        const url = url_path();
+        const response: Response = await 
+            fetch(`${url}/api/v1/user/profile/update-image`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${jwtToken}`,
@@ -129,10 +141,13 @@ async function createThread(): Promise<void> {
     const statusMessage: HTMLElement | null = document.getElementById('statusMessage');
 
     // Get field values by ID
-    const communityId: string = (document.getElementById('threadCommunityID') as HTMLInputElement).value;
+    const communityId: string = 
+        (document.getElementById('threadCommunityID') as HTMLInputElement).value;
     const title: string = (document.getElementById('threadTitle') as HTMLInputElement).value;
-    const description: string = (document.getElementById('threadDescription') as HTMLTextAreaElement).value;
-    const fileInput: HTMLInputElement | null = document.getElementById('threadAttachment') as HTMLInputElement;
+    const description: string = 
+        (document.getElementById('threadDescription') as HTMLTextAreaElement).value;
+    const fileInput: HTMLInputElement | null = 
+        document.getElementById('threadAttachment') as HTMLInputElement;
     const file: File | undefined = fileInput?.files?.[0];
 
     // Create FormData object
@@ -153,8 +168,10 @@ async function createThread(): Promise<void> {
     }
 
     try {
+        const url = url_path();
+        console.log("url is ", url)
         if (statusMessage) statusMessage.textContent = "Creating thread...";
-        const response: Response = await fetch('http://localhost:8085/api/v1/user/thread/create', {
+        const response: Response = await fetch(`${url}/api/v1/user/thread/create`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${jwtToken}`,
@@ -170,7 +187,8 @@ async function createThread(): Promise<void> {
         const result: any = await response.json();
         console.log("Thread created successfully:", result);
 
-        if (statusMessage) statusMessage.textContent = "Thread created successfully! Returning to home...";
+        if (statusMessage) statusMessage.textContent = 
+                "Thread created successfully! Returning to home...";
         window.location.href = "/"; // Redirect to home page
     } catch (error: any) {
         if (statusMessage) statusMessage.textContent = "Error creating thread: " + error.message;
@@ -178,21 +196,23 @@ async function createThread(): Promise<void> {
     }
 }
 
-async function updateThread(tId : number): Promise<void> {
+async function updateThread(tId: number): Promise<void> {
     console.log("inside updateThread()");
     const statusMessage: HTMLElement | null = document.getElementById('statusMessage');
 
     // Get field values by ID
-    const communityId: string = (document.getElementById('threadCommunityID') as HTMLInputElement).value;
+    const communityId: string = 
+        (document.getElementById('threadCommunityID') as HTMLInputElement).value;
     const title: string = (document.getElementById('threadTitle') as HTMLInputElement).value;
-    const description: string = (document.getElementById('threadDescription') as HTMLTextAreaElement).value;
+    const description: string = 
+        (document.getElementById('threadDescription') as HTMLTextAreaElement).value;
 
     // Create FormData object
     const formData: FormData = new FormData();
     formData.append('threadCommunityIDForUpdate', communityId);
     formData.append('threadTitleForUpdate', title);
     formData.append('threadDescriptionForUpdate', description);
-    formData.append("threadIDForUpdate",tId.toString())
+    formData.append("threadIDForUpdate", tId.toString())
     console.log("created formData ", formData);
 
     // Extract JWT token
@@ -203,8 +223,9 @@ async function updateThread(tId : number): Promise<void> {
     }
 
     try {
+        const url = url_path();
         if (statusMessage) statusMessage.textContent = "Creating thread...";
-        const response: Response = await fetch('http://localhost:8085/api/v1/user/thread/update', {
+        const response: Response = await fetch(`${url}/api/v1/user/thread/update`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${jwtToken}`,
@@ -220,7 +241,8 @@ async function updateThread(tId : number): Promise<void> {
         const result: any = await response.json();
         console.log("Thread created successfully:", result);
 
-        if (statusMessage) statusMessage.textContent = "Thread Updated successfully! Returning to home...";
+        if (statusMessage) statusMessage.textContent = 
+                "Thread Updated successfully! Returning to home...";
         window.location.href = "/"; // Redirect to home page
     } catch (error: any) {
         if (statusMessage) statusMessage.textContent = "Error creating thread: " + error.message;
@@ -232,12 +254,13 @@ function cancelForm() {
     window.location.href = '/';
 }
 
-async function downloadAttachment (threadId : number, attachmentName: string) {
+async function downloadAttachment(threadId: number, attachmentName: string) {
     console.log("downloading attachment")
-    const apiUrl = `http://localhost:8085/api/v1/thread/attachment/${threadId}`
+    const url = url_path()
+    const apiUrl = `${url}/api/v1/thread/attachment/${threadId}`
     try {
-        const response = await fetch(apiUrl,{
-            method : 'GET'
+        const response = await fetch(apiUrl, {
+            method: 'GET'
         });
         if (!response.ok)
             throw new Error("Network response was not ok")
@@ -252,8 +275,8 @@ async function downloadAttachment (threadId : number, attachmentName: string) {
 
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-    }catch (err) {
-        console.log("Error while downloading: ",err)
+    } catch (err) {
+        console.log("Error while downloading: ", err)
         return;
     }
- }
+}

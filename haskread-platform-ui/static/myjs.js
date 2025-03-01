@@ -35,6 +35,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 console.log("custom js loaded!");
+var url_path = function () {
+    var hostUrl = window.location.hostname;
+    return hostUrl.includes("localhost")
+        ? "http://localhost:8085" : "https://haskread.tushar-adhatrao.in";
+};
 // Function to extract JWT token from cookie
 function extractJwtToken() {
     var getCookie = function (name) {
@@ -111,7 +116,7 @@ function previewImage() {
 // Function to upload image
 function uploadImage() {
     return __awaiter(this, void 0, void 0, function () {
-        var imageInput, statusMessage, file, jwtToken, formData, response, error_1;
+        var imageInput, statusMessage, file, jwtToken, formData, url, response, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -144,7 +149,8 @@ function uploadImage() {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, fetch('http://localhost:8085/api/v1/user/profile/update-image', {
+                    url = url_path();
+                    return [4 /*yield*/, fetch("".concat(url, "/api/v1/user/profile/update-image"), {
                             method: 'PUT',
                             headers: {
                                 'Authorization': "Bearer ".concat(jwtToken),
@@ -174,7 +180,7 @@ function uploadImage() {
 // Function to create a thread
 function createThread() {
     return __awaiter(this, void 0, void 0, function () {
-        var statusMessage, communityId, title, description, fileInput, file, formData, jwtToken, response, result, error_2;
+        var statusMessage, communityId, title, description, fileInput, file, formData, jwtToken, url, response, result, error_2;
         var _a;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -203,9 +209,11 @@ function createThread() {
                     _b.label = 1;
                 case 1:
                     _b.trys.push([1, 4, , 5]);
+                    url = url_path();
+                    console.log("url is ", url);
                     if (statusMessage)
                         statusMessage.textContent = "Creating thread...";
-                    return [4 /*yield*/, fetch('http://localhost:8085/api/v1/user/thread/create', {
+                    return [4 /*yield*/, fetch("".concat(url, "/api/v1/user/thread/create"), {
                             method: 'POST',
                             headers: {
                                 'Authorization': "Bearer ".concat(jwtToken),
@@ -223,7 +231,8 @@ function createThread() {
                     result = _b.sent();
                     console.log("Thread created successfully:", result);
                     if (statusMessage)
-                        statusMessage.textContent = "Thread created successfully! Returning to home...";
+                        statusMessage.textContent =
+                            "Thread created successfully! Returning to home...";
                     window.location.href = "/"; // Redirect to home page
                     return [3 /*break*/, 5];
                 case 4:
@@ -239,7 +248,7 @@ function createThread() {
 }
 function updateThread(tId) {
     return __awaiter(this, void 0, void 0, function () {
-        var statusMessage, communityId, title, description, formData, jwtToken, response, result, error_3;
+        var statusMessage, communityId, title, description, formData, jwtToken, url, response, result, error_3;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -263,9 +272,10 @@ function updateThread(tId) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 4, , 5]);
+                    url = url_path();
                     if (statusMessage)
                         statusMessage.textContent = "Creating thread...";
-                    return [4 /*yield*/, fetch('http://localhost:8085/api/v1/user/thread/update', {
+                    return [4 /*yield*/, fetch("".concat(url, "/api/v1/user/thread/update"), {
                             method: 'PUT',
                             headers: {
                                 'Authorization': "Bearer ".concat(jwtToken),
@@ -283,7 +293,8 @@ function updateThread(tId) {
                     result = _a.sent();
                     console.log("Thread created successfully:", result);
                     if (statusMessage)
-                        statusMessage.textContent = "Thread Updated successfully! Returning to home...";
+                        statusMessage.textContent =
+                            "Thread Updated successfully! Returning to home...";
                     window.location.href = "/"; // Redirect to home page
                     return [3 /*break*/, 5];
                 case 4:
@@ -302,12 +313,13 @@ function cancelForm() {
 }
 function downloadAttachment(threadId, attachmentName) {
     return __awaiter(this, void 0, void 0, function () {
-        var apiUrl, response, blob, url, a, err_1;
+        var url, apiUrl, response, blob, url_1, a, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     console.log("downloading attachment");
-                    apiUrl = "http://localhost:8085/api/v1/thread/attachment/".concat(threadId);
+                    url = url_path();
+                    apiUrl = "".concat(url, "/api/v1/thread/attachment/").concat(threadId);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 4, , 5]);
@@ -321,13 +333,13 @@ function downloadAttachment(threadId, attachmentName) {
                     return [4 /*yield*/, response.blob()];
                 case 3:
                     blob = _a.sent();
-                    url = window.URL.createObjectURL(blob);
+                    url_1 = window.URL.createObjectURL(blob);
                     a = document.createElement('a');
-                    a.href = url;
+                    a.href = url_1;
                     a.download = attachmentName;
                     document.body.appendChild(a);
                     a.click();
-                    window.URL.revokeObjectURL(url);
+                    window.URL.revokeObjectURL(url_1);
                     document.body.removeChild(a);
                     return [3 /*break*/, 5];
                 case 4:
