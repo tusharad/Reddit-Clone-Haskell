@@ -8,6 +8,7 @@ module Platform.User.Thread.DB
   , fetchThreadInfoQ
   , fetchThreadInfoByIDQ
   , fetchThreadInfoByTextQ
+  , fetchAllThreads
   )
 where
 
@@ -23,6 +24,9 @@ import Platform.DB.Marshaller
 import Platform.DB.Model
 import Platform.DB.Table
 import Platform.Orville.Helper
+
+fetchAllThreads :: MonadOrville m => m [ThreadRead]
+fetchAllThreads = findEntitiesBy threadTable emptySelectOptions
 
 fetchThreadByIDQ :: (MonadOrville m) => ThreadID -> m (Maybe ThreadRead)
 fetchThreadByIDQ = findEntity threadTable

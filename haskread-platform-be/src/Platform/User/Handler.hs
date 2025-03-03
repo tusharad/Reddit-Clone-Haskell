@@ -192,40 +192,49 @@ userUpdateProfileImageH ::
   UpdateUserImageBody ->
   AppM m UpdateUserImageResponse
 userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} = do
-  let (content, fType, fName) = userImageInfo
-  checkValidImageType fType
-  mUserProfile <- fetchUserProfileImage userIDForUserInfo
-  let newUserProfileImageName = show userIDForUserInfo <> "_profile_" <> takeExtension (T.unpack fName)
-  eRes <- liftIO $ uploadObject "haskread_vm_storage2" newUserProfileImageName content
-  case eRes of
-    Left err -> throw400Err $ "Error while uploading image: " <> (BSL.pack err)
-    Right _ -> do
-      let imageSize = BSL.length content
-      let maxSizeKB = 300
-          maxSizeBytes = maxSizeKB * 1024
-      when (imageSize > maxSizeBytes) $
-        throw400Err $
-          BSL.pack $
-            "Image size exceeds "
-              ++ show maxSizeKB
-              ++ "KB limit ("
-              ++ show (imageSize `div` 1024)
-              ++ "KB)"
-      let userProfileImage =
-            UserProfileImage
-              { userIDForProfileImage = userIDForUserInfo
-              , userImage = "haskread_vm_storage2" -- Temporary hardcoded bucket name
-              , userImageName = T.pack newUserProfileImageName
-              , createdAtForProfileImage = ()
-              , updatedAtForProfileImage = ()
-              }
-      case mUserProfile of
-        Nothing -> do
-          addUserProfileImageQ userProfileImage
-          pure $ UpdateUserImageResponse "Profile image added successfully!"
-        Just _ -> do
-          updateUserProfileImageQ userIDForUserInfo userProfileImage
-          pure $ UpdateUserImageResponse "Profile image added successfully!"
+  totalProfileCount <- fetchUserProfilesQ
+  if (length totalProfileCount >= 1000)
+    then
+      throw400Err "storage full!"
+    else do
+      let (content, fType, fName) = userImageInfo
+      checkValidImageType fType
+      mUserProfile <- fetchUserProfileImage userIDForUserInfo
+      let newUserProfileImageName =
+            show userIDForUserInfo
+              <> "_profile_"
+              <> takeExtension (T.unpack fName)
+      eRes <- liftIO $ uploadObject "haskread_vm_storage2" newUserProfileImageName content
+      case eRes of
+        Left err -> throw400Err $ "Error while uploading image: " <> (BSL.pack err)
+        Right _ -> do
+          let imageSize = BSL.length content
+          let maxSizeKB = 300
+              maxSizeBytes = maxSizeKB * 1024
+          when (imageSize > maxSizeBytes) $
+            throw400Err $
+              BSL.pack $
+                "Image size exceeds "
+                  ++ show maxSizeKB
+                  ++ "KB limit ("
+                  ++ show (imageSize `div` 1024)
+                  ++ "KB)"
+          let userProfileImage =
+                UserProfileImage
+                  { userIDForProfileImage = userIDForUserInfo
+                  , userImage = "haskread_vm_storage2" -- Temporary hardcoded bucket name
+                  , userImageName = T.pack newUserProfileImageName
+                  , createdAtForProfileImage = ()
+                  , updatedAtForProfileImage = ()
+                  }
+          case mUserProfile of
+            Nothing -> do
+              addUserProfileImageQ userProfileImage
+              pure $ UpdateUserImageResponse "Profile image added successfully!"
+            Just UserProfileImage{..} -> do
+              _ <- liftIO $ deleteObject (T.unpack userImage) (T.unpack userImageName)
+              updateUserProfileImageQ userIDForUserInfo userProfileImage
+              pure $ UpdateUserImageResponse "Profile image added successfully!"
   where
     checkValidImageType fType = do
       let validImageTypes = ["image/png", "image/jpeg", "image/jpg"]

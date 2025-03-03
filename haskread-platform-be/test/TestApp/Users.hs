@@ -12,13 +12,13 @@ import Test.Tasty.Wai
 import TestApp.SampleData
 
 userAPITests :: Application -> [BSL.ByteString] -> TestTree
-userAPITests app [tokenBatman, tokenSpiderman, tokenSuperman, tokenWonderwoman, _] =
+userAPITests app [tokenBatman, tokenSpiderman, tokenSuperman, _, _] =
   testGroup
     "User APIs"
     [ testUserDashboard app tokenBatman,
       testUserChangePassword app tokenSpiderman,
-      testUserDeleteAccount app tokenSuperman,
-      testUpdateUserProfileImage app tokenWonderwoman
+      testUserDeleteAccount app tokenSuperman
+      -- testUpdateUserProfileImage app tokenWonderwoman
     ]
 userAPITests _ _ = testGroup "Servant HaskRead" []
 

@@ -117,28 +117,33 @@ supportedFileTypes =
 
 storeAttachmentIfExist :: MonadUnliftIO m => Maybe (FileData Mem) -> AppM m (Maybe AttachmentInfo)
 storeAttachmentIfExist Nothing = pure Nothing
-storeAttachmentIfExist (Just FileData {..}) =
-  if fdFileCType `notElem` supportedFileTypes
-    then
-      throw400Err "File type not supported"
-    else do
-      uuid <- liftIO $ nextRandom
-      let newAttachmentObjectName = "attachment_" <> show uuid <> takeExtension (T.unpack fdFileName)
-      let fileSize = BSL.length fdPayload
-      unless (fileSize < 1000000) $ throw400Err "File to large :("
-      eRes <- liftIO $ uploadObject "haskread_vm_storage2" newAttachmentObjectName fdPayload
-      case eRes of
-        Left err -> throw400Err $ "Could not upload object: " <> (BSL.pack err)
-        Right _ ->
-          pure $
-            Just
-              ( AttachmentInfo
-                  "haskread_vm_storage2"
-                  (T.pack newAttachmentObjectName)
-                  (fromIntegral fileSize)
-              )
+storeAttachmentIfExist (Just FileData {..}) = do
+  -- Checking total threads...if number of threads crossed 10000 stop
+  totalThreads <- fetchAllThreads 
+  if (length totalThreads >= 10000) then 
+    throw400Err "Threads fulled!"
+  else do
+      if fdFileCType `notElem` supportedFileTypes
+        then
+          throw400Err "File type not supported"
+        else do
+          uuid <- liftIO $ nextRandom
+          let newAttachmentObjectName = "attachment_" <> show uuid <> takeExtension (T.unpack fdFileName)
+          let fileSize = BSL.length fdPayload
+          unless (fileSize < 1000000) $ throw400Err "File to large :("
+          eRes <- liftIO $ uploadObject "haskread_vm_storage2" newAttachmentObjectName fdPayload
+          case eRes of
+            Left err -> throw400Err $ "Could not upload object: " <> (BSL.pack err)
+            Right _ ->
+              pure $
+                Just
+                  ( AttachmentInfo
+                      "haskread_vm_storage2"
+                      (T.pack newAttachmentObjectName)
+                      (fromIntegral fileSize)
+                  )
 
-checkIfUserOwnsThread :: (MonadUnliftIO m) => ThreadID -> UserID -> AppM m ()
+checkIfUserOwnsThread :: (MonadUnliftIO m) => ThreadID -> UserID -> AppM m ThreadRead
 checkIfUserOwnsThread tID uID = do
   eRes :: Either SomeException (Maybe ThreadRead) <-
     try $ fetchThreadByIDQ tID
@@ -146,9 +151,10 @@ checkIfUserOwnsThread tID uID = do
     Left e -> throw400Err $ BSL.pack $ show e
     Right mThread -> case mThread of
       Nothing -> throw400Err "Thread does not exist!"
-      Just Thread {..} ->
+      Just t@Thread {..} -> do
         when (threadUserID /= uID) $
           throw400Err "You do not own this thread!"
+        pure t
 
 createThreadH ::
   (MonadUnliftIO m) =>
@@ -193,7 +199,14 @@ deleteThreadH ::
   ThreadID ->
   AppM m DeleteThreadResponse
 deleteThreadH (Authenticated UserInfo {..}) threadID = do
-  void $ checkIfUserOwnsThread threadID userIDForUserInfo
+  Thread{..} <- checkIfUserOwnsThread threadID userIDForUserInfo
+  case (threadAttachment,threadAttachmentName) of
+    (Just bucketName, Just objectName) -> do
+      eRes <- liftIO $ deleteObject (T.unpack bucketName) (T.unpack objectName)
+      case eRes of
+        Left err -> throw400Err $ "Couldn't delete attachment please reach out :" <> (BSL.pack err)
+        Right _ -> pure ()
+    _ -> pure ()
   (eRes :: Either SomeException ()) <- try $ deleteThreadQ threadID
   case eRes of
     Left e -> throw400Err $ BSL.pack $ show e

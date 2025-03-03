@@ -1,22 +1,23 @@
 module Platform.User.DB
-  ( fetchUserByEmailQ,
-    fetchUserByUserNameQ,
-    addUserQ,
-    fetchUserByIDQ,
-    updateUserQ,
-    deleteUserQ,
-    updateUserProfileImageQ,
-    fetchUserProfileQ,
-    addUserProfileImageQ,
-    fetchUEVOByIDQ,
-    deleteUEVO,
-    deleteUEVOQ,
-    fetchUEVOByID,
-    addUEVOQ,
-    fetchUserByID,
-    updateUser,
-    fetchUserByEmail,
-    addUser,
+  ( fetchUserByEmailQ
+  , fetchUserByUserNameQ
+  , addUserQ
+  , fetchUserByIDQ
+  , updateUserQ
+  , deleteUserQ
+  , updateUserProfileImageQ
+  , fetchUserProfileQ
+  , addUserProfileImageQ
+  , fetchUEVOByIDQ
+  , deleteUEVO
+  , deleteUEVOQ
+  , fetchUEVOByID
+  , addUEVOQ
+  , fetchUserByID
+  , updateUser
+  , fetchUserByEmail
+  , addUser
+  , fetchUserProfilesQ 
   )
 where
 
@@ -82,6 +83,9 @@ updateUserProfileImageQ = updateEntity userProfileImageTable
 
 fetchUserProfileQ :: (MonadOrville m) => UserID -> m (Maybe UserProfileImageRead)
 fetchUserProfileQ = findEntity userProfileImageTable
+
+fetchUserProfilesQ :: MonadOrville m => m [UserProfileImageRead]
+fetchUserProfilesQ = findEntitiesBy userProfileImageTable emptySelectOptions
 
 addUserProfileImageQ :: (MonadUnliftIO m) => UserProfileImageWrite -> AppM m ()
 addUserProfileImageQ = insertEntity userProfileImageTable
