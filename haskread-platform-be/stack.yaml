@@ -45,6 +45,16 @@ extra-deps:
 - tasty-wai-0.1.2.0@sha256:06cc057d500aed373fb945e8b263363518ffefab5eface3524c1ccccad541390,2089
 - atomic-write-0.2.1.1@sha256:1863c94cef87b4cf52b0064fd696201ebc747843d72daa3de2b2ce947a66e898,4773
 - repline-0.4.2.0@sha256:3d863dedf6d840d0578b597bb3b85c95e400c895c67e77a0c286b184d8be51b2,2179
+- jwt-0.11.0@sha256:0602735ee4093c6c5bc918461855bcd55499099363bad34eb7a227aeef3cde29
+- cryptostore-0.3.1.0@sha256:ce4762361b509d1719b5d500604a5a1f2d75c2c53f4fe75f7c4ef2faec4f8352,4219
+- x509-1.7.7@sha256:90eef2d745a654146fc1c325e035eaddac531e4d2145d4bc1dcf4b8fad439d34,2276
+- x509-store-1.6.9@sha256:1f1abeab5bacf1407b920d0f34f4c35a5ad450ff0d8121cd3dc76460f81e711d,1716
+- x509-validation-1.6.12@sha256:4f4af20ec77f02c042ecd4726c195bb0e0b694b336de81e7bd4515b2917bd9bc,2169
+- git: https://github.com/tusharad/google-cloud-haskell
+  commit: 22d66379dc8f89a05a35b011d30b60cf8c8d9ff8
+  subdirs:
+    - lib/google-cloud-storage
+    - lib/google-cloud-common
 - git: https://github.com/facebook/Haxl.git
   commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
 - git: https://github.com/tusharad/orville

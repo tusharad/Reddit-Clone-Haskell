@@ -109,6 +109,9 @@ updatedAtField =
 userImageField :: FieldDefinition NotNull Text
 userImageField = unboundedTextField "user_profile_image"
 
+userImageNameField :: FieldDefinition NotNull Text
+userImageNameField = unboundedTextField "image_name"
+
 threadTitleField :: FieldDefinition NotNull Text
 threadTitleField = boundedTextField "thread_title" 255
 
@@ -163,6 +166,7 @@ userProfileImageMarshaller =
       (\UserProfileImage {..} -> userIDForProfileImage)
       userIDField
     <*> marshallField (\UserProfileImage {..} -> userImage) userImageField
+    <*> marshallField (\UserProfileImage {..} -> userImageName) userImageNameField
     <*> marshallReadOnly
       ( marshallField
           (\UserProfileImage {..} -> createdAtForProfileImage)

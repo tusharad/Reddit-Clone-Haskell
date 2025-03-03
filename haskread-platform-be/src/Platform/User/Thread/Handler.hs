@@ -9,18 +9,20 @@ module Platform.User.Thread.Handler
   , fetchAllThreadsH
   , fetchThreadH
   , fetchAllThreadsBySearchH
-  , fetchThreadAttachmentImageH
+  , fetchThreadAttachmentH
   )
 where
 
-import Control.Monad (void, when)
-import qualified Data.ByteString.Lazy.Char8 as BSL
+import Control.Monad (unless, void, when)
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TE
+import Data.UUID.V4
+import Google.Cloud.Storage.Bucket
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Utils
@@ -29,32 +31,31 @@ import Platform.DB.Model
 import Platform.User.Thread.DB
 import Platform.User.Thread.Types
 import Servant.Auth.Server
-import UnliftIO
 import Servant.Multipart
-import Data.UUID.V4
 import System.FilePath
-import System.Directory (doesFileExist)
+import UnliftIO
 
-fetchThreadAttachmentImageH :: 
+fetchThreadAttachmentH ::
   (MonadUnliftIO m) =>
-    ThreadID ->
-    AppM m LBS.ByteString
-fetchThreadAttachmentImageH tId = do
+  ThreadID ->
+  AppM m LBS.ByteString
+fetchThreadAttachmentH tId = do
   mbThreadRead <- queryWrapper $ fetchThreadByIDQ tId
   case mbThreadRead of
-   Nothing -> throw400Err $ 
+    Nothing ->
+      throw400Err $
         "No thread found with given threadId " <> (TE.encodeUtf8 . TL.pack $ show tId)
-   Just Thread{..} -> do
-    case threadAttachment of
-      Nothing -> throw400Err "No attachment found"
-      Just attachmentPath -> do
-         let filePath = T.unpack attachmentPath
-         exists <- liftIO $ doesFileExist filePath
-         if exists
-           then do
-             liftIO $ LBS.readFile filePath
-           else throw400Err $ "File path not found " 
-                <> (TE.encodeUtf8 $ TL.pack filePath)
+    Just Thread {..} -> do
+      case (threadAttachment, threadAttachmentName) of
+        (Just attachmentPath, Just attachmentName_) -> do
+          let bucketName = T.unpack attachmentPath
+              objectName = T.unpack attachmentName_
+          eRes <- liftIO $ downloadObject bucketName objectName
+          case eRes of
+            Left err -> throw400Err $ "Could not download attachment: " <> (BSL.pack err)
+            Right r -> pure r
+        _ ->
+          throw400Err $ "No attachment found: " <> (BSL.pack $ show (threadAttachment, threadAttachmentName))
 
 checkIfCommunityExists :: (MonadUnliftIO m) => CommunityID -> AppM m ()
 checkIfCommunityExists cID = do
@@ -71,11 +72,11 @@ checkThreadTitleNotEmpty tTitle =
   when (T.null tTitle) $
     throw400Err "Thread title cannot be empty!"
 
-data AttachmentInfo = AttachmentInfo {
-    serverFilePath :: FilePath
+data AttachmentInfo = AttachmentInfo
+  { serverFilePath :: FilePath
   , attachmentName_ :: Text
   , attachmentSize_ :: Int
- }
+  }
 
 addThread :: (MonadUnliftIO m) => UserID -> CreateThreadReqBody -> AppM m CreateThreadResponse
 addThread userID CreateThreadReqBody {..} = do
@@ -86,7 +87,7 @@ addThread userID CreateThreadReqBody {..} = do
           , threadDescription = threadDescriptionForCreate
           , threadCommunityID = threadCommunityIDForCreate
           , threadAttachment = T.pack <$> serverFilePath <$> mbAttachmentInfo
-          , threadAttachmentName = attachmentName_ <$> mbAttachmentInfo 
+          , threadAttachmentName = attachmentName_ <$> mbAttachmentInfo
           , threadAttachmentSize = fromIntegral . attachmentSize_ <$> mbAttachmentInfo
           , threadUserID = userID
           , threadCreatedAt = ()
@@ -99,8 +100,8 @@ addThread userID CreateThreadReqBody {..} = do
     Right _ -> return $ CreateThreadResponse "Thread added successfully!"
 
 supportedFileTypes :: [Text]
-supportedFileTypes = [
-  "application/zip"
+supportedFileTypes =
+  [ "application/zip"
   , "application/x-zip-compressed"
   , "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   , "application/vnd.ms-excel"
@@ -112,19 +113,31 @@ supportedFileTypes = [
   , "image/png"
   , "application/vnd.oasis.opendocument.text"
   , "image/jpeg"
- ]
+  ]
 
-storeAttachmentIfExist :: MonadUnliftIO m =>  Maybe (FileData Tmp) -> AppM m (Maybe AttachmentInfo)
+storeAttachmentIfExist :: MonadUnliftIO m => Maybe (FileData Mem) -> AppM m (Maybe AttachmentInfo)
 storeAttachmentIfExist Nothing = pure Nothing
-storeAttachmentIfExist (Just FileData{..}) =
-  if fdFileCType `notElem` supportedFileTypes then
-    throw400Err "File type not supported"
-  else do
-    uuid <- liftIO $ nextRandom
-    (serverFilePath, fileSize) <- createServerFilePathAndSize 1000000 fdPayload 
-                ("attachment_" <> show uuid <> takeExtension (T.unpack fdFileName)) 
-    pure $ Just (AttachmentInfo serverFilePath fdFileName fileSize)
-    
+storeAttachmentIfExist (Just FileData {..}) =
+  if fdFileCType `notElem` supportedFileTypes
+    then
+      throw400Err "File type not supported"
+    else do
+      uuid <- liftIO $ nextRandom
+      let newAttachmentObjectName = "attachment_" <> show uuid <> takeExtension (T.unpack fdFileName)
+      let fileSize = BSL.length fdPayload
+      unless (fileSize < 1000000) $ throw400Err "File to large :("
+      eRes <- liftIO $ uploadObject "haskread_vm_storage2" newAttachmentObjectName fdPayload
+      case eRes of
+        Left err -> throw400Err $ "Could not upload object: " <> (BSL.pack err)
+        Right _ ->
+          pure $
+            Just
+              ( AttachmentInfo
+                  "haskread_vm_storage2"
+                  (T.pack newAttachmentObjectName)
+                  (fromIntegral fileSize)
+              )
+
 checkIfUserOwnsThread :: (MonadUnliftIO m) => ThreadID -> UserID -> AppM m ()
 checkIfUserOwnsThread tID uID = do
   eRes :: Either SomeException (Maybe ThreadRead) <-
@@ -154,7 +167,7 @@ updateThreadH (Authenticated UserInfo {..}) UpdateThreadReqBody {..} = do
   void $ checkIfCommunityExists threadCommunityIDForUpdate
   void $ checkThreadTitleNotEmpty threadTitleForUpdate
   void $ checkIfUserOwnsThread threadIDForUpdate userIDForUserInfo
-  mbAttachmentInfo  <- storeAttachmentIfExist threadAttachmentForUpdate
+  mbAttachmentInfo <- storeAttachmentIfExist threadAttachmentForUpdate
   let threadWrite =
         Thread
           { threadTitle = threadTitleForUpdate
@@ -162,7 +175,7 @@ updateThreadH (Authenticated UserInfo {..}) UpdateThreadReqBody {..} = do
           , threadCommunityID = threadCommunityIDForUpdate
           , threadUserID = userIDForUserInfo
           , threadAttachment = T.pack <$> serverFilePath <$> mbAttachmentInfo
-          , threadAttachmentName = attachmentName_ <$> mbAttachmentInfo 
+          , threadAttachmentName = attachmentName_ <$> mbAttachmentInfo
           , threadAttachmentSize = fromIntegral . attachmentSize_ <$> mbAttachmentInfo
           , threadCreatedAt = ()
           , threadUpdatedAt = ()

@@ -25,6 +25,7 @@ import GHC.Generics
 import GHC.Int (Int32)
 import Platform.DB.Model
 import Servant.Multipart
+import qualified Data.ByteString.Lazy as BSL
 
 data RegisterUserBody = RegisterUserBody
   { userNameForRegister :: Text,
@@ -83,9 +84,9 @@ newtype DeleteUserResponse = DeleteUserResponse
   deriving (Show, Eq, Generic, ToJSON)
 
 newtype UpdateUserImageBody = UpdateUserImageBody
-  { userImageInfo :: (FilePath, TheFileType, TheFileName)
+  { userImageInfo :: (BSL.ByteString, TheFileType, TheFileName)
   }
-  deriving (Show, Eq, Generic, FromJSON, ToJSON)
+  deriving (Show, Eq, Generic)
 
 newtype UpdateUserImageResponse = UpdateUserImageResponse
   { updateUserImageResponseMsg :: Text
@@ -96,7 +97,7 @@ type TheFileType = Text
 
 type TheFileName = Text
 
-instance FromMultipart Tmp UpdateUserImageBody where
+instance FromMultipart Mem UpdateUserImageBody where
   fromMultipart multipartData =
     UpdateUserImageBody <$> getFileInfo (lookupFile "pic" multipartData)
     where

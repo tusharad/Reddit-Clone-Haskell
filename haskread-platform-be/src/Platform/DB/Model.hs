@@ -78,6 +78,7 @@ type UserWrite = User () ()
 data UserProfileImage a = UserProfileImage
   { userIDForProfileImage :: UserID,
     userImage :: Text,
+    userImageName :: Text,
     createdAtForProfileImage :: a,
     updatedAtForProfileImage :: a
   }

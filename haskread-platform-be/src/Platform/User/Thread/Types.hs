@@ -24,11 +24,11 @@ data CreateThreadReqBody = CreateThreadReqBody
   { threadTitleForCreate :: Text,
     threadDescriptionForCreate :: Maybe Text,
     threadCommunityIDForCreate :: CommunityID,
-    threadAttachment :: Maybe (FileData Tmp)
+    threadAttachment :: Maybe (FileData Mem)
   }
   deriving (Show, Eq, Generic)
 
-instance FromMultipart Tmp CreateThreadReqBody where
+instance FromMultipart Mem CreateThreadReqBody where
   fromMultipart multipartData =
     CreateThreadReqBody <$> lookupInput "threadTitleForCreate" multipartData
                         <*> optionalInput "threadDescriptionForCreate" multipartData
@@ -60,11 +60,11 @@ data UpdateThreadReqBody = UpdateThreadReqBody
     threadTitleForUpdate :: Text,
     threadDescriptionForUpdate :: Maybe Text,
     threadCommunityIDForUpdate :: CommunityID,
-    threadAttachmentForUpdate :: Maybe (FileData Tmp)
+    threadAttachmentForUpdate :: Maybe (FileData Mem)
   }
   deriving (Show, Eq, Generic)
 
-instance FromMultipart Tmp UpdateThreadReqBody where
+instance FromMultipart Mem UpdateThreadReqBody where
   fromMultipart multipartData =
     UpdateThreadReqBody <$> lookupInputThreadID "threadIDForUpdate" multipartData
                         <*> lookupInput "threadTitleForUpdate" multipartData

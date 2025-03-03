@@ -18,6 +18,7 @@ import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Coerce (coerce)
 import Data.Password.Bcrypt
 import qualified Data.Text as T
+import Google.Cloud.Storage.Bucket
 import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
 import qualified Haxl.Core as Haxl
 import Platform.Auth.Types
@@ -30,10 +31,7 @@ import Platform.Log
 import Platform.User.DB
 import Platform.User.Types
 import Servant.Auth.Server
-import System.Directory
 import System.FilePath
-import System.Posix.Files (fileSize, getFileStatus)
-import System.Posix.Types (COff(..))
 import UnliftIO
 
 fetchUserProfileImageH ::
@@ -45,12 +43,12 @@ fetchUserProfileImageH uId = do
   case mbUserImage of
     Nothing -> throw400Err "Not available"
     Just UserProfileImage {..} -> do
-      let filePath = T.unpack userImage
-      exists <- liftIO $ doesFileExist filePath
-      if exists
-        then do
-          liftIO $ LBS.readFile filePath
-        else throw400Err "Not available"
+      let bucketName = T.unpack userImage
+          objectName = T.unpack userImageName
+      eRes <- liftIO $ downloadObject bucketName objectName
+      case eRes of
+        Left err -> throw400Err $ "Could not download image: " <> (BSL.pack err)
+        Right r -> pure r
 
 fetchUserByIDHaxl ::
   (MonadUnliftIO m) =>
@@ -194,49 +192,42 @@ userUpdateProfileImageH ::
   UpdateUserImageBody ->
   AppM m UpdateUserImageResponse
 userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} = do
-  let (tempFP, fType, fName) = userImageInfo
+  let (content, fType, fName) = userImageInfo
   checkValidImageType fType
   mUserProfile <- fetchUserProfileImage userIDForUserInfo
-  (serverFilePath, _) <-
-    createServerFilePathAndSize
-      300000
-      tempFP
-      ( show userIDForUserInfo
-          <> "_profile_"
-          <> takeExtension (T.unpack fName)
-      )
-  imageSize <- liftIO $ getFileSize tempFP
-  let maxSizeKB = 300
-      maxSizeBytes = maxSizeKB * 1024
-  when (imageSize > maxSizeBytes) $
-    throw400Err $
-      BSL.pack $
-        "Image size exceeds "
-          ++ show maxSizeKB
-          ++ "KB limit ("
-          ++ show (imageSize `div` 1024)
-          ++ "KB)"
-  let userProfileImage =
-        UserProfileImage
-          { userIDForProfileImage = userIDForUserInfo
-          , userImage = T.pack serverFilePath
-          , createdAtForProfileImage = ()
-          , updatedAtForProfileImage = ()
-          }
-  case mUserProfile of
-    Nothing -> do
-      addUserProfileImageQ userProfileImage
-      pure $ UpdateUserImageResponse "Profile image added successfully!"
-    Just _ -> do
-      updateUserProfileImageQ userIDForUserInfo userProfileImage
-      pure $ UpdateUserImageResponse "Profile image added successfully!"
+  let newUserProfileImageName = show userIDForUserInfo <> "_profile_" <> takeExtension (T.unpack fName)
+  eRes <- liftIO $ uploadObject "haskread_vm_storage2" newUserProfileImageName content
+  case eRes of
+    Left err -> throw400Err $ "Error while uploading image: " <> (BSL.pack err)
+    Right _ -> do
+      let imageSize = BSL.length content
+      let maxSizeKB = 300
+          maxSizeBytes = maxSizeKB * 1024
+      when (imageSize > maxSizeBytes) $
+        throw400Err $
+          BSL.pack $
+            "Image size exceeds "
+              ++ show maxSizeKB
+              ++ "KB limit ("
+              ++ show (imageSize `div` 1024)
+              ++ "KB)"
+      let userProfileImage =
+            UserProfileImage
+              { userIDForProfileImage = userIDForUserInfo
+              , userImage = "haskread_vm_storage2" -- Temporary hardcoded bucket name
+              , userImageName = T.pack newUserProfileImageName
+              , createdAtForProfileImage = ()
+              , updatedAtForProfileImage = ()
+              }
+      case mUserProfile of
+        Nothing -> do
+          addUserProfileImageQ userProfileImage
+          pure $ UpdateUserImageResponse "Profile image added successfully!"
+        Just _ -> do
+          updateUserProfileImageQ userIDForUserInfo userProfileImage
+          pure $ UpdateUserImageResponse "Profile image added successfully!"
   where
     checkValidImageType fType = do
       let validImageTypes = ["image/png", "image/jpeg", "image/jpg"]
       unless (fType `elem` validImageTypes) $ throw400Err "Invalid image type!"
-    getFileSize :: FilePath -> IO Integer
-    getFileSize path = do
-      stat <- getFileStatus path
-      let (COff fSize) = fileSize stat
-      return $ fromIntegral fSize
 userUpdateProfileImageH _ _ = throw401Err "Please login first"

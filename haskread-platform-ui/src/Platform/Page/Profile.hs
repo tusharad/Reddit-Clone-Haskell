@@ -33,6 +33,30 @@ import Web.Hyperbole.Data.QueryData
 newtype ProfileId = ProfileId Int
   deriving (Show, Read, ViewId)
 
+newtype ProfileImageId = ProfileImageId Int
+  deriving (Show, Read, ViewId)
+
+instance IOE :> es => HyperView ProfileImageId es where
+  data Action ProfileImageId = LoadProfileImage Int
+    deriving (Show, Read, ViewAction)
+
+  update (LoadProfileImage userId) = do
+    eImage <- liftIO $ getUserProfileImage userId
+    case eImage of
+      Right imgBytes -> do
+        pure $ el (cc "mb-4") $ do
+          tag
+            "img"
+            ( att "src" (imgData imgBytes)
+                . att "alt" "Profile Image"
+                . cc "w-32 h-32 rounded-full object-cover"
+            )
+            none
+      Left _ ->
+        pure $ tag "p" (cc "text-gray-600 italic") "No profile image available"
+    where
+      imgData imgBytes = (TL.toStrict $ "data:image/jpeg;base64," <> extractBase64 (encodeBase64 imgBytes))
+
 instance IOE :> es => HyperView ProfileId es where
   data Action ProfileId
     = GoToHome
@@ -271,15 +295,26 @@ updateImageView = do
             CancelChangePassword
             (cc "px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
             "Cancel"
-        tag
-          "img"
-          (att "id" "imagePreview" . att "style" "display: none; max-width: 100%; height: auto;")
-          none
+        el (cc "mb-4") $ do
+          tag
+            "img"
+            ( att "id" "imagePreview"
+                . att "style" "display: none; width 100%; height: 100%;"
+                . cc "w-80 h-80"
+            )
+            none
         tag "p" (att "id" "statusMessage") none
+
+loadingProfileImage :: Int -> View ProfileImageId ()
+loadingProfileImage userId =
+  el (onLoad (LoadProfileImage userId) 800) $ do
+    text "Loading profile image"
 
 profilePage ::
   (Hyperbole :> es, IOE :> es) =>
-  Eff es (Page '[ProfileId, HeaderId, ThreadId, FooterId, LiveSearchId, AttachmentViewId])
+  Eff
+    es
+    (Page '[ProfileId, HeaderId, ThreadId, FooterId, LiveSearchId, AttachmentViewId, ProfileImageId])
 profilePage = do
   mbTokenAndUser <- getTokenAndUser
   case mbTokenAndUser of
@@ -296,7 +331,6 @@ profilePage = do
               mbCommunityId
               (Just $ userIDForUPR userInfo)
           )
-      eImage <- liftIO $ getUserProfileImage (userIDForUPR userInfo)
       case eRes of
         Left err -> pure $ el_ $ raw (T.pack err)
         Right res -> do
@@ -314,23 +348,7 @@ profilePage = do
                       "p"
                       (cc "text-lg text-center mb-6 text-gray-800 dark:text-gray-200")
                       "Welcome to your profile page!"
-                    case eImage of
-                      Right imgBytes -> do
-                        el (cc "mb-4") $ do
-                          tag
-                            "img"
-                            ( att
-                                "src"
-                                ( TL.toStrict $
-                                    "data:image/jpeg;base64,"
-                                      <> extractBase64 (encodeBase64 imgBytes)
-                                )
-                                . att "alt" "Profile Image"
-                                . cc "w-32 h-32 rounded-full object-cover"
-                            )
-                            none
-                      Left _ ->
-                        tag "p" (cc "text-gray-600 italic") "No profile image available"
+                    hyper (ProfileImageId 0) (loadingProfileImage (userIDForUPR userInfo))
                     tag
                       "p"
                       (cc "text-bold")

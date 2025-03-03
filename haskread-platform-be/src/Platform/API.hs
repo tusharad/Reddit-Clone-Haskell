@@ -72,7 +72,7 @@ mainServer =
     :<|> fetchCommunitiesH
     :<|> fetchAllThreadsBySearchH
     :<|> fetchUserProfileImageH
-    :<|> fetchThreadAttachmentImageH
+    :<|> fetchThreadAttachmentH
 
 type MainAPI auths =
   CheckHealthAPI
@@ -171,7 +171,7 @@ type UpdateUserImageAPI =
     :> "user"
     :> "profile"
     :> "update-image"
-    :> MultipartForm Tmp UpdateUserImageBody
+    :> MultipartForm Mem UpdateUserImageBody
     :> Put '[JSON] UpdateUserImageResponse
 
 -- Admin APIs
@@ -253,7 +253,7 @@ type CreateThreadAPI =
     :> "user"
     :> "thread"
     :> "create"
-    :> MultipartForm Tmp CreateThreadReqBody
+    :> MultipartForm Mem CreateThreadReqBody
     :> Post '[JSON] CreateThreadResponse
 
 type UpdateThreadAPI =
@@ -262,7 +262,7 @@ type UpdateThreadAPI =
     :> "user"
     :> "thread"
     :> "update"
-    :> MultipartForm Tmp UpdateThreadReqBody
+    :> MultipartForm Mem UpdateThreadReqBody
     :> Put '[JSON] UpdateThreadResponse
 
 type DeleteThreadAPI =

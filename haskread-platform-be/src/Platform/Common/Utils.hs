@@ -232,17 +232,13 @@ toEnv _ = Local -- Shouldn't happen
 createServerFilePathAndSize ::
   (MonadUnliftIO m) =>
   Int64 ->
-  FilePath ->
+  BSL.ByteString ->
   String ->
   AppM m (FilePath, Int)
-createServerFilePathAndSize maxFileSize tempFP fName = do
+createServerFilePathAndSize maxFileSize content fName = do
   AppConfig{..} <- asks appConfig
-  (eRes :: Either SomeException BSL.ByteString) <- liftIO $ try $ BSL.readFile tempFP
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right content -> do
-      let fileSize = BSL.length content
-      unless (fileSize < maxFileSize) $ throw400Err "File to large :("
-      let serverFilePath = fileUploadDir </> fName
-      liftIO $ BSL.writeFile serverFilePath content
-      pure (serverFilePath, fromIntegral fileSize)
+  let fileSize = BSL.length content
+  unless (fileSize < maxFileSize) $ throw400Err "File to large :("
+  let serverFilePath = fileUploadDir </> fName
+  liftIO $ BSL.writeFile serverFilePath content
+  pure (serverFilePath, fromIntegral fileSize)

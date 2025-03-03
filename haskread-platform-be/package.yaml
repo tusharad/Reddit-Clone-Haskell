@@ -63,6 +63,7 @@ dependencies:
 - uuid
 - wai-rate-limit
 - sqlite-simple
+- google-cloud-storage
 
 ghc-options:
 - -Wall
