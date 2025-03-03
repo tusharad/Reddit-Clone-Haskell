@@ -42,6 +42,7 @@ rateLimitMiddleware secs reqs = do
 initRateLimitTable :: String -> IO ()
 initRateLimitTable dbName =
   withConnection dbName $ \conn ->
+    withImmediateTransaction conn $
     execute_
       conn
       "CREATE TABLE IF NOT EXISTS rate_limit (key TEXT PRIMARY KEY, usage INTEGER NOT NULL DEFAULT 0,expires_at TIMESTAMP)"
@@ -56,6 +57,7 @@ sqliteBackend dbName =
   where
     getCount ipAddr = do
       rows <- withConnection dbName $ \conn ->
+        withImmediateTransaction conn $
         query
           conn
           "SELECT usage FROM rate_limit WHERE key = ? AND (expires_at IS NULL OR expires_at > DATETIME('now'))"
@@ -65,6 +67,7 @@ sqliteBackend dbName =
         _ -> pure 0
     incAndGetCount ipAddr increment = do
       rows <- withConnection dbName $ \conn ->
+        withImmediateTransaction conn $
         query
           conn
           "SELECT usage FROM rate_limit WHERE key = ? AND (expires_at IS NULL OR expires_at > DATETIME('now'))"
@@ -73,6 +76,7 @@ sqliteBackend dbName =
         [Only usage] -> do
           let newUsage = usage + increment
           withConnection dbName $ \conn ->
+           withImmediateTransaction conn $
             execute
               conn
               "UPDATE rate_limit SET usage = ? WHERE key = ?"
@@ -80,11 +84,13 @@ sqliteBackend dbName =
           pure newUsage
         _ -> do
           withConnection dbName $ \conn ->
+           withImmediateTransaction conn $
             execute
               conn
               "DELETE FROM rate_limit WHERE key = ? AND expires_at <= DATETIME('now')"
               (Only ipAddr)
           withConnection dbName $ \conn ->
+           withImmediateTransaction conn $
             execute
               conn
               "INSERT INTO rate_limit (key, usage, expires_at) VALUES (?, ?, NULL)"
@@ -92,6 +98,7 @@ sqliteBackend dbName =
           pure increment
     setExpirationSeconds seconds ipAddr =
       withConnection dbName $ \conn ->
+           withImmediateTransaction conn $
         execute
           conn
           "UPDATE rate_limit SET expires_at = DATETIME('now', '+' || ? || ' seconds') WHERE key = ?"
