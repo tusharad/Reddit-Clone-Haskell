@@ -19,7 +19,6 @@ module Platform.Common.Utils
   , queryWrapper
   , redirects
   , genRandomUserName
-  , createServerFilePathAndSize
   )
 where
 
@@ -43,10 +42,6 @@ import Servant as S
 import Servant.Auth.Server
 import System.Log.FastLogger
 import UnliftIO
-import Control.Monad.Reader
-import System.FilePath
-import Control.Monad
-import Data.Int (Int64)
 
 toUserInfo :: UserRead -> UserInfo
 toUserInfo User {..} = UserInfo userID userName
@@ -160,14 +155,13 @@ readEnv envFilePath = do
         Left e -> pure $ Left $ toException e
         Right pool -> do
           jwtSecretKey <- generateKey
-          loggerSet_ <- newFileLoggerSet defaultBufSize logFilePath
+          loggerSet_ <- newStdoutLoggerSet defaultBufSize
           sem <- newQSem 10 -- 10 threads
           let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
               jwtSett = defaultJWTSettings jwtSecretKey
               appCfg =
                 AppConfig
-                  { fileUploadDir = fileUploadPath
-                  , loggerSet = loggerSet_
+                  { loggerSet = loggerSet_
                   , minLogLevel = toLogLevel logLevel
                   , emailAPIToken = mailAPIToken
                   , emailFromEmail = mailFromEmail
@@ -212,14 +206,14 @@ genRandomUserName = do
         mempty
     if responseStatusCode jsonRes /= 200
       then do
-        liftIO $ print (BSL.pack (show (responseBody jsonRes)))
-        pure $ Left (BSL.pack (show (responseBody jsonRes)))
+        let errMsg = BSL.pack $ show (responseBody jsonRes)
+        liftIO $ print errMsg
+        pure $ Left errMsg
       else do
-        let res0 =
-              randomUsername $
-                head $
-                  results (responseBody jsonRes :: RandomUserNameApiResponse)
-        pure $ Right (T.pack res0)
+        let res_ = results (responseBody jsonRes :: RandomUserNameApiResponse)
+        case res_ of
+          (randomName : _) -> pure $ Right $ T.pack (randomUsername randomName)
+          _ -> pure $ Left "Could not generate user name"
 
 toEnv :: Text -> Environment
 toEnv "local" = Local
@@ -229,6 +223,8 @@ toEnv "sandbox" = Sandbox
 toEnv "production" = Production
 toEnv _ = Local -- Shouldn't happen
 
+{-
+-- Commenting out function instead of deleting it for future reference
 createServerFilePathAndSize ::
   (MonadUnliftIO m) =>
   Int64 ->
@@ -242,3 +238,4 @@ createServerFilePathAndSize maxFileSize content fName = do
   let serverFilePath = fileUploadDir </> fName
   liftIO $ BSL.writeFile serverFilePath content
   pure (serverFilePath, fromIntegral fileSize)
+  -}

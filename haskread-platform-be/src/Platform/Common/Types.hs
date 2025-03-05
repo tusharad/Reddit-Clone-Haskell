@@ -50,9 +50,7 @@ data OAuth2Config = OAuth2Config
 
 data Env = Env
   { dbConfig :: DBConfig
-  , logFilePath :: FilePath
   , logLevel :: Text
-  , fileUploadPath :: FilePath
   , applicationPort :: Natural
   , mailAPIToken :: Text
   , mailFromEmail :: Text
@@ -64,8 +62,8 @@ data Env = Env
   deriving (Generic, FromDhall, Show)
 
 data AppConfig = AppConfig
-  { fileUploadDir :: FilePath
-  , loggerSet :: LoggerSet
+  { 
+    loggerSet :: LoggerSet
   , minLogLevel :: MinLogLevel
   , emailAPIToken :: Text
   , emailFromEmail :: Text

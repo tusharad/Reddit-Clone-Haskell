@@ -43,12 +43,12 @@ startApp = do
           case eEnv of
             Left e -> putStrLn ("error happened: " <> show e) >> exitFailure
             Right (appST, _, ctx, appPort, _) -> do
-              initRateLimitTable "rate_limit.db"
+              -- initRateLimitTable "rate_limit.db"
               putStrLn $ "Application running at pot " <> show appPort
               run appPort $
                 concatMiddleware
                   [ myCorsMiddleware
-                  , rateLimitMiddleware 60 60 -- At max 60 requests in 1 minute
+                 -- , rateLimitMiddleware 60 60 -- At max 60 requests in 1 minute
                   ]
                   (app appST ctx)
     _ -> putStrLn "please provide argument" >> exitFailure
