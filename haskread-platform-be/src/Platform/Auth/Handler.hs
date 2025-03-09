@@ -346,6 +346,7 @@ oauth2CallbackH ::
     )
 oauth2CallbackH (Authenticated _) _ _ = throw401Err "User alread logged IN"
 oauth2CallbackH _ (Just _) (Just codeP) = do
+  liftIO $ print ("getting callback" :: String)
   let code = ExchangeToken codeP
   -- idpName = T.takeWhile ('.' /=) stateP
   googleApp <- mkTestGoogleApp
@@ -423,6 +424,7 @@ loginUser userRead0 isOAuth = do
         Right v -> do
           if isOAuth
             then do
+              _ <- liftIO $ print ("calling oauth2/callback" :: String, v)
               let redirectUrl =
                     if environment == Production
                       then

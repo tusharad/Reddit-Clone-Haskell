@@ -38,7 +38,7 @@ console.log("custom js loaded!");
 var url_path = function () {
     var hostUrl = window.location.hostname;
     return hostUrl.includes("localhost")
-        ? "http://localhost:8085" : "https://haskread.tushar-adhatrao.in";
+        ? "http://localhost:8085" : window.location.origin;
 };
 // Function to extract JWT token from cookie
 function extractJwtToken() {

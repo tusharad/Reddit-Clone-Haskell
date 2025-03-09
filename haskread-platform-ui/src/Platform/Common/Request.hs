@@ -29,6 +29,7 @@ module Platform.Common.Request
   , deleteUser
   , getUserProfileImage
   , getAttachment
+  , verifyOAuth
   ) where
 
 import Control.Exception
@@ -545,5 +546,21 @@ getAttachment threadId = do
               Just $
                 toPath
                   [ "api", "v1", "thread", "attachment", show threadId]
+          , mbAuthToken = Nothing
+  }
+
+verifyOAuth :: Text -> Text -> IO (Either String LoginUserResponse)
+verifyOAuth state_ code_ = do
+  url <- getUrl
+  doRequestJSON RequestOptions {
+    reqMethod = GET
+          , reqUrl = url
+          , mbReqHeaders = Nothing
+          , mbQueryParams = Just [("state", Just $ TE.encodeUtf8 state_), ("code", Just $ TE.encodeUtf8 code_)]
+          , mbReqBody = Nothing
+          , mbReqPath =
+              Just $
+                toPath
+                  [ "callback"]
           , mbAuthToken = Nothing
   }

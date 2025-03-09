@@ -30,6 +30,7 @@ library
       Platform.Common.Types
       Platform.Common.Utils
       Platform.Page.Callback
+      Platform.Page.CallbackInternal
       Platform.Page.Home
       Platform.Page.Login
       Platform.Page.OTP

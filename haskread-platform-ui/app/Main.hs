@@ -21,6 +21,7 @@ import Platform.Page.OTP
 import Platform.Page.Profile
 import Platform.Page.Register
 import Platform.Page.ViewThread
+import Platform.Page.CallbackInternal
 import Text.Read (readMaybe)
 import Web.Hyperbole
 import System.Environment
@@ -45,6 +46,7 @@ data AppRoute
   | ViewThread Int
   | OTP Int
   | Callback
+  | CallbackInternal
   | Profile
   deriving (Eq, Generic)
 
@@ -60,6 +62,7 @@ instance Route AppRoute where
   matchRoute ["view-thread", tId] = do
     tId_ <- readMaybe $ T.unpack tId
     pure $ ViewThread tId_
+  matchRoute ["callback"] = pure CallbackInternal
   matchRoute _ = pure Home
 
 router :: forall es. (Hyperbole :> es, IOE :> es) => AppRoute -> Eff es Response
@@ -70,6 +73,7 @@ router Profile = runPage profilePage
 router Callback = runPage callbackPage
 router (OTP tId) = runPage (otpPage tId)
 router (ViewThread tId) = runPage (viewThreadPage tId)
+router CallbackInternal = runPage callbackInternalPage
 
 newtype Message = Message Int
   deriving (Show, Read, ViewId)

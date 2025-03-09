@@ -3,7 +3,7 @@ console.log("custom js loaded!");
 const url_path = () => {
     const hostUrl = window.location.hostname
     return hostUrl.includes("localhost")
-        ? "http://localhost:8085" : "https://haskread.tushar-adhatrao.in"
+        ? "http://localhost:8085" : window.location.origin
 }
 
 // Function to extract JWT token from cookie

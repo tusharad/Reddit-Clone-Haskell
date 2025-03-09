@@ -2,7 +2,7 @@ name: Haskell CI
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -132,35 +132,3 @@ jobs:
       - name: Stop test database
         if: always()
         run: docker stop haskread_test_pg_db
-
-  deploy:
-    needs : [build-be, build-ui]
-    environment: Test Env
-    runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Authenticate with GCP
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_KEY }}
-
-      - name: Download Binaries
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-
-      - name: Upload UI binary to GCS
-        uses: google-github-actions/upload-cloud-storage@v2
-        with:
-          path: ./artifacts
-          destination: haskread_ci_storage
-      
-      - name: Deploying code
-        run: |
-          curl --request POST \
-            --url https://haskread.tushar-adhatrao.in/api/service/app/update \
-            --header 'Authorization: Bearer ${{ secrets.BEARER_TOKEN }}'
