@@ -12,18 +12,18 @@ module Platform.Comment.DB
   )
 where
 
+import Data.Coerce (coerce)
+import Data.List.NonEmpty
 import Orville.PostgreSQL
 import Orville.PostgreSQL.Expr hiding (tableName)
 import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
+import Platform.Common.AppM (AppM)
+import Platform.Common.Utils (queryWrapper)
 import Platform.DB.Marshaller
 import Platform.DB.Model
 import Platform.DB.Table
 import Platform.Orville.Helper
-import Data.List.NonEmpty
-import Platform.Common.Utils (queryWrapper)
-import Data.Coerce (coerce)
 import UnliftIO (MonadUnliftIO)
-import Platform.Common.AppM (AppM)
 
 addCommentQ :: (MonadOrville m) => CommentWrite -> m ()
 addCommentQ = insertEntity commentTable
@@ -50,20 +50,20 @@ updateCommentVoteQ :: (MonadOrville m) => CommentID -> UserID -> CommentVoteWrit
 updateCommentVoteQ cID uID = updateEntity commentVoteTable (CommentVoteID uID cID)
 
 fetchCommentsByThreadQ :: (MonadOrville m) => ThreadID -> m [CommentInfo]
-fetchCommentsByThreadQ threadID = do
+fetchCommentsByThreadQ _threadID = do
   executeAndDecode
     SelectQuery
-    (fetchCommentsByThreadExpr threadID)
+    (fetchCommentsByThreadExpr _threadID)
     (annotateSqlMarshallerEmptyAnnotation commentInfoMarshaller)
 
 whereThreadIdIs :: ThreadID -> WhereClause
 whereThreadIdIs (ThreadID tID) =
   whereClause $
-    columnReference (fieldToAliasQualifiedColumnName ( (stringToAliasName "c")) threadIDField)
+    columnReference (fieldToAliasQualifiedColumnName ((stringToAliasName "c")) threadIDField)
       `equals` valueExpression (SqlValue.fromInt32 tID)
 
 fetchCommentsByThreadExpr :: ThreadID -> QueryExpr
-fetchCommentsByThreadExpr threadID =
+fetchCommentsByThreadExpr _threadID =
   queryExpr selectClause_ selectedColumns (Just fromTable)
   where
     selectClause_ = selectClause (selectExpr Nothing)
@@ -82,7 +82,7 @@ fetchCommentsByThreadExpr threadID =
     commentTableName = tableFromItemWithAlias (stringToAliasExpr "c") (tableName commentTable)
     userTableName = tableFromItemWithAlias (stringToAliasExpr "u") (tableName userTable)
     userIDConstraint =
-      columnReference (fieldToAliasQualifiedColumnName  (stringToAliasName "u") userIDField)
+      columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "u") userIDField)
         `equals` columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "c") userIDField)
     commentIdConstraint =
       columnReference (fieldToAliasQualifiedColumnName (stringToAliasName "c") commentIDField)
@@ -100,7 +100,7 @@ fetchCommentsByThreadExpr threadID =
         , deriveColumnAsAlias downVoteCountExpr (stringToAliasExpr "downvote_count")
         ]
     upvoteCountExpr =
-      count
+      countExprAggregateFunction
         ( caseExpr
             ( whenExpr
                 (voteField `fieldEquals` True)
@@ -110,7 +110,7 @@ fetchCommentsByThreadExpr threadID =
             (Just (valueExpression SqlValue.sqlNull))
         )
     downVoteCountExpr =
-      count
+      countExprAggregateFunction
         ( caseExpr
             ( whenExpr
                 (voteField `fieldEquals` False)
@@ -132,22 +132,26 @@ fetchCommentsByThreadExpr threadID =
         Nothing
     joinList =
       [ joinExpr innerJoinType userTableName (joinOnConstraint userIDConstraint)
-       , joinExpr leftJoinType voteCountTable (joinOnConstraint commentIdConstraint)
+      , joinExpr leftJoinType voteCountTable (joinOnConstraint commentIdConstraint)
       ]
     fromTable =
       mkTableExpr
         (commentTableName `appendJoinFromItem` joinList)
-        defaultClauses {_whereClause = Just $ whereThreadIdIs threadID}
+        defaultClauses {_whereClause = Just $ whereThreadIdIs _threadID}
 
-fetchVoteCommentsByUser :: MonadUnliftIO m => UserID -> [CommentID] -> AppM m [CommentVoteRead]
-fetchVoteCommentsByUser userID commentIdList =
+fetchVoteCommentsByUser ::
+  MonadUnliftIO m =>
+  UserID ->
+  [CommentID] ->
+  AppM m [CommentVoteRead]
+fetchVoteCommentsByUser _userID commentIdList =
   queryWrapper $
     findEntitiesBy
       commentVoteTable
-      (where_
-          (fieldColumnReference userIDField
+      ( where_
+          ( fieldColumnReference userIDField
               `equals` valueExpression
-                (SqlValue.fromInt32 $ coerce userID)
+                (SqlValue.fromInt32 $ coerce _userID)
               .&& valueIn
                 (fieldColumnReference commentIDField)
                 (fromList (valueExpression . SqlValue.fromInt32 . coerce <$> commentIdList))

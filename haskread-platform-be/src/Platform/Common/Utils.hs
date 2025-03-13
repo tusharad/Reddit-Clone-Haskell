@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Platform.Common.Utils
@@ -84,14 +85,14 @@ toJsonbArray :: [Text] -> Text
 toJsonbArray = T.pack . show
 
 mkConnection :: DBConfig -> ConnectionOptions
-mkConnection DBConfig {..} =
+mkConnection DBConfig {port = p, dbName,host, dbUserName, dbPassword} =
   let connString =
         unwords
           [ "dbname=" <> T.unpack dbName
           , "host=" <> T.unpack host
           , "user=" <> T.unpack dbUserName
           , "password=" <> T.unpack dbPassword
-          , "port=" <> show port
+          , "port=" <> show p
           ]
    in ConnectionOptions
         { connectionString = connString

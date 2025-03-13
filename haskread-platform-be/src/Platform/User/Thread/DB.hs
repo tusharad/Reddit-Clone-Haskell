@@ -116,13 +116,13 @@ userIdExpr uId =
     `equals` valueExpression (SqlValue.fromInt32 $ fromIntegral uId)
 
 fetchThreadInfoQ :: (MonadOrville m) => Int -> Int -> Maybe Int -> Maybe Int -> m [ThreadInfo]
-fetchThreadInfoQ limit offset mCommunityId mUserId =
+fetchThreadInfoQ _limit _offset mCommunityId mUserId =
   executeAndDecode
     SelectQuery
     ( fetchThreadInfoExpr
         (mkWhereClauseForFetchThreadInfo mCommunityId mUserId)
-        (Just (limitExpr limit))
-        (Just (offsetExpr offset))
+        (Just (limitExpr _limit))
+        (Just (offsetExpr _offset))
         Nothing
     )
     (annotateSqlMarshallerEmptyAnnotation threadInfoMarshaller)
@@ -196,7 +196,7 @@ fetchThreadInfoExpr wClause lClause oClause orderClause =
         , deriveColumnAsAlias downVoteCountExpr (stringToAliasExpr "downvote_count")
         ]
     upvoteCountExpr =
-      count
+      countExprAggregateFunction
         ( caseExpr
             ( whenExpr
                 (voteField `fieldEquals` True)
@@ -206,7 +206,7 @@ fetchThreadInfoExpr wClause lClause oClause orderClause =
             (Just (valueExpression SqlValue.sqlNull))
         )
     downVoteCountExpr =
-      count
+      countExprAggregateFunction
         ( caseExpr
             ( whenExpr
                 (voteField `fieldEquals` False)
@@ -226,7 +226,7 @@ fetchThreadInfoExpr wClause lClause oClause orderClause =
     commentCountTable =
       subQueryAsFromItemExpr (stringToAliasExpr "comm") commentCountExpr
     commentCountFieldExpr =
-      countColumn (fieldColumnName threadIDField)
+      countColumnAggregateFunction (fieldColumnName threadIDField)
     commentCountExpr =
       queryExpr selectClauseDefault commentCountSelectList (Just fromCommentTable)
     fromCommentTable =
@@ -246,14 +246,14 @@ fetchThreadInfoExpr wClause lClause oClause orderClause =
       , joinExpr leftJoinType voteCountTable (joinOnConstraint threadIDConstraint)
       , joinExpr leftJoinType commentCountTable (joinOnConstraint commentConstraint)
       ]
-    fromTable wClause lClause oClause orderClause =
+    fromTable _wClause _lClause _oClause _orderClause =
       mkTableExpr
         (threadTableName `appendJoinFromItem` joinList)
         defaultClauses
-          { _whereClause = wClause
-          , _limitExpr = lClause
-          , _offSetExpr = oClause
-          , _orderByClause = orderClause
+          { _whereClause = _wClause
+          , _limitExpr = _lClause
+          , _offSetExpr = _oClause
+          , _orderByClause = _orderClause
           }
 
 {-
@@ -272,6 +272,7 @@ ORDER BY ts_rank(
     ) DESC;
 -}
 
+mkWhereClauseForFetchThreadInfoByText :: Text -> Maybe WhereClause
 mkWhereClauseForFetchThreadInfoByText txt =
   Just $
     whereClause $
@@ -283,6 +284,7 @@ mkWhereClauseForFetchThreadInfoByText txt =
         (toTSVector (columnToValExpression t) (Just English))
         (textToPlainTSQuery txt)
 
+mkOrderByClauseForFetchThreadInfoByText :: Text -> Maybe OrderByClause
 mkOrderByClauseForFetchThreadInfoByText txt =
   Just $
     orderByClause $
@@ -297,9 +299,14 @@ mkOrderByClauseForFetchThreadInfoByText txt =
         ascendingOrder
 
 -- simple internal functions
+columnToValExpression :: FieldDefinition nullability a -> ValueExpression
 columnToValExpression t =
   columnReference (untrackQualified (fieldAliasQualifiedColumnName (stringToAliasName "t") t))
+
+textToPlainTSQuery :: Text -> ValueExpression
 textToPlainTSQuery txt = plainToTSQuery (valueExpression $ SqlValue.fromText txt) (Just English)
+
+textToTSQuery :: Text -> ValueExpression
 textToTSQuery txt = toTSQuery (valueExpression $ SqlValue.fromText txt) (Just English)
 
 fetchThreadInfoByTextQ :: MonadOrville m => Text -> m [ThreadInfo]

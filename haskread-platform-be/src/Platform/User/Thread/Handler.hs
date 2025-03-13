@@ -119,10 +119,11 @@ storeAttachmentIfExist :: MonadUnliftIO m => Maybe (FileData Mem) -> AppM m (May
 storeAttachmentIfExist Nothing = pure Nothing
 storeAttachmentIfExist (Just FileData {..}) = do
   -- Checking total threads...if number of threads crossed 10000 stop
-  totalThreads <- fetchAllThreads 
-  if (length totalThreads >= 10000) then 
-    throw400Err "Threads fulled!"
-  else do
+  totalThreads <- fetchAllThreads
+  if (length totalThreads >= 10000)
+    then
+      throw400Err "Threads fulled!"
+    else do
       if fdFileCType `notElem` supportedFileTypes
         then
           throw400Err "File type not supported"
@@ -198,9 +199,9 @@ deleteThreadH ::
   AuthResult UserInfo ->
   ThreadID ->
   AppM m DeleteThreadResponse
-deleteThreadH (Authenticated UserInfo {..}) threadID = do
-  Thread{..} <- checkIfUserOwnsThread threadID userIDForUserInfo
-  case (threadAttachment,threadAttachmentName) of
+deleteThreadH (Authenticated UserInfo {..}) _threadID = do
+  Thread {..} <- checkIfUserOwnsThread _threadID userIDForUserInfo
+  case (threadAttachment, threadAttachmentName) of
     (Just bucketName, Just objectName) -> do
       eRes <- liftIO $ deleteObject (T.unpack bucketName) (T.unpack objectName)
       case eRes of

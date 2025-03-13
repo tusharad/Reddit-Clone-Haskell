@@ -591,3 +591,7 @@ Need to use `readKey` function from server-auth-server to generate JWT.
 ## TODO:
 
 - Make threadID from vote_thread table indexed.
+
+#### 09/03/2025 
+
+- The next few commits shall be related to refactoring current structure.

@@ -5,7 +5,6 @@
 module Platform.Core (startApp, app) where
 
 -- Starting point of the Application
-
 import Control.Monad.Reader
 import Network.Wai.Handler.Warp
 import Platform.API
@@ -48,7 +47,7 @@ startApp = do
               run appPort $
                 concatMiddleware
                   [ myCorsMiddleware
-                 -- , rateLimitMiddleware 60 60 -- At max 60 requests in 1 minute
+                  -- , rateLimitMiddleware 60 60 -- At max 60 requests in 1 minute
                   ]
                   (app appST ctx)
     _ -> putStrLn "please provide argument" >> exitFailure
