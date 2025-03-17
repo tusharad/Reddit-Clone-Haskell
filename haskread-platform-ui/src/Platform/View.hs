@@ -9,6 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Platform.View
   ( FooterId (..)
@@ -23,6 +24,10 @@ import Platform.Common.Types
 import Platform.Common.Utils
 import Web.Hyperbole
 import Web.View.Style
+import Platform.Common.Request (getCommunityList)
+import Control.Monad.IO.Class (MonadIO(liftIO))
+import Effectful (IOE)
+import qualified  Data.Text as T
 
 newtype FooterId = FooterId Int
   deriving (Show, Read, ViewId)
@@ -36,9 +41,13 @@ instance HyperView FooterId es where
 newtype CommunityId = CommunityId Int
   deriving (Show, Read, ViewId)
 
-instance HyperView CommunityId es where
+instance IOE :> es => HyperView CommunityId es where
   data Action CommunityId = Init
     deriving (Show, Read, ViewAction)
+
+  update Init = do 
+    eCommunityList <- liftIO getCommunityList
+    pure $ communityListView_ eCommunityList
 
 newtype SortMenuId = SortMenuId Int
   deriving (Show, Read, ViewId)
@@ -75,14 +84,26 @@ showCommunityNames (CommunityC {..} : communityList) = do
       (text communityName)
     showCommunityNames communityList
 
-communityListView :: Communities -> View CommunityId ()
-communityListView (Communities communityList) = do
+communityListView_ :: Either String Communities -> View CommunityId ()
+communityListView_ eCommunityList = 
   el (cc "w-full px-4") $ do
     el (addClass (cls "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden")) $ do
       el (addClass (cls "border-b p-4 dark:border-gray-700")) $ do
         el (addClass (cls "text-lg font-bold text-gray-800 dark:text-gray-200")) (text "Communities")
         tag "ul" (cc "p-4 space-y-2") $ do
-          showCommunityNames communityList
+          either
+            (el_ . raw . T.pack)
+            (showCommunityNames . communities)
+            eCommunityList
+
+communityListView :: View CommunityId ()
+communityListView = do
+  el (cc "w-full px-4") $ do
+    el (addClass (cls "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden")) $ do
+      el (addClass (cls "border-b p-4 dark:border-gray-700")) $ do
+        el (addClass (cls "text-lg font-bold text-gray-800 dark:text-gray-200")) (text "Communities")
+        tag "ul" (cc "p-4 space-y-2") $ do
+          el (onLoad Init 500) $ text "Loading communities"
 
 sortMenuView :: View SortMenuId ()
 sortMenuView = do

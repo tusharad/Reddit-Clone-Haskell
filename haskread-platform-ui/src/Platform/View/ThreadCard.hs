@@ -284,6 +284,7 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
           tag "i" (cc "bx bx-comment") none
           tag "span" mempty . text $ toText (fromMaybe 0 commentCount)
 
+editThreadView :: ThreadInfo -> Communities -> View ThreadId ()
 editThreadView ThreadInfo {..} (Communities communityList) = do
   let css = "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
       funcName = "updateThread(" <> show threadIDForThreadInfo <> ")"

@@ -86,10 +86,11 @@ disabled = att "disabled" mempty
 getRedirectUrl :: IO Url
 getRedirectUrl = do
   argList <- getArgs
-  if null argList || (head argList == "local")
-    then
-      return "http://localhost:8085/api/v1/user/oauth2/login"
-    else return "/api/v1/user/oauth2/login"
+  case argList of
+    (envType:_) -> 
+        if envType == "local" then pure "http://localhost:8085/api/v1/user/oauth2/login"
+        else pure "/api/v1/user/oauth2/login"
+    _ -> pure "/api/v1/user/oauth2/login"
 
 hush :: Either a b -> Maybe b
 hush = either (const Nothing) Just

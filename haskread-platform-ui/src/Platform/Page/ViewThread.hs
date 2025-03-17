@@ -233,5 +233,5 @@ renderCommunitySection ::
     )
     ()
 renderCommunitySection (Left err) = el_ $ raw $ T.pack err
-renderCommunitySection (Right communityList) =
-  el_ $ hyper (CommunityId 1) $ communityListView communityList
+renderCommunitySection (Right _) =
+  el_ $ hyper (CommunityId 1) $ communityListView 

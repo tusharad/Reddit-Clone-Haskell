@@ -112,7 +112,6 @@ homePage = do
   mbCommunityId <- lookupParam $ Param "communityId"
   mbUserId <- lookupParam $ Param "userId"
   eRes <- liftIO (getAllThreads mbLimit mbOffset mbCommunityId mbUserId)
-  eCommunityList <- liftIO getCommunityList
   case eRes of
     Left err -> pure . el_ $ raw (T.pack err)
     Right res -> do
@@ -138,8 +137,5 @@ homePage = do
                   0
                   (threads res)
                 hyper (HomeId 1) (paginationView (threadsCount res) PageParams {..})
-              either
-                (el_ . raw . T.pack)
-                (hyper (CommunityId 1) . communityListView)
-                eCommunityList
+                hyper (CommunityId 1) communityListView
           hyper (FooterId 1) footerView

@@ -144,7 +144,7 @@ instance ToColor AppColor where
   colorValue Danger = "#ef1509"
   colorValue Warning = "#e1c915"
 
-newtype Communities = Communities
+data Communities = Communities
   { communities :: [CommunityC]
   }
   deriving (Show, Eq, Generic, FromJSON)
@@ -218,12 +218,12 @@ data CreateCommentReqBody = CreateCommentReqBody
   }
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
-newtype FetchVoteThreadsForUserReq = FetchVoteThreadsForUserReq
+data FetchVoteThreadsForUserReq = FetchVoteThreadsForUserReq
   { threadListForVotes :: [Int]
   }
   deriving (Show, Eq, Generic, ToJSON)
 
-newtype FetchVoteComemntsForUserReq = FetchVoteComemntsForUserReq
+data FetchVoteComemntsForUserReq = FetchVoteComemntsForUserReq
   { commentListForVotes :: [Int]
   }
   deriving (Show, Eq, Generic, ToJSON)
@@ -241,7 +241,7 @@ newtype CVoteList = CVoteList [CVote]
     deriving (Show, Eq, Generic, FromJSON)
 -}
 
-newtype FetchVoteCommentsForUserResponse = FetchVoteCommentsForUserResponse
+data FetchVoteCommentsForUserResponse = FetchVoteCommentsForUserResponse
   { fetchVoteCommentsList :: [FetchVoteComments]
   }
   deriving (Show, Eq, Generic, FromJSON)
@@ -274,7 +274,7 @@ data DeleteUserBody = DeleteUserBody
   }
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
-newtype AuthData = AuthData
+data AuthData = AuthData
   { jToken :: Maybe Text
   }
   deriving (Generic, Show, Read, ToParam, FromParam)

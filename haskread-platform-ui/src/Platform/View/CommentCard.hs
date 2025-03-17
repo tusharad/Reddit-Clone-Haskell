@@ -39,6 +39,7 @@ import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.View.Header (headerButtonCSS)
 import Web.Hyperbole hiding (input)
+import Web.Hyperbole.View.Forms (FormFields)
 
 data CommentCardOps = CommentCardOps
   { currUserVotes :: Maybe [(Int, Bool)]
@@ -222,6 +223,12 @@ newtype EditCommentForm f = EditCommentForm
 
 instance Form EditCommentForm Maybe
 
+helperCommentView ::
+  Text ->
+  (View (FormFields id) () -> View CommentCardId a) ->
+  View (FormFields id) b ->
+  Int ->
+  View CommentCardId ()
 helperCommentView cardTitle formTag inpField a = do
   let css =
         "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
