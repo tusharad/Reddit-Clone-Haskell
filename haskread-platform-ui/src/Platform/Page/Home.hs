@@ -134,8 +134,24 @@ homePage = do
                   (snd <$> mbTokenAndUser)
                   (fst <$> mbTokenAndUser)
                   (hush eUserThreadVotes)
-                  0
                   (threads res)
                 hyper (HomeId 1) (paginationView (threadsCount res) PageParams {..})
                 hyper (CommunityId 1) communityListView
           hyper (FooterId 1) footerView
+  where
+    viewThreadsList mUserInfo mToken_ mUserThreadVotes threads =
+      foldr
+        (\(idx, thread) acc -> do
+          hyper
+            (ThreadId idx)
+            ( threadView
+                ThreadCardOps
+                  { currUserVotesForThreads = mUserThreadVotes
+                  , tokenForThreadCard = mToken_
+                  , threadInfo = thread
+                  , mbUserInfo = mUserInfo
+                  }
+            )
+          acc)
+        none
+        (zip [0 ..] threads)

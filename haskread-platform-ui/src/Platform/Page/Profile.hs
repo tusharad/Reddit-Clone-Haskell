@@ -29,6 +29,7 @@ import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
 import Web.Hyperbole.Data.QueryData
+import qualified Platform.View.ThreadCard as ThreadCard
 
 newtype ProfileId = ProfileId Int
   deriving (Show, Read, ViewId)
@@ -360,6 +361,22 @@ profilePage = do
                     (Just userInfo)
                     (Just token_)
                     (hush eUserThreadVotes)
-                    0
                     (threads res)
               hyper (FooterId 1) footerView
+  where
+    viewThreadsList mUserInfo_ mToken_ mUserThreadVotes threads_ =
+      foldr
+        (\(idx, thread) acc -> do
+          hyper
+            (ThreadId idx)
+            ( threadView
+                ThreadCardOps
+                  { currUserVotesForThreads = mUserThreadVotes
+                  , tokenForThreadCard = mToken_
+                  , threadInfo = thread
+                  , ThreadCard.mbUserInfo = mUserInfo_
+                  }
+            )
+          acc)
+        none
+        (zip [0 ..] threads_)

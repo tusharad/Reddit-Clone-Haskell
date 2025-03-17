@@ -199,7 +199,7 @@ addCommentButtonView addCommentData =
   button
     (AddCommentBtn addCommentData)
     ( cc
-        "px-4 py-2 text-white rounded-full font-semibold bg-blue-600 hover:bg-blue-700 transition transform hover:scale-105"
+        "px-4 py-2 text-white rounded-full font-semibold bg-blue-600 hover:bg-blue-700 hover:scale-105"
     )
     "Add comment"
 

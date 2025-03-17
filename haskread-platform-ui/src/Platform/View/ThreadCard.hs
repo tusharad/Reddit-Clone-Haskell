@@ -24,7 +24,6 @@ module Platform.View.ThreadCard
   , updateCurrUserVotes
   , Action (..)
   , update
-  , viewThreadsList
   ) where
 
 import Control.Monad (forM_, void)
@@ -183,20 +182,6 @@ showLikeIcon (Just vals) tId = do
   case lookup tId vals of
     Just True -> tag "i" (cc "bx bxs-like text-gray-600 dark:text-gray-300") none
     _ -> tag "i" (cc "bx bx-like text-gray-600 dark:text-gray-300") none
-
-viewThreadsList _ _ _ _ [] = none
-viewThreadsList mUserInfo mToken_ mUserThreadVotes n (t : ts) = do
-  hyper
-    (ThreadId n)
-    ( threadView
-        ThreadCardOps
-          { currUserVotesForThreads = mUserThreadVotes
-          , tokenForThreadCard = mToken_
-          , threadInfo = t
-          , mbUserInfo = mUserInfo
-          }
-    )
-  viewThreadsList mUserInfo mToken_ mUserThreadVotes (n + 1) ts
 
 attachmentView :: Text -> Int -> View AttachmentViewId ()
 attachmentView attachmentName threadId
