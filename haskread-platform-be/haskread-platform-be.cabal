@@ -6,7 +6,7 @@ cabal-version: 1.12
 
 name:           haskread-platform-be
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/tusharad/haskread-platform#readme>
+description:    Core backend service of haskread platform
 homepage:       https://github.com/tusharad/haskread-platform#readme
 bug-reports:    https://github.com/tusharad/haskread-platform/issues
 author:         tushar
@@ -24,7 +24,6 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
       Platform.Admin.DB
       Platform.Admin.Handler
       Platform.Admin.Types

@@ -3,53 +3,10 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/topics/lock_files
 
-packages:
-- completed:
-    commit: ec93fc575a49516142242ef64f7dff75909ceb79
-    git: https://github.com/seanhess/hyperbole
-    name: hyperbole
-    pantry-tree:
-      sha256: 84ee4749d2082c25c149cebbe63b28f83d6e84cdc26a87aefb51e893f5e04696
-      size: 8549
-    version: 0.4.2
-  original:
-    commit: ec93fc575a49516142242ef64f7dff75909ceb79
-    git: https://github.com/seanhess/hyperbole
-- completed:
-    commit: 1e113328a0b69c25baa1fe0a965b1636cf916333
-    git: https://github.com/seanhess/web-view/
-    name: web-view
-    pantry-tree:
-      sha256: 6911cd3caabb58f89c88b647539da96e03d3a047bf97f26b12cf5749c0fba6e1
-      size: 2417
-    version: 0.7.0
-  original:
-    commit: 1e113328a0b69c25baa1fe0a965b1636cf916333
-    git: https://github.com/seanhess/web-view/
-- completed:
-    hackage: cookie-0.4.6@sha256:00f3a7d5604a3ccbfe89b9c52f8eb1edea753dc273d015333895118f32683ecd,1517
-    pantry-tree:
-      sha256: 8761320dd1ea21f2dee85336e05b6875503e83ddb66274614998ff91abe54d62
-      size: 360
-  original:
-    hackage: cookie-0.4.6@sha256:00f3a7d5604a3ccbfe89b9c52f8eb1edea753dc273d015333895118f32683ecd,1517
-- completed:
-    hackage: data-default-0.8.0.0@sha256:ba77cbe437508d5dfe4dec1e929121a92f0d6fc004c30fabb94c78172c0606dc,1016
-    pantry-tree:
-      sha256: 2ced4cb63070004ac8650e38d5544a25d941fcc8167787505468a163dd28daeb
-      size: 331
-  original:
-    hackage: data-default-0.8.0.0@sha256:ba77cbe437508d5dfe4dec1e929121a92f0d6fc004c30fabb94c78172c0606dc,1016
-- completed:
-    hackage: data-default-class-0.2.0.0@sha256:788dc5c0be3981ca83ad11206e300a77ae8a1c8b9bc4f9630f563d37f540ccbd,728
-    pantry-tree:
-      sha256: 2ddcb2ed7288849c7c46c7b3ae4fd0df016069a125f5803740974ea59700df19
-      size: 224
-  original:
-    hackage: data-default-class-0.2.0.0@sha256:788dc5c0be3981ca83ad11206e300a77ae8a1c8b9bc4f9630f563d37f540ccbd,728
+packages: []
 snapshots:
 - completed:
-    sha256: 00544e83718bcc51fc3783254aa1813205e1a723074bb0e2fb625879147445c0
-    size: 654477
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/2/24.yaml
-  original: nightly-2025-02-24
+    sha256: 5052c3587a92adc44d4912d5890346ba4a5bbe81ef6eb87962608a5e5003b5b9
+    size: 681591
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/4/16.yaml
+  original: nightly-2025-04-16

@@ -1,7 +1,7 @@
 name:                haskread-platform-ui
 version:             0.1.0.0
 github:              "tusharad/haskread-platform-ui"
-license:             BSD-3-Clause
+license:             MIT
 author:              "tushar"
 maintainer:          "tusharadhatrao@gmail.com"
 copyright:           "2024 tushar"
@@ -10,14 +10,7 @@ extra-source-files:
 - README.md
 - CHANGELOG.md
 
-# Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Web
-
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/tusharad/haskread-platform-ui#readme>
+description: Frontend core service of haskread platform.
 
 dependencies:
 - base >= 4.7 && < 5

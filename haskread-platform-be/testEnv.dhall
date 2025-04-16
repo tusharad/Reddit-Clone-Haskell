@@ -14,7 +14,7 @@ let OAuth2Config = {
 let Env = {
     dbConfig : DBConfig,
     logLevel : Text,
-    fileUploadPath : Text,
+    -- fileUploadPath : Text,
     applicationPort : Natural,
     mailAPIToken : Text,
     mailFromEmail : Text,

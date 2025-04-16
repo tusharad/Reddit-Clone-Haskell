@@ -10,14 +10,7 @@ extra-source-files:
 - README.md
 - CHANGELOG.md
 
-# Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Web
-
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/tusharad/haskread-platform#readme>
+description: Core backend service of haskread platform
 
 dependencies:
 - base >= 4.7 && < 5
@@ -105,4 +98,3 @@ tests:
     - tasty-hunit
     - tasty-wai
     - servant-multipart
-

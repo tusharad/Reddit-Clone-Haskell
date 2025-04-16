@@ -18,7 +18,6 @@ import Data.List.NonEmpty
 import Data.Text (Text)
 import Orville.PostgreSQL
 import Orville.PostgreSQL.Expr hiding (tableName)
-import Orville.PostgreSQL.Marshall (fieldAliasQualifiedColumnName)
 import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
 import Platform.DB.Marshaller
 import Platform.DB.Model
@@ -281,7 +280,7 @@ mkWhereClauseForFetchThreadInfoByText txt =
   where
     go t =
       tsMatch
-        (toTSVector (columnToValExpression t) (Just English))
+        (toTSVector (columnToValExpression t) (Just englishRegConfig))
         (textToPlainTSQuery txt)
 
 mkOrderByClauseForFetchThreadInfoByText :: Text -> Maybe OrderByClause
@@ -289,10 +288,14 @@ mkOrderByClauseForFetchThreadInfoByText txt =
   Just $
     orderByClause $
       orderByValueExpression
-        ( tsRank
-            ( stringConcat
-                (setWeight (toTSVector (columnToValExpression threadTitleField) (Just English)) A)
-                (setWeight (toTSVector (columnToValExpression threadDescriptionField) (Just English)) B)
+        ( toTSRank
+            ( tsVectorConcat
+                ( setTSWeight (toTSVector (columnToValExpression threadTitleField) (Just englishRegConfig)) tsWeightA
+                )
+                ( setTSWeight
+                    (toTSVector (columnToValExpression threadDescriptionField) (Just englishRegConfig))
+                    tsWeightB
+                )
             )
             (textToTSQuery txt)
         )
@@ -303,11 +306,11 @@ columnToValExpression :: FieldDefinition nullability a -> ValueExpression
 columnToValExpression t =
   columnReference (untrackQualified (fieldAliasQualifiedColumnName (stringToAliasName "t") t))
 
-textToPlainTSQuery :: Text -> ValueExpression
-textToPlainTSQuery txt = plainToTSQuery (valueExpression $ SqlValue.fromText txt) (Just English)
+textToPlainTSQuery :: Text -> TSQuery
+textToPlainTSQuery txt = plainToTSQuery (valueExpression $ SqlValue.fromText txt) (Just englishRegConfig)
 
-textToTSQuery :: Text -> ValueExpression
-textToTSQuery txt = toTSQuery (valueExpression $ SqlValue.fromText txt) (Just English)
+textToTSQuery :: Text -> TSQuery
+textToTSQuery txt = toTSQuery (valueExpression $ SqlValue.fromText txt) (Just englishRegConfig)
 
 fetchThreadInfoByTextQ :: MonadOrville m => Text -> m [ThreadInfo]
 fetchThreadInfoByTextQ searchTerm =

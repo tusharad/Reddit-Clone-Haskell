@@ -1,4 +1,4 @@
-cabal-version: 2.2
+cabal-version: 1.12
 
 -- This file has been generated from package.yaml by hpack version 0.37.0.
 --
@@ -6,13 +6,13 @@ cabal-version: 2.2
 
 name:           haskread-platform-ui
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/tusharad/haskread-platform-ui#readme>
+description:    Frontend core service of haskread platform.
 homepage:       https://github.com/tusharad/haskread-platform-ui#readme
 bug-reports:    https://github.com/tusharad/haskread-platform-ui/issues
 author:         tushar
 maintainer:     tusharadhatrao@gmail.com
 copyright:      2024 tushar
-license:        BSD-3-Clause
+license:        MIT
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
@@ -25,7 +25,6 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
       Platform.Common.Request
       Platform.Common.Types
       Platform.Common.Utils
@@ -43,8 +42,6 @@ library
       Platform.View.LiveSearch
       Platform.View.ThreadCard
   other-modules:
-      Paths_haskread_platform_ui
-  autogen-modules:
       Paths_haskread_platform_ui
   hs-source-dirs:
       src
@@ -71,8 +68,6 @@ library
 executable haskread-platform-ui-exe
   main-is: Main.hs
   other-modules:
-      Paths_haskread_platform_ui
-  autogen-modules:
       Paths_haskread_platform_ui
   hs-source-dirs:
       app
@@ -101,8 +96,6 @@ test-suite haskread-platform-ui-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_haskread_platform_ui
-  autogen-modules:
       Paths_haskread_platform_ui
   hs-source-dirs:
       test

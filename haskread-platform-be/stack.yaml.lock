@@ -12,6 +12,13 @@ packages:
   original:
     hackage: dhall-1.42.2@sha256:2c5b6b63ff63b6267af65b0f85f2cdd6708068854c3e2d6c67e0a8acbeb94a69,16962
 - completed:
+    hackage: google-cloud-storage-0.1.0.0@sha256:265d0f350eb484b7089bfb38129895e19bf276b037604c0123faa54598e1332e,1764
+    pantry-tree:
+      sha256: 6bba1820cfeefde892c6d0239cf30ccb471c149b2485e47cc01a4f594897b20b
+      size: 391
+  original:
+    hackage: google-cloud-storage-0.1.0.0@sha256:265d0f350eb484b7089bfb38129895e19bf276b037604c0123faa54598e1332e,1764
+- completed:
     hackage: hoauth2-providers-0.8.0@sha256:78ac02bed781b7b9c28f4876fb62c8bcce62e21dd8313cdc1e0e654b189df420,3058
     pantry-tree:
       sha256: 763c270af90342e60c9d8290fc525528bab64bcb2e970ce96f0d944d447526c9
@@ -19,26 +26,19 @@ packages:
   original:
     hackage: hoauth2-providers-0.8.0@sha256:78ac02bed781b7b9c28f4876fb62c8bcce62e21dd8313cdc1e0e654b189df420,3058
 - completed:
-    hackage: servant-auth-server-0.4.9.0@sha256:dff8a46a1491b9102323094b3a715ceaaa0b2d450cb81e2e0784bd5c19a7199f,5397
+    hackage: servant-auth-server-0.4.9.0@sha256:81bf73638d2a47c629bbadf9f212319a901073682e51b1ca6bf27dec27de7b6a,5547
     pantry-tree:
-      sha256: 7625d590d3349090eba88faec5187fede4c4302c8567255e675a592feaa55035
+      sha256: e11af75fbc4d8a8f0d64d495db294bc96eafc1a4e21e4df86e7ef5fd789c50c8
       size: 1376
   original:
-    hackage: servant-auth-server-0.4.9.0@sha256:dff8a46a1491b9102323094b3a715ceaaa0b2d450cb81e2e0784bd5c19a7199f,5397
+    hackage: servant-auth-server-0.4.9.0@sha256:81bf73638d2a47c629bbadf9f212319a901073682e51b1ca6bf27dec27de7b6a,5547
 - completed:
-    hackage: tasty-wai-0.1.2.0@sha256:06cc057d500aed373fb945e8b263363518ffefab5eface3524c1ccccad541390,2089
+    hackage: google-cloud-common-0.1.0.0@sha256:15d4780ffb57574c1972048adc8f07113e80f470a4849a0257f803af92383501,2001
     pantry-tree:
-      sha256: bf3bb90896581f1a7df1bc21c6b8e326a894d2a515f730730f9aceb66f291dce
-      size: 369
+      sha256: a80043557d31bae915d9398ce6b20e45be7b148fbe79468c7ec3d0f33e9d8d66
+      size: 387
   original:
-    hackage: tasty-wai-0.1.2.0@sha256:06cc057d500aed373fb945e8b263363518ffefab5eface3524c1ccccad541390,2089
-- completed:
-    hackage: atomic-write-0.2.1.1@sha256:1863c94cef87b4cf52b0064fd696201ebc747843d72daa3de2b2ce947a66e898,4773
-    pantry-tree:
-      sha256: 5f2b9e87ccdf1290785343abbb7e14df27e012cef7cea620cc110a45a3a34364
-      size: 2237
-  original:
-    hackage: atomic-write-0.2.1.1@sha256:1863c94cef87b4cf52b0064fd696201ebc747843d72daa3de2b2ce947a66e898,4773
+    hackage: google-cloud-common-0.1.0.0@sha256:15d4780ffb57574c1972048adc8f07113e80f470a4849a0257f803af92383501,2001
 - completed:
     hackage: repline-0.4.2.0@sha256:3d863dedf6d840d0578b597bb3b85c95e400c895c67e77a0c286b184d8be51b2,2179
     pantry-tree:
@@ -52,7 +52,7 @@ packages:
       sha256: 0b3155d79cc7d44285762b2012debe8ec70ac377163a8e5f29581bacaf50179e
       size: 1029
   original:
-    hackage: jwt-0.11.0@sha256:0602735ee4093c6c5bc918461855bcd55499099363bad34eb7a227aeef3cde29
+    hackage: jwt-0.11.0@sha256:0602735ee4093c6c5bc918461855bcd55499099363bad34eb7a227aeef3cde29,4265
 - completed:
     hackage: cryptostore-0.3.1.0@sha256:ce4762361b509d1719b5d500604a5a1f2d75c2c53f4fe75f7c4ef2faec4f8352,4219
     pantry-tree:
@@ -82,58 +82,28 @@ packages:
   original:
     hackage: x509-validation-1.6.12@sha256:4f4af20ec77f02c042ecd4726c195bb0e0b694b336de81e7bd4515b2917bd9bc,2169
 - completed:
-    commit: 22d66379dc8f89a05a35b011d30b60cf8c8d9ff8
-    git: https://github.com/tusharad/google-cloud-haskell
-    name: google-cloud-storage
+    hackage: tasty-wai-0.1.2.0@sha256:06cc057d500aed373fb945e8b263363518ffefab5eface3524c1ccccad541390,2089
     pantry-tree:
-      sha256: 33e8c147ca2bda11541648426683fff6089b55f41bd9f093bcdb53e8742a5931
-      size: 591
-    subdir: lib/google-cloud-storage
-    version: 0.1.0.0
+      sha256: bf3bb90896581f1a7df1bc21c6b8e326a894d2a515f730730f9aceb66f291dce
+      size: 369
   original:
-    commit: 22d66379dc8f89a05a35b011d30b60cf8c8d9ff8
-    git: https://github.com/tusharad/google-cloud-haskell
-    subdir: lib/google-cloud-storage
+    hackage: tasty-wai-0.1.2.0@sha256:06cc057d500aed373fb945e8b263363518ffefab5eface3524c1ccccad541390,2089
 - completed:
-    commit: 22d66379dc8f89a05a35b011d30b60cf8c8d9ff8
-    git: https://github.com/tusharad/google-cloud-haskell
-    name: google-cloud-common
-    pantry-tree:
-      sha256: f78a713c31ddf89a6f9ea58bbcb67ad49369d747e7f1814f1581ee8d4ff0cdab
-      size: 537
-    subdir: lib/google-cloud-common
-    version: 0.1.0.0
-  original:
-    commit: 22d66379dc8f89a05a35b011d30b60cf8c8d9ff8
-    git: https://github.com/tusharad/google-cloud-haskell
-    subdir: lib/google-cloud-common
-- completed:
-    commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
-    git: https://github.com/facebook/Haxl.git
-    name: haxl
-    pantry-tree:
-      sha256: 1994b7e0d98b273bf0e3662a2d8c24691fe8acf8f2a1b625bb8ee81cfa364c0a
-      size: 4438
-    version: 2.5.1.0
-  original:
-    commit: 6c86542a1843b747a52f4f3b7c25bb67c6bb2828
-    git: https://github.com/facebook/Haxl.git
-- completed:
-    commit: e08919c298844bd1b4572141c3b972b7d5b7c042
-    git: https://github.com/tusharad/orville
+    commit: 09528c117156592fc1ecbb82dd65548972b2d9d8
+    git: https://github.com/flipstone/orville
     name: orville-postgresql
     pantry-tree:
-      sha256: 7342f4a39e181cee6197638b1cb41b4ff712e74c11f1c02be7ec0759737519b5
-      size: 17540
+      sha256: 98b6c93573a7c7553616dbe8c05c02216b499edf0dee3c96495d94a805afa621
+      size: 17693
     subdir: orville-postgresql
     version: 1.1.0.0
   original:
-    commit: e08919c298844bd1b4572141c3b972b7d5b7c042
-    git: https://github.com/tusharad/orville
+    commit: 09528c117156592fc1ecbb82dd65548972b2d9d8
+    git: https://github.com/flipstone/orville
     subdir: orville-postgresql
 snapshots:
 - completed:
-    sha256: 00544e83718bcc51fc3783254aa1813205e1a723074bb0e2fb625879147445c0
-    size: 654477
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/2/24.yaml
-  original: nightly-2025-02-24
+    sha256: 5052c3587a92adc44d4912d5890346ba4a5bbe81ef6eb87962608a5e5003b5b9
+    size: 681591
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/4/16.yaml
+  original: nightly-2025-04-16

@@ -1,6 +1,6 @@
 module Platform.DB.Functions
-  ( updateUpdatedAtColumnFunctionQ,
-    setUpdatedAtUsersTrigger,
+  ( updateUpdatedAtColumnFunctionQ
+  , setUpdatedAtUsersTrigger
   )
 where
 
@@ -12,7 +12,7 @@ import Orville.PostgreSQL.Expr
   ( orReplace,
     triggerBefore,
     triggerForEachRow,
-    triggerOnUpdate,
+    triggerOnUpdate
   )
 import Platform.DB.Table
 
@@ -50,14 +50,14 @@ setUpdatedAtUsersTrigger ::
 setUpdatedAtUsersTrigger =
   mapM_
     runSetUpdatedAtTrigger
-    [ (tableName userTable, "set_updated_at_users"),
-      (tableName userProfileImageTable, "set_updated_at_userProfileImage"),
-      (tableName adminTable, "set_updated_at_admin"),
-      (tableName communityTable, "set_updated_at_community"),
-      (tableName threadTable, "set_updated_at_thread"),
-      (tableName threadVoteTable, "set_updated_at_threadVote"),
-      (tableName commentTable, "set_updated_at_comment"),
-      (tableName commentVoteTable, "set_updated_at_commentVote")
+    [ (tableName userTable, "set_updated_at_users")
+    , (tableName userProfileImageTable, "set_updated_at_userProfileImage")
+    , (tableName adminTable, "set_updated_at_admin")
+    , (tableName communityTable, "set_updated_at_community")
+    , (tableName threadTable, "set_updated_at_thread")
+    , (tableName threadVoteTable, "set_updated_at_threadVote")
+    , (tableName commentTable, "set_updated_at_comment")
+    , (tableName commentVoteTable, "set_updated_at_commentVote")
     ]
   where
     runSetUpdatedAtTrigger (tName, triggerName) =
