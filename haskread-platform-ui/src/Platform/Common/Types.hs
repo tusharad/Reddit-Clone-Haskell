@@ -35,18 +35,46 @@ module Platform.Common.Types
   , ChangePasswordBody (..)
   , DeleteUserBody (..)
   , AuthData (..)
+  , AppConfig (..)
+  , Environment (..)
+  , LogLevel (..)
+  , MinLogLevel
   ) where
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.String.Conversions
 import Data.Text (Text)
 import Data.Time
+import System.Log.FastLogger
 import Text.Read (readMaybe)
 import Web.HttpApiData
 import Web.Hyperbole
 import Web.Hyperbole.Data.QueryData (Param (..))
 
 -- import Web.View.Types (ClassName)
+data LogLevel
+  = LevelDebug
+  | LevelInfo
+  | LevelWarn
+  | LevelError
+  deriving (Eq, Ord, Generic)
+
+instance Show LogLevel where
+  show LevelDebug = "[Debug]"
+  show LevelInfo = "[Info]"
+  show LevelWarn = "[Warn]"
+  show LevelError = "[Error]"
+
+type MinLogLevel = LogLevel
+
+data Environment = Production | Development | Sandbox | Test | Local
+  deriving (Generic, Eq, Ord, Show, ToJSON)
+
+data AppConfig = AppConfig
+  { environment :: Environment
+  , minLogLevel :: MinLogLevel
+  , loggerSet :: LoggerSet
+  }
 
 data UserProfileResponse = UserProfileResponse
   { userIDForUPR :: Int

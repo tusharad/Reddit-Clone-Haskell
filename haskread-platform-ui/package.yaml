@@ -30,6 +30,8 @@ dependencies:
 - data-default >= 0.8.0
 - base64
 - filepath
+- fast-logger
+- mtl
 
 ghc-options:
 - -Wall

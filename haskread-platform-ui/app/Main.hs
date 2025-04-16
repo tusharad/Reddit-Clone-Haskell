@@ -11,33 +11,38 @@
 
 module Main (main) where
 
-import Data.Text (Text)
 import qualified Data.Text as T
 import Effectful
+import Effectful.Reader.Dynamic
+import Network.Wai.Middleware.Static
+import Platform.Common.Types
 import Platform.Page.Callback
+import Platform.Page.CallbackInternal
 import Platform.Page.Home
 import Platform.Page.Login
 import Platform.Page.OTP
 import Platform.Page.Profile
 import Platform.Page.Register
 import Platform.Page.ViewThread
-import Platform.Page.CallbackInternal
+import System.Log.FastLogger
 import Text.Read (readMaybe)
 import Web.Hyperbole
-import System.Environment
-import Network.Wai.Middleware.Static
 
 main :: IO ()
 main = do
-  args <- getArgs
-  if null args then putStrLn "Please provide env"
-  else do
-    putStrLn "UI running on http://localhost:3000"
-    let app = staticPolicy (addBase "static") myApp
-    run 3000 app
+  putStrLn "UI running on http://localhost:3000"
+  loggerSet_ <- newStdoutLoggerSet defaultBufSize
+  let appConfig =
+        AppConfig
+          { environment = Development
+          , minLogLevel = LevelDebug
+          , loggerSet = loggerSet_
+          }
+      app = staticPolicy (addBase "static") (myApp appConfig)
+  run 3000 app
 
-myApp :: Application
-myApp = liveApp (basicDocument "HaskRead-UI") (routeRequest router)
+myApp :: AppConfig -> Application
+myApp appConfig = liveApp (basicDocument "HaskRead-UI") (runReader appConfig $ routeRequest router)
 
 data AppRoute
   = Home
@@ -65,38 +70,13 @@ instance Route AppRoute where
   matchRoute ["callback"] = pure CallbackInternal
   matchRoute _ = pure Home
 
-router :: forall es. (Hyperbole :> es, IOE :> es) => AppRoute -> Eff es Response
+router ::
+  forall es. (Hyperbole :> es, IOE :> es, Reader AppConfig :> es) => AppRoute -> Eff es Response
 router Home = runPage homePage
-router Login = runPage loginPage 
+router Login = runPage loginPage
 router Register = runPage registerPage
 router Profile = runPage profilePage
 router Callback = runPage callbackPage
 router (OTP tId) = runPage (otpPage tId)
 router (ViewThread tId) = runPage (viewThreadPage tId)
 router CallbackInternal = runPage callbackInternalPage
-
-newtype Message = Message Int
-  deriving (Show, Read, ViewId)
-
-instance HyperView Message es where
-  data Action Message
-    = Louder Text
-    | Softer Text
-    deriving (Show, Read, ViewAction)
-
-  update (Louder m) = do
-    let new = m <> "!"
-    pure $ messageView new
-  update (Softer m) = do
-    if not (T.null m) && T.last m == '!'
-      then do
-        let new = T.init m
-        pure $ messageView new
-      else
-        pure $ messageView m
-
-messageView :: Text -> View Message ()
-messageView m = do
-  el_ $ text m
-  button (Louder m) (border 1) "Louder"
-  button (Softer m) (border 1) "Softer"

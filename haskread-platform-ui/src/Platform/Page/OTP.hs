@@ -18,23 +18,27 @@ import Data.Maybe (isNothing)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Effectful
+import Effectful.Reader.Dynamic
+import Platform.Common.Log
 import Platform.Common.Request
+import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.View
 import Platform.View.Header
+import Platform.View.LiveSearch (LiveSearchId)
 import Text.Read (readMaybe)
 import Web.Hyperbole
-import Platform.View.LiveSearch (LiveSearchId)
 
 data OTPView = OTPView
   deriving (Show, Read, ViewId)
 
-instance (IOE :> es, Hyperbole :> es) => HyperView OTPView es where
+instance (IOE :> es, Hyperbole :> es, Reader AppConfig :> es) => HyperView OTPView es where
   data Action OTPView = Submit Int | DoRedirect
     deriving (Show, Read, ViewAction)
 
   update DoRedirect = redirect "/login"
   update (Submit newUserId) = do
+    logDebug "Submitting OTP"
     uf <- formData @OTPForm
     let vals = validateForm uf
     if anyInvalid vals
