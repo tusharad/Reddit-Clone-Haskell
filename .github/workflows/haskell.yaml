@@ -33,7 +33,7 @@ jobs:
       uses: freckle/stack-action@v5
       with:
         working-directory: ./haskread-platform-ui/
-        stack-build-arguments: --copy-bins"
+        stack-build-arguments: --copy-bins
 
     - name: upload ui binary
       uses: actions/upload-artifact@v4
@@ -61,7 +61,7 @@ jobs:
       uses: freckle/stack-action@v5
       with:
         working-directory: ./haskread-platform-be/
-        stack-build-arguments: --copy-bins"
+        stack-build-arguments: --copy-bins
 
     - name: upload be binary
       uses: actions/upload-artifact@v4
