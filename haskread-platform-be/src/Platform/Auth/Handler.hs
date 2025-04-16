@@ -33,9 +33,6 @@ import GHC.Int (Int32)
 import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
 import qualified Haxl.Core as Haxl
 import Network.HTTP.Conduit (newManager, tlsManagerSettings)
-
--- import Network.OAuth2.Provider.Google (GoogleUser (..))
-
 import Network.OAuth.OAuth2
   ( ExchangeToken (ExchangeToken)
   , OAuth2Token (accessToken)
@@ -51,6 +48,7 @@ import Platform.Common.Utils
 import Platform.DB.Model
 import Platform.Email
 import Platform.Haxl.DataSource
+import Platform.Log
 import Platform.User.DB
 import Platform.User.Types
 import Servant
@@ -76,10 +74,11 @@ toUserWrite RegisterUserBody {..} = do
 
 doesEmailExists :: (MonadUnliftIO m) => Text -> AppM m Bool
 doesEmailExists email0 = do
-  (eRes0 :: Either SomeException (Maybe a)) <-
-    try $ fetchUserByEmailQ email0
+  eRes0 :: Either SomeException (Maybe a) <- try $ fetchUserByEmailQ email0
   case eRes0 of
-    Left e -> throw400Err $ BSL.pack $ show e
+    Left e -> do
+      logError $ "DB Exception: doesEmailExists: " <> email0 <> toText e
+      throw400Err $ BSL.pack $ show e
     Right r -> return $ isJust r
 
 doesUserNameExists :: (MonadUnliftIO m) => Text -> AppM m Bool
@@ -87,7 +86,9 @@ doesUserNameExists userName0 = do
   (eRes0 :: Either SomeException (Maybe a)) <-
     try $ fetchUserByUserNameQ userName0
   case eRes0 of
-    Left e -> throw400Err $ BSL.pack $ show e
+    Left e -> do
+      logError $ "DB Exception: doesUserNameExists: " <> userName0 <> toText e
+      throw400Err $ BSL.pack $ show e
     Right r -> return $ isJust r
 
 getUserID :: UserRead -> UserID
@@ -99,21 +100,27 @@ addUEVO uevo@UserEmailVerifyOTP {userIDForUEVO = uID} = do
     try $
       fetchUEVOByIDQ uID
   case eRes0 of
-    Left e -> throw400Err $ BSL.pack $ show e
+    Left e -> do 
+      logError $ "DB Exception: fetchUEVOByIDQ " <> toText uID <> toText e
+      throw400Err $ BSL.pack $ show e
     Right Nothing -> do
       eRes1 :: Either SomeException () <- try $ addUEVOQ uevo
       case eRes1 of
-        Left e -> throw400Err $ BSL.pack $ show e
-        Right _ -> pure ()
+        Left e -> do 
+          logError $ "DB Exception: addUEVOQ " <> toText uID <> toText e
+          throw400Err $ BSL.pack $ show e
+        Right _ -> logDebug $ "OTP Added for userId " <> toText uID
     Right (Just _) -> do
       eRes2 :: Either SomeException () <- try $ deleteUEVOQ uID
       case eRes2 of
-        Left e -> throw400Err $ BSL.pack $ show e
+        Left e -> do 
+          logError $ "DB Exception: deleteUEVOQ " <> toText uID <> toText e
+          throw400Err $ BSL.pack $ show e
         Right _ -> do
           eRes3 :: Either SomeException () <- try $ addUEVOQ uevo
           case eRes3 of
             Left e -> throw400Err $ BSL.pack $ show e
-            Right _ -> pure ()
+            Right _ -> logDebug $ "OTP Updated for userId" <> toText uID
 
 sendOTPForEmailVerify :: (MonadUnliftIO m) => UserID -> Text -> AppM m ()
 sendOTPForEmailVerify userID0 userEmail0 = do
@@ -135,8 +142,10 @@ sendOTPForEmailVerify userID0 userEmail0 = do
       eRes1 :: Either SomeException () <- try $ deleteUserQ userID0
       case eRes1 of
         Left err -> throw400Err $ e <> (BSL.pack $ show err)
-        Right _ -> throw400Err e
-    Right _ -> pure ()
+        Right _ -> do 
+          logDebug $ "Sending otp failed, deleting registered usered: " <> userEmail0
+          throw400Err e
+    Right _ -> logDebug $ "OTP email sent successfully :" <> userEmail0
 
 registerUserH ::
   (MonadUnliftIO m) =>
@@ -144,7 +153,9 @@ registerUserH ::
   AppM m RegisterUserResponse
 registerUserH userBody@RegisterUserBody {..} = do
   res0 <- doesEmailExists emailForRegister
-  when res0 (throw400Err "email already exists")
+  when res0 $ do
+    logDebug $ "email already exists: " <> emailForRegister
+    throw400Err "email already exists"
   res1 <- doesUserNameExists userNameForRegister
   when res1 $ throw400Err "UserName already exists :("
   when (passwordForRegister /= confirmPasswordForRegister) $
@@ -154,6 +165,7 @@ registerUserH userBody@RegisterUserBody {..} = do
   userWrite0 <- liftIO $ toUserWrite userBody
   userRead0 <- addUser userWrite0
   void $ sendOTPForEmailVerify (getUserID userRead0) (email userRead0)
+  logDebug $ "user inserted successfully: " <> toText userRead0
   return
     RegisterUserResponse
       { registerUserResponseMessage = "User registered successfully"
@@ -176,6 +188,7 @@ loginUserH LoginUserBody {..} = do
   case mRes of
     Nothing -> throw400Err "Email/Password is incorrect"
     Just userRead0 -> do
+      logDebug $ "login process initiated for user: " <> toText userRead0
       let mUPassword = userPassword userRead0
       case mUPassword of
         Nothing -> throw400Err "Email/Password is incorrect"
@@ -424,16 +437,19 @@ loginUser userRead0 isOAuth = do
         Right v -> do
           if isOAuth
             then do
-              _ <- liftIO $ print ("calling oauth2/callback" :: String, v)
+              logDebug $ "calling Oouth2/callback " <> toText v 
+              --TODO: This logic shall be moved to frontend
               let redirectUrl =
                     if environment == Production
                       then
                         "https://" <> BSL.fromStrict (T.encodeUtf8 ip) <> "/oauth2/callback?token=" <> v
                       else
                         "http://localhost:3000/oauth2/callback?token=" <> v
+              logDebug $ "User logged in: " <> toText userInfo
               void $ redirects $ BSL.toStrict redirectUrl
               return $ x (LoginUserResponse (T.decodeUtf8 $ BSL.toStrict v) "")
-            else
+            else do 
+              logDebug $ "User logged in: " <> toText userInfo
               return $
                 x
                   ( LoginUserResponse

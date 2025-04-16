@@ -40,7 +40,9 @@ startApp = do
         else do
           eEnv <- readEnv envFilePath
           case eEnv of
-            Left e -> putStrLn ("error happened: " <> show e) >> exitFailure
+            Left e -> do
+                putStrLn ("error happened: " <> show e)
+                exitFailure
             Right (appST, _, ctx, appPort, _) -> do
               -- initRateLimitTable "rate_limit.db"
               putStrLn $ "Application running at pot " <> show appPort

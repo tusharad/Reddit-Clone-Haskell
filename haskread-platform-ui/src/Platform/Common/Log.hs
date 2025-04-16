@@ -4,6 +4,9 @@
 
 module Platform.Common.Log
   ( logDebug
+  , logError
+  , logInfo
+  , logWarn
   ) where
 
 import Control.Monad (when)
@@ -21,6 +24,21 @@ logDebug :: (Reader AppConfig :> es, IOE :> es) => Text -> Eff es ()
 logDebug msg = do
   res <- ask
   liftIO $ logger (loggerSet res) (minLogLevel res) LevelDebug msg
+
+logInfo :: (Reader AppConfig :> es, IOE :> es) => Text -> Eff es ()
+logInfo msg = do
+  res <- ask
+  liftIO $ logger (loggerSet res) (minLogLevel res) LevelInfo msg
+
+logWarn :: (Reader AppConfig :> es, IOE :> es) => Text -> Eff es ()
+logWarn msg = do
+  res <- ask
+  liftIO $ logger (loggerSet res) (minLogLevel res) LevelWarn msg
+
+logError :: (Reader AppConfig :> es, IOE :> es) => Text -> Eff es ()
+logError msg = do
+  res <- ask
+  liftIO $ logger (loggerSet res) (minLogLevel res) LevelError msg
 
 logger :: ToLogStr msg => LoggerSet -> MinLogLevel -> LogLevel -> msg -> IO ()
 logger loggerSet_ minLogLevel_ logLevel0 msg = do

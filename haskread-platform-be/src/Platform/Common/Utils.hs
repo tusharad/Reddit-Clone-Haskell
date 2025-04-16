@@ -20,6 +20,7 @@ module Platform.Common.Utils
   , queryWrapper
   , redirects
   , genRandomUserName
+  , toText
   )
 where
 
@@ -223,6 +224,9 @@ toEnv "development" = Development
 toEnv "sandbox" = Sandbox
 toEnv "production" = Production
 toEnv _ = Local -- Shouldn't happen
+
+toText :: Show a => a -> Text
+toText = T.pack . show
 
 {-
 -- Commenting out function instead of deleting it for future reference
