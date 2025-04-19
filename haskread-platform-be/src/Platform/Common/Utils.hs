@@ -17,7 +17,7 @@ module Platform.Common.Utils
   , toJsonbArray
   , readEnv
   , matchPasswords
-  , queryWrapper
+  , runQuery
   , redirects
   , genRandomUserName
   , toText
@@ -44,6 +44,7 @@ import Servant as S
 import Servant.Auth.Server
 import System.Log.FastLogger
 import UnliftIO
+import Platform.Log (logError)
 
 toUserInfo :: UserRead -> UserInfo
 toUserInfo User {..} = UserInfo userID userName
@@ -112,11 +113,13 @@ toLogLevel _ = LevelInfo -- Default if wrong value is mentioned
 
 -- This function wraps query function in try and throws
 -- 400 Error on exception
-queryWrapper :: (MonadUnliftIO m) => AppM m a -> AppM m a
-queryWrapper queryFunc = do
-  eRes <- try queryFunc
+runQuery :: (MonadUnliftIO m) => AppM m a -> AppM m a
+runQuery queryFunction = do
+  eRes <- try queryFunction
   case eRes of
-    Left e -> throw400Err $ BSL.pack (show (e :: SomeException))
+    Left e -> do 
+        logError $ "DBException: " <> toText e
+        throw400Err . BSL.pack $ show (e :: SomeException)
     Right r -> pure r
 
 newtype MissingEnvArgumentException = MissingEnvArgumentException Text

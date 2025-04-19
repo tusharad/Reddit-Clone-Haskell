@@ -18,7 +18,7 @@ import Orville.PostgreSQL
 import Orville.PostgreSQL.Expr hiding (tableName)
 import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
 import Platform.Common.AppM (AppM)
-import Platform.Common.Utils (queryWrapper)
+import Platform.Common.Utils (runQuery)
 import Platform.DB.Marshaller
 import Platform.DB.Model
 import Platform.DB.Table
@@ -145,7 +145,7 @@ fetchVoteCommentsByUser ::
   [CommentID] ->
   AppM m [CommentVoteRead]
 fetchVoteCommentsByUser _userID commentIdList =
-  queryWrapper $
+  runQuery $
     findEntitiesBy
       commentVoteTable
       ( where_

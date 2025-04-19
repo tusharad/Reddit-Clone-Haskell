@@ -21,7 +21,6 @@ module Platform.User.DB
   )
 where
 
-import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Text (Text)
 import Orville.PostgreSQL
 import Platform.Common.AppM
@@ -32,11 +31,7 @@ import Platform.DB.Table
 import UnliftIO
 
 fetchUserByEmail :: (MonadUnliftIO m) => Text -> AppM m (Maybe UserRead)
-fetchUserByEmail email0 = do
-  eRes <- try $ fetchUserByEmailQ email0
-  case eRes of
-    Left err -> throw400Err $ BSL.pack (show (err :: SomeException))
-    Right mUser -> pure mUser
+fetchUserByEmail = runQuery . fetchUserByEmailQ
 
 fetchUserByEmailQ :: (MonadOrville m) => Text -> m (Maybe UserRead)
 fetchUserByEmailQ email0 = findFirstEntityBy userTable whereEmailIs
@@ -50,27 +45,19 @@ fetchUserByUserNameQ userName0 =
     whereUserNameIs = where_ $ userNameField .== userName0
 
 addUser :: (MonadUnliftIO m) => UserWrite -> AppM m UserRead
-addUser uWrite = do
-  eRes <- try $ addUserQ uWrite
-  case eRes of
-    Left err -> throw400Err $ BSL.pack (show (err :: SomeException))
-    Right mUser -> pure mUser
+addUser = runQuery . addUserQ
 
 addUserQ :: (MonadOrville m) => UserWrite -> m UserRead
 addUserQ = insertAndReturnEntity userTable
 
 fetchUserByID :: (MonadUnliftIO m) => UserID -> AppM m (Maybe UserRead)
-fetchUserByID userID0 = do
-  eRes <- try $ fetchUserByIDQ userID0
-  case eRes of
-    Left e -> throw400Err $ BSL.pack (show (e :: SomeException))
-    Right mUser -> pure mUser
+fetchUserByID = runQuery . fetchUserByIDQ 
 
 fetchUserByIDQ :: (MonadOrville m) => UserID -> m (Maybe UserRead)
 fetchUserByIDQ = findEntity userTable
 
 updateUser :: (MonadUnliftIO m) => UserID -> UserWrite -> AppM m ()
-updateUser userID0 userWrite0 = queryWrapper (updateUserQ userID0 userWrite0)
+updateUser userID0 userWrite0 = runQuery (updateUserQ userID0 userWrite0)
 
 updateUserQ :: (MonadUnliftIO m) => UserID -> UserWrite -> AppM m ()
 updateUserQ = updateEntity userTable
@@ -91,11 +78,7 @@ addUserProfileImageQ :: (MonadUnliftIO m) => UserProfileImageWrite -> AppM m ()
 addUserProfileImageQ = insertEntity userProfileImageTable
 
 fetchUEVOByID :: (MonadUnliftIO m) => UserID -> AppM m (Maybe UserEmailVerifyOTPRead)
-fetchUEVOByID uID = do
-  eRes <- try $ fetchUEVOByIDQ uID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack (show (e :: SomeException))
-    Right mRes -> pure mRes
+fetchUEVOByID = runQuery . fetchUEVOByIDQ
 
 fetchUEVOByIDQ :: (MonadOrville m) => UserID -> m (Maybe UserEmailVerifyOTPRead)
 fetchUEVOByIDQ = findEntity userEmailVerifyOTPTable
@@ -104,11 +87,7 @@ addUEVOQ :: (MonadOrville m) => UserEmailVerifyOTPWrite -> m ()
 addUEVOQ = insertEntity userEmailVerifyOTPTable
 
 deleteUEVO :: (MonadUnliftIO m) => UserID -> AppM m ()
-deleteUEVO userID0 = do
-  eRes <- try $ deleteUEVOQ userID0
-  case eRes of
-    Left e -> throw400Err $ BSL.pack (show (e :: SomeException))
-    Right _ -> pure ()
+deleteUEVO = runQuery . deleteUEVOQ
 
 deleteUEVOQ :: (MonadOrville m) => UserID -> m ()
 deleteUEVOQ = deleteEntity userEmailVerifyOTPTable

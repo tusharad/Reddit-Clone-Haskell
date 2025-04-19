@@ -3,15 +3,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Platform.Community.Handler
-  ( communityCreateH,
-    communityUpdateH,
-    communityDeleteH,
-    fetchCommunitiesH,
+  ( communityCreateH
+  , communityUpdateH
+  , communityDeleteH
+  , fetchCommunitiesH
   )
 where
 
 import Control.Monad (void, when)
-import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.List (nub)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
@@ -40,31 +39,24 @@ addCommunity :: (MonadUnliftIO m) => CommunityCreateReqBody -> AppM m CommunityC
 addCommunity CommunityCreateReqBody {..} = do
   let communityWrite =
         Community
-          { communityName = communityNameForCreate,
-            communityDescription = communityDescriptionForCreate,
-            communityLabelList = toJsonbArray communityLabelListForCreate,
-            communityCreatedAt = (),
-            communityUpdatedAt = (),
-            communityID = ()
+          { communityName = communityNameForCreate
+          , communityDescription = communityDescriptionForCreate
+          , communityLabelList = toJsonbArray communityLabelListForCreate
+          , communityCreatedAt = ()
+          , communityUpdatedAt = ()
+          , communityID = ()
           }
-  (eRes :: Either SomeException ()) <- try $ addCommunityQ communityWrite
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ ->
-      return
-        CommunityCreateResponse
-          { communityCreateResponseMsg = "Community added successfully!"
-          }
+  runQuery $ addCommunityQ communityWrite
+  return
+    CommunityCreateResponse
+      { communityCreateResponseMsg = "Community added successfully!"
+      }
 
 checkIfCommunityNameExists :: (MonadUnliftIO m) => T.Text -> AppM m ()
 checkIfCommunityNameExists cName = do
-  eRes :: Either SomeException (Maybe CommunityRead) <-
-    try $ fetchCommunityByNameQ cName
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right mCommunity ->
-      when (isJust mCommunity) $
-        throw400Err "Community name already exists!"
+  mCommunity <- runQuery $ fetchCommunityByNameQ cName
+  when (isJust mCommunity) $
+    throw400Err "Community name already exists!"
 
 checkDescriptionNotEmpty :: (MonadUnliftIO m) => T.Text -> AppM m ()
 checkDescriptionNotEmpty cDescription = do
@@ -85,12 +77,7 @@ validateLabelList communityLabelListForCreate = do
     $ throw400Err "Each tag in community label list should be unique!"
 
 fetchCommunityByID :: (MonadUnliftIO m) => CommunityID -> AppM m (Maybe CommunityRead)
-fetchCommunityByID communityID = do
-  eRes :: Either SomeException (Maybe CommunityRead) <-
-    try $ fetchCommunityByIDQ communityID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right mCommunity -> pure mCommunity
+fetchCommunityByID = runQuery . fetchCommunityByIDQ
 
 communityUpdateH ::
   (MonadUnliftIO m) =>
@@ -109,23 +96,18 @@ communityUpdateH (Authenticated _) CommunityUpdateReqBody {..} = do
     updateCommunity = do
       let updatedCommunity =
             Community
-              { communityName = communityNameForUpdate,
-                communityDescription = communityDescriptionForUpdate,
-                communityLabelList = toJsonbArray communityLabelListForUpdate,
-                communityCreatedAt = (),
-                communityUpdatedAt = (),
-                communityID = ()
+              { communityName = communityNameForUpdate
+              , communityDescription = communityDescriptionForUpdate
+              , communityLabelList = toJsonbArray communityLabelListForUpdate
+              , communityCreatedAt = ()
+              , communityUpdatedAt = ()
+              , communityID = ()
               }
-      eRes :: Either SomeException () <-
-        try $
-          updateCommunityQ communityIDForUpdate updatedCommunity
-      case eRes of
-        Left e -> throw400Err $ BSL.pack $ show e
-        Right _ ->
-          return
-            CommunityUpdateResponse
-              { communityUpdateResponseMsg = "Community updated successfully!"
-              }
+      runQuery $ updateCommunityQ communityIDForUpdate updatedCommunity
+      return
+        CommunityUpdateResponse
+          { communityUpdateResponseMsg = "Community updated successfully!"
+          }
 communityUpdateH _ _ = throw401Err "Please login first"
 
 data MyCustomException = MyCustomException T.Text
@@ -135,14 +117,11 @@ instance Exception MyCustomException
 
 deleteCommunity :: (MonadUnliftIO m) => CommunityID -> AppM m CommunityDeleteResponse
 deleteCommunity communityID = do
-  eRes :: Either SomeException () <- try $ deleteCommunityQ communityID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> do
-      return
-        CommunityDeleteResponse
-          { communityDeleteResponseMsg = "Community deleted successfully!"
-          }
+  runQuery $ deleteCommunityQ communityID
+  return
+    CommunityDeleteResponse
+      { communityDeleteResponseMsg = "Community deleted successfully!"
+      }
 
 communityDeleteH ::
   (MonadUnliftIO m) =>
@@ -159,5 +138,5 @@ communityDeleteH _ _ = throw401Err "Please login first"
 
 fetchCommunitiesH :: (MonadUnliftIO m) => AppM m FetchCommunitiesResponse
 fetchCommunitiesH = do
-  communityList <- queryWrapper fetchCommunitiesQ
+  communityList <- runQuery fetchCommunitiesQ
   pure $ FetchCommunitiesResponse communityList (length communityList)

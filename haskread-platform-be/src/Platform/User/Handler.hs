@@ -78,11 +78,7 @@ fetchUserProfileImage ::
   (MonadUnliftIO m) =>
   UserID ->
   AppM m (Maybe UserProfileImageRead)
-fetchUserProfileImage uID = do
-  eRes :: Either SomeException (Maybe UserProfileImageRead) <- try $ fetchUserProfileQ uID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right mUserProfileInfo -> pure mUserProfileInfo
+fetchUserProfileImage = runQuery . fetchUserProfileQ
 
 userDashboardH ::
   (MonadUnliftIO m) =>
@@ -144,18 +140,14 @@ userChangePasswordH (Authenticated UserInfo {..}) ChangePasswordBody {..} = do
       hashedPass <- hashPassword (mkPassword newPasswordForChangePass)
       let newPassUsr = passwordUpdatedUser u hashedPass
       logDebug $ "new password user : " <> T.pack (show newPassUsr)
-      eRes :: Either SomeException () <-
-        try $
-          updateUser
-            userIDForUserInfo
-            newPassUsr
-      case eRes of
-        Left e -> throw400Err $ BSL.pack $ show e
-        Right _ ->
-          return
-            ChangePasswordResponse
-              { changePasswordResponseMsg = "Password changed successfully!"
-              }
+      runQuery $
+        updateUser
+          userIDForUserInfo
+          newPassUsr
+      return
+        ChangePasswordResponse
+          { changePasswordResponseMsg = "Password changed successfully!"
+          }
 userChangePasswordH _ _ = throw401Err "Please login first"
 
 userDeleteAccountH ::
@@ -180,10 +172,8 @@ userDeleteAccountH (Authenticated UserInfo {..}) DeleteUserBody {..} = do
       unless (matchPasswords uPassword passwordForDeleteUser) $
         throw400Err "Password is incorrect!"
     deleteUserByID = do
-      eRes :: Either SomeException () <- try $ deleteUserQ userIDForUserInfo
-      case eRes of
-        Left e -> throw400Err $ BSL.pack $ show e
-        Right _ -> return $ DeleteUserResponse "Sad to see you go :L"
+      runQuery $ deleteUserQ userIDForUserInfo
+      return $ DeleteUserResponse "Sad to see you go :L"
 userDeleteAccountH _ _ = throw401Err "Please login first"
 
 userUpdateProfileImageH ::
@@ -192,7 +182,7 @@ userUpdateProfileImageH ::
   UpdateUserImageBody ->
   AppM m UpdateUserImageResponse
 userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} = do
-  totalProfileCount <- fetchUserProfilesQ
+  totalProfileCount <- runQuery fetchUserProfilesQ
   if (length totalProfileCount >= 1000)
     then
       throw400Err "storage full!"
@@ -229,11 +219,11 @@ userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} =
                   }
           case mUserProfile of
             Nothing -> do
-              addUserProfileImageQ userProfileImage
+              runQuery $ addUserProfileImageQ userProfileImage
               pure $ UpdateUserImageResponse "Profile image added successfully!"
-            Just UserProfileImage{..} -> do
+            Just UserProfileImage {..} -> do
               _ <- liftIO $ deleteObject (T.unpack userImage) (T.unpack userImageName)
-              updateUserProfileImageQ userIDForUserInfo userProfileImage
+              runQuery $ updateUserProfileImageQ userIDForUserInfo userProfileImage
               pure $ UpdateUserImageResponse "Profile image added successfully!"
   where
     checkValidImageType fType = do

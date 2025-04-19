@@ -40,7 +40,7 @@ fetchThreadAttachmentH ::
   ThreadID ->
   AppM m LBS.ByteString
 fetchThreadAttachmentH tId = do
-  mbThreadRead <- queryWrapper $ fetchThreadByIDQ tId
+  mbThreadRead <- runQuery $ fetchThreadByIDQ tId
   case mbThreadRead of
     Nothing ->
       throw400Err $
@@ -59,13 +59,9 @@ fetchThreadAttachmentH tId = do
 
 checkIfCommunityExists :: (MonadUnliftIO m) => CommunityID -> AppM m ()
 checkIfCommunityExists cID = do
-  eRes :: Either SomeException (Maybe CommunityRead) <-
-    try $ fetchCommunityByIDQ cID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right mCommunity ->
-      when (isNothing mCommunity) $
-        throw400Err "Community does not exist!"
+  mCommunity <- runQuery $ fetchCommunityByIDQ cID
+  when (isNothing mCommunity) $
+    throw400Err "Community does not exist!"
 
 checkThreadTitleNotEmpty :: (MonadUnliftIO m) => T.Text -> AppM m ()
 checkThreadTitleNotEmpty tTitle =
@@ -94,10 +90,8 @@ addThread userID CreateThreadReqBody {..} = do
           , threadUpdatedAt = ()
           , threadID = ()
           }
-  (eRes :: Either SomeException ()) <- try $ addThreadQ threadWrite
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> return $ CreateThreadResponse "Thread added successfully!"
+  runQuery $ addThreadQ threadWrite
+  return $ CreateThreadResponse "Thread added successfully!"
 
 supportedFileTypes :: [Text]
 supportedFileTypes =
@@ -146,16 +140,13 @@ storeAttachmentIfExist (Just FileData {..}) = do
 
 checkIfUserOwnsThread :: (MonadUnliftIO m) => ThreadID -> UserID -> AppM m ThreadRead
 checkIfUserOwnsThread tID uID = do
-  eRes :: Either SomeException (Maybe ThreadRead) <-
-    try $ fetchThreadByIDQ tID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right mThread -> case mThread of
-      Nothing -> throw400Err "Thread does not exist!"
-      Just t@Thread {..} -> do
-        when (threadUserID /= uID) $
-          throw400Err "You do not own this thread!"
-        pure t
+  mThread <- runQuery $ fetchThreadByIDQ tID
+  case mThread of
+    Nothing -> throw400Err "Thread does not exist!"
+    Just t@Thread {..} -> do
+      when (threadUserID /= uID) $
+        throw400Err "You do not own this thread!"
+      pure t
 
 createThreadH ::
   (MonadUnliftIO m) =>
@@ -188,10 +179,8 @@ updateThreadH (Authenticated UserInfo {..}) UpdateThreadReqBody {..} = do
           , threadUpdatedAt = ()
           , threadID = ()
           }
-  (eRes :: Either SomeException ()) <- try $ updateThreadQ threadIDForUpdate threadWrite
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> return $ UpdateThreadResponse "Thread updated successfully!"
+  runQuery $ updateThreadQ threadIDForUpdate threadWrite
+  return $ UpdateThreadResponse "Thread updated successfully!"
 updateThreadH _ _ = throw401Err "Please login first"
 
 deleteThreadH ::
@@ -208,10 +197,8 @@ deleteThreadH (Authenticated UserInfo {..}) _threadID = do
         Left err -> throw400Err $ "Couldn't delete attachment please reach out :" <> (BSL.pack err)
         Right _ -> pure ()
     _ -> pure ()
-  (eRes :: Either SomeException ()) <- try $ deleteThreadQ threadID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> return $ DeleteThreadResponse "Thread deleted successfully!"
+  runQuery $ deleteThreadQ threadID
+  return $ DeleteThreadResponse "Thread deleted successfully!"
 deleteThreadH _ _ = throw401Err "Please login first"
 
 fetchAllThreadsH ::
@@ -223,14 +210,14 @@ fetchAllThreadsH ::
   AppM m FetchAllThreadsResponse
 fetchAllThreadsH mLimit mOffSet mCommunityId mUserId = do
   threadInfoList <-
-    queryWrapper
+    runQuery
       ( fetchThreadInfoQ (fromMaybe 10 mLimit) (fromMaybe 0 mOffSet) mCommunityId mUserId
       )
   return $ FetchAllThreadsResponse (length threadInfoList) threadInfoList
 
 fetchThreadH :: (MonadUnliftIO m) => ThreadID -> AppM m ThreadInfo
 fetchThreadH tID = do
-  mThreadInfo <- queryWrapper $ fetchThreadInfoByIDQ tID
+  mThreadInfo <- runQuery $ fetchThreadInfoByIDQ tID
   case mThreadInfo of
     Nothing -> throw400Err "Thread not found"
     Just t -> pure t
@@ -242,7 +229,7 @@ fetchAllThreadsBySearchH (Just searchTerm_) = do
   if T.null searchTerm
     then throw400Err "Search term is empty"
     else do
-      threadInfoList <- queryWrapper (fetchThreadInfoByTextQ (convertSearchTermToTerms searchTerm))
+      threadInfoList <- runQuery (fetchThreadInfoByTextQ (convertSearchTermToTerms searchTerm))
       return $ FetchAllThreadsResponse (length threadInfoList) threadInfoList
 
 convertSearchTermToTerms :: Text -> Text

@@ -13,7 +13,6 @@ module Platform.Comment.Handler
 where
 
 import Control.Monad (void, when)
-import qualified Data.ByteString.Lazy.Char8 as BSL
 import Data.Maybe (isNothing)
 import qualified Data.Text as T
 import Platform.Auth.Types
@@ -29,13 +28,9 @@ import UnliftIO
 
 checkIfThreadExists :: (MonadUnliftIO m) => ThreadID -> AppM m ()
 checkIfThreadExists tID = do
-  eRes :: Either SomeException (Maybe ThreadRead) <-
-    try $ fetchThreadByIDQ tID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right mThread ->
-      when (isNothing mThread) $
-        throw400Err "Thread does not exist!"
+  mThread <- runQuery $ fetchThreadByIDQ tID
+  when (isNothing mThread) $
+    throw400Err "Thread does not exist!"
 
 sanityCheckCommentContent :: (MonadUnliftIO m) => T.Text -> AppM m ()
 sanityCheckCommentContent c = do
@@ -62,24 +57,19 @@ addComment userID threadID comment mParentCommentID = do
           , createdAtForComment = ()
           , updatedAtForComment = ()
           }
-  (eRes :: Either SomeException ()) <- try $ addCommentQ commentWrite
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> return $ CreateCommentResponse "Comment added successfully!"
+  runQuery $ addCommentQ commentWrite
+  return $ CreateCommentResponse "Comment added successfully!"
 
 checkIfUserOwnsComment :: (MonadUnliftIO m) => CommentID -> UserID -> AppM m CommentRead
 checkIfUserOwnsComment cID uID = do
-  eRes :: Either SomeException (Maybe CommentRead) <-
-    try $ fetchCommentByIDQ cID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right mComment -> case mComment of
-      Nothing -> throw400Err "Comment does not exist!"
-      Just comment@Comment {..} ->
-        if userIDForComment /= uID
-          then
-            throw400Err "You do not own this comment!"
-          else pure comment
+  mComment <- runQuery $ fetchCommentByIDQ cID
+  case mComment of
+    Nothing -> throw400Err "Comment does not exist!"
+    Just comment@Comment {..} ->
+      if userIDForComment /= uID
+        then
+          throw400Err "You do not own this comment!"
+        else pure comment
 
 createCommentH ::
   (MonadUnliftIO m) =>
@@ -103,10 +93,8 @@ deleteCommentH ::
   AppM m DeleteCommentResponse
 deleteCommentH (Authenticated UserInfo {..}) cID = do
   void $ checkIfUserOwnsComment cID userIDForUserInfo
-  (eRes :: Either SomeException ()) <- try $ deleteCommentQ cID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> return $ DeleteCommentResponse "Comment deleted successfully!"
+  runQuery $ deleteCommentQ cID
+  return $ DeleteCommentResponse "Comment deleted successfully!"
 deleteCommentH _ _ = throw401Err "Please login first"
 
 updateCommentH ::
@@ -126,10 +114,8 @@ updateCommentH (Authenticated UserInfo {..}) commentID0 UpdateCommentReqBody {..
           , createdAtForComment = ()
           , updatedAtForComment = ()
           }
-  (eRes :: Either SomeException ()) <- try $ updateCommentQ commentID0 commentWrite
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> return $ UpdateCommentResponse "Comment updated successfully!"
+  runQuery $ updateCommentQ commentID0 commentWrite
+  return $ UpdateCommentResponse "Comment updated successfully!"
 updateCommentH _ _ _ = throw401Err "Please login first"
 
 voteCommentH ::
@@ -154,12 +140,7 @@ fetchVoteComment ::
   CommentID ->
   UserID ->
   AppM m (Maybe CommentVoteRead)
-fetchVoteComment cID uID = do
-  eRes :: Either SomeException (Maybe CommentVoteRead) <-
-    try $ fetchCommentVoteQ cID uID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right r -> pure r
+fetchVoteComment cID uID = runQuery $ fetchCommentVoteQ cID uID
 
 addVoteComment ::
   (MonadUnliftIO m) =>
@@ -176,10 +157,8 @@ addVoteComment uID cID vote = do
           , createdAtForCommentVote = ()
           , updatedAtForCommentVote = ()
           }
-  (eRes :: Either SomeException ()) <- try $ addCommentVoteQ commentVoteWrite
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> return $ VoteCommentResponse "Vote added successfully!"
+  runQuery $ addCommentVoteQ commentVoteWrite
+  return $ VoteCommentResponse "Vote added successfully!"
 
 removeVoteComment ::
   (MonadUnliftIO m) =>
@@ -187,10 +166,8 @@ removeVoteComment ::
   CommentID ->
   AppM m VoteCommentResponse
 removeVoteComment uID cID = do
-  (eRes :: Either SomeException ()) <- try $ deleteCommentVoteQ cID uID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> return $ VoteCommentResponse "Vote removed successfully!"
+  runQuery $ deleteCommentVoteQ cID uID
+  return $ VoteCommentResponse "Vote removed successfully!"
 
 updateVoteComment ::
   (MonadUnliftIO m) =>
@@ -207,15 +184,13 @@ updateVoteComment cID uID vote = do
           , createdAtForCommentVote = ()
           , updatedAtForCommentVote = ()
           }
-  (eRes :: Either SomeException ()) <- try $ updateCommentVoteQ cID uID commentVoteWrite
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> return $ VoteCommentResponse "Vote updated successfully!"
+  runQuery $ updateCommentVoteQ cID uID commentVoteWrite
+  return $ VoteCommentResponse "Vote updated successfully!"
 
 fetchCommentsByThreadH :: (MonadUnliftIO m) => ThreadID -> AppM m FetchCommentsResponse
 fetchCommentsByThreadH threadID = do
   checkIfThreadExists threadID
-  commentInfoList <- queryWrapper $ fetchCommentsByThreadQ threadID
+  commentInfoList <- runQuery $ fetchCommentsByThreadQ threadID
   let res = buildNestedComments commentInfoList
   pure $ FetchCommentsResponse (length res) res
 

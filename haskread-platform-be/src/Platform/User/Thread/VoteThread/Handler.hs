@@ -10,7 +10,6 @@ module Platform.User.Thread.VoteThread.Handler
 where
 
 import Control.Monad (void)
-import qualified Data.ByteString.Lazy.Char8 as BSL
 import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Utils
@@ -40,11 +39,8 @@ voteThreadH _ _ _ = throw401Err "Unauthorized!"
 
 removeVoteThread :: (MonadUnliftIO m) => UserID -> ThreadID -> AppM m VoteThreadResponse
 removeVoteThread userID threadID = do
-  eRes :: Either SomeException () <-
-    try $ deleteThreadVoteQ userID threadID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> pure $ VoteThreadResponse "Vote removed successfully!"
+  runQuery $ deleteThreadVoteQ userID threadID
+  pure $ VoteThreadResponse "Vote removed successfully!"
 
 checkIfThreadExists :: (MonadUnliftIO m) => ThreadID -> AppM m ()
 checkIfThreadExists threadID = do
@@ -54,44 +50,33 @@ checkIfThreadExists threadID = do
     Just _ -> pure ()
 
 fetchVoteThread :: (MonadUnliftIO m) => ThreadID -> UserID -> AppM m (Maybe ThreadVoteRead)
-fetchVoteThread threadID userID = do
-  eRes :: Either SomeException (Maybe ThreadVoteRead) <-
-    try $ fetchThreadVoteQ userID threadID
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right r -> pure r
+fetchVoteThread threadID = runQuery . flip fetchThreadVoteQ threadID
 
 addVoteThread :: (MonadUnliftIO m) => UserID -> ThreadID -> Bool -> AppM m VoteThreadResponse
 addVoteThread userID threadID isUpvote = do
-  eRes :: Either SomeException () <-
-    try $
-      addThreadVoteQ $
-        ThreadVote
-          { threadVoteUserID = userID
-          , threadVoteThreadID = threadID
-          , threadVote = isUpvote
-          , threadVoteCreatedAt = ()
-          , threadVoteUpdatedAt = ()
-          } -- userID threadID isUpvote
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> pure $ VoteThreadResponse "Vote added successfully!"
+  runQuery $
+    addThreadVoteQ $
+      ThreadVote
+        { threadVoteUserID = userID
+        , threadVoteThreadID = threadID
+        , threadVote = isUpvote
+        , threadVoteCreatedAt = ()
+        , threadVoteUpdatedAt = ()
+        } -- userID threadID isUpvote
+  pure $ VoteThreadResponse "Vote added successfully!"
 
 updateVoteThread :: (MonadUnliftIO m) => ThreadID -> UserID -> Bool -> AppM m VoteThreadResponse
 updateVoteThread threadID userID isUpvote = do
-  eRes :: Either SomeException () <-
-    try $
-      updateThreadVoteQ userID threadID $
-        ThreadVote
-          { threadVoteUserID = userID
-          , threadVoteThreadID = threadID
-          , threadVote = isUpvote
-          , threadVoteCreatedAt = ()
-          , threadVoteUpdatedAt = ()
-          }
-  case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
-    Right _ -> pure $ VoteThreadResponse "Vote udpated successfully!"
+  runQuery $
+    updateThreadVoteQ userID threadID $
+      ThreadVote
+        { threadVoteUserID = userID
+        , threadVoteThreadID = threadID
+        , threadVote = isUpvote
+        , threadVoteCreatedAt = ()
+        , threadVoteUpdatedAt = ()
+        }
+  pure $ VoteThreadResponse "Vote udpated successfully!"
 
 fetchVoteThreadsForUserH ::
   MonadUnliftIO m =>
@@ -102,10 +87,11 @@ fetchVoteThreadsForUserH
   (Authenticated UserInfo {..})
   (FetchVoteThreadsForUserReq threadList) = do
     -- ThreadList shall not be empty
-    if null threadList then return $ FetchVoteThreadsForUserResponse []
-    else do
-      res <- fetchVoteThreadsByUser userIDForUserInfo threadList
-      pure $
-        FetchVoteThreadsForUserResponse $
-          (\ThreadVote {..} -> (threadVoteThreadID, threadVote)) <$> res
+    if null threadList
+      then return $ FetchVoteThreadsForUserResponse []
+      else do
+        res <- fetchVoteThreadsByUser userIDForUserInfo threadList
+        pure $
+          FetchVoteThreadsForUserResponse $
+            (\ThreadVote {..} -> (threadVoteThreadID, threadVote)) <$> res
 fetchVoteThreadsForUserH _ _ = throw401Err "Please login first"

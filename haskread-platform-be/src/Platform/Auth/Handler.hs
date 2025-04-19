@@ -73,54 +73,25 @@ toUserWrite RegisterUserBody {..} = do
       }
 
 doesEmailExists :: (MonadUnliftIO m) => Text -> AppM m Bool
-doesEmailExists email0 = do
-  eRes0 :: Either SomeException (Maybe a) <- try $ fetchUserByEmailQ email0
-  case eRes0 of
-    Left e -> do
-      logError $ "DB Exception: doesEmailExists: " <> email0 <> toText e
-      throw400Err $ BSL.pack $ show e
-    Right r -> return $ isJust r
+doesEmailExists email0 = fmap isJust <$> runQuery $ fetchUserByEmailQ email0
 
 doesUserNameExists :: (MonadUnliftIO m) => Text -> AppM m Bool
-doesUserNameExists userName0 = do
-  (eRes0 :: Either SomeException (Maybe a)) <-
-    try $ fetchUserByUserNameQ userName0
-  case eRes0 of
-    Left e -> do
-      logError $ "DB Exception: doesUserNameExists: " <> userName0 <> toText e
-      throw400Err $ BSL.pack $ show e
-    Right r -> return $ isJust r
+doesUserNameExists userName0 = fmap isJust <$> runQuery $ fetchUserByUserNameQ userName0
 
 getUserID :: UserRead -> UserID
 getUserID User {..} = userID
 
 addUEVO :: (MonadUnliftIO m) => UserEmailVerifyOTPWrite -> AppM m ()
 addUEVO uevo@UserEmailVerifyOTP {userIDForUEVO = uID} = do
-  eRes0 :: (Either SomeException (Maybe UserEmailVerifyOTPRead)) <-
-    try $
-      fetchUEVOByIDQ uID
-  case eRes0 of
-    Left e -> do 
-      logError $ "DB Exception: fetchUEVOByIDQ " <> toText uID <> toText e
-      throw400Err $ BSL.pack $ show e
-    Right Nothing -> do
-      eRes1 :: Either SomeException () <- try $ addUEVOQ uevo
-      case eRes1 of
-        Left e -> do 
-          logError $ "DB Exception: addUEVOQ " <> toText uID <> toText e
-          throw400Err $ BSL.pack $ show e
-        Right _ -> logDebug $ "OTP Added for userId " <> toText uID
-    Right (Just _) -> do
-      eRes2 :: Either SomeException () <- try $ deleteUEVOQ uID
-      case eRes2 of
-        Left e -> do 
-          logError $ "DB Exception: deleteUEVOQ " <> toText uID <> toText e
-          throw400Err $ BSL.pack $ show e
-        Right _ -> do
-          eRes3 :: Either SomeException () <- try $ addUEVOQ uevo
-          case eRes3 of
-            Left e -> throw400Err $ BSL.pack $ show e
-            Right _ -> logDebug $ "OTP Updated for userId" <> toText uID
+  mbOTPForEmail <- fetchUEVOByIDQ uID
+  case mbOTPForEmail of
+    Nothing -> do
+      runQuery $ addUEVOQ uevo
+      logDebug $ "OTP Added for userId " <> toText uID
+    _ -> do
+      runQuery $ deleteUEVOQ uID
+      runQuery $ addUEVOQ uevo
+      logDebug $ "OTP Updated for userId" <> toText uID
 
 sendOTPForEmailVerify :: (MonadUnliftIO m) => UserID -> Text -> AppM m ()
 sendOTPForEmailVerify userID0 userEmail0 = do
@@ -139,12 +110,8 @@ sendOTPForEmailVerify userID0 userEmail0 = do
     Left e -> do
       -- upon sending verify email failure, the user record shall be
       -- deleted from the database
-      eRes1 :: Either SomeException () <- try $ deleteUserQ userID0
-      case eRes1 of
-        Left err -> throw400Err $ e <> (BSL.pack $ show err)
-        Right _ -> do 
-          logDebug $ "Sending otp failed, deleting registered usered: " <> userEmail0
-          throw400Err e
+      runQuery $ deleteUserQ userID0
+      throw400Err $ "Error while sending OTP email: " <> e
     Right _ -> logDebug $ "OTP email sent successfully :" <> userEmail0
 
 registerUserH ::
@@ -202,12 +169,7 @@ loginUserH LoginUserBody {..} = do
               -- do login
               loginUser userRead0 False
   where
-    findUserByMail = do
-      (eMUser :: Either SomeException (Maybe UserRead)) <-
-        try $ fetchUserByEmailQ emailForLogin
-      case eMUser of
-        Left e -> throw400Err $ BSL.pack $ show e
-        Right r -> pure r
+    findUserByMail = runQuery $ fetchUserByEmailQ emailForLogin
 
 adminLoginH ::
   (MonadUnliftIO m) =>
@@ -437,8 +399,8 @@ loginUser userRead0 isOAuth = do
         Right v -> do
           if isOAuth
             then do
-              logDebug $ "calling Oouth2/callback " <> toText v 
-              --TODO: This logic shall be moved to frontend
+              logDebug $ "calling Oouth2/callback " <> toText v
+              -- TODO: This logic shall be moved to frontend
               let redirectUrl =
                     if environment == Production
                       then
@@ -448,7 +410,7 @@ loginUser userRead0 isOAuth = do
               logDebug $ "User logged in: " <> toText userInfo
               void $ redirects $ BSL.toStrict redirectUrl
               return $ x (LoginUserResponse (T.decodeUtf8 $ BSL.toStrict v) "")
-            else do 
+            else do
               logDebug $ "User logged in: " <> toText userInfo
               return $
                 x

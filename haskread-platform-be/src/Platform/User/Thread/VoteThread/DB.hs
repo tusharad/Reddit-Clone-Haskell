@@ -13,7 +13,7 @@ import Orville.PostgreSQL
 import Orville.PostgreSQL.Expr
 import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
 import Platform.Common.AppM (AppM)
-import Platform.Common.Utils (queryWrapper)
+import Platform.Common.Utils (runQuery)
 import Platform.DB.Marshaller (threadIDField, userIDField)
 import Platform.DB.Model
 import Platform.DB.Table
@@ -37,7 +37,7 @@ fetchVoteThreadsByUser ::
   [ThreadID] ->
   AppM m [ThreadVoteRead]
 fetchVoteThreadsByUser u t =
-  queryWrapper $
+  runQuery $
     findEntitiesBy
       threadVoteTable
       ( where_
