@@ -3,11 +3,9 @@
 module TestAppConfig where
 
 import Orville.PostgreSQL
-import qualified Orville.PostgreSQL as O
 import Orville.PostgreSQL.AutoMigration
 import Platform.Admin.DB
 import Platform.Comment.DB
-import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.Community.DB
 import Platform.Core (app)
@@ -19,7 +17,6 @@ import Platform.User.Thread.DB
 import Servant
 import Servant.Auth.Server
 import System.Exit
-import System.Log.FastLogger
 import TestApp.SampleData
 
 getTestAppCfg :: IO (Application, ConnectionPool, JWTSettings)

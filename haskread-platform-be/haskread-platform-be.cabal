@@ -28,7 +28,6 @@ library
       Platform.Admin.Handler
       Platform.Admin.Types
       Platform.API
-      Platform.Auth.DB
       Platform.Auth.Handler
       Platform.Auth.Types
       Platform.Comment.DB
@@ -36,6 +35,7 @@ library
       Platform.Comment.Types
       Platform.Comment.Utils
       Platform.Common.AppM
+      Platform.Common.DB
       Platform.Common.Middleware
       Platform.Common.Types
       Platform.Common.Utils

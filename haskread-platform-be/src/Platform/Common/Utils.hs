@@ -1,9 +1,9 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Platform.Common.Utils
@@ -40,11 +40,12 @@ import Platform.Auth.Types
 import Platform.Common.AppM
 import Platform.Common.Types
 import Platform.DB.Model
+import Platform.Log (logError)
 import Servant as S
 import Servant.Auth.Server
 import System.Log.FastLogger
 import UnliftIO
-import Platform.Log (logError)
+import Platform.Common.DB (autoMigrateQ, checkDBConnection)
 
 toUserInfo :: UserRead -> UserInfo
 toUserInfo User {..} = UserInfo userID userName
@@ -87,7 +88,7 @@ toJsonbArray :: [Text] -> Text
 toJsonbArray = T.pack . show
 
 mkConnection :: DBConfig -> ConnectionOptions
-mkConnection DBConfig {port = p, dbName,host, dbUserName, dbPassword} =
+mkConnection DBConfig {port = p, dbName, host, dbUserName, dbPassword} =
   let connString =
         unwords
           [ "dbname=" <> T.unpack dbName
@@ -117,9 +118,9 @@ runQuery :: (MonadUnliftIO m) => AppM m a -> AppM m a
 runQuery queryFunction = do
   eRes <- try queryFunction
   case eRes of
-    Left e -> do 
-        logError $ "DBException: " <> toText e
-        throw400Err . BSL.pack $ show (e :: SomeException)
+    Left e -> do
+      logError $ "DBException: " <> toText e
+      throw400Err . BSL.pack $ show (e :: SomeException)
     Right r -> pure r
 
 newtype MissingEnvArgumentException = MissingEnvArgumentException Text
@@ -159,40 +160,51 @@ readEnv envFilePath = do
       case ePool of
         Left e -> pure $ Left $ toException e
         Right pool -> do
-          jwtSecretKey <- generateKey
-          loggerSet_ <- newStdoutLoggerSet defaultBufSize
-          sem <- newQSem 10 -- 10 threads
-          let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
-              jwtSett = defaultJWTSettings jwtSecretKey
-              appCfg =
-                AppConfig
-                  { loggerSet = loggerSet_
-                  , minLogLevel = toLogLevel logLevel
-                  , emailAPIToken = mailAPIToken
-                  , emailFromEmail = mailFromEmail
-                  , googleOauth2Config = oauth2Config
-                  , jwtSett = jwtSett
-                  , cookieSett =
-                      defaultCookieSettings
-                  , {-
-                      { cookieMaxAge =
-                          Just $
-                            secondsToDiffTime $
-                              fromIntegral tokenExpiryTime
-                      }
-                      -}
+          putStrLn "Checking connection"
+          eConnection <- checkDBConnection pool 
+          case eConnection of
+            Left err -> pure $ Left err
+            Right _ -> do
+              putStrLn "Performing automigration"
+              eRes <- migrateSchema pool
+              putStrLn "Automigration complete"
+              case eRes of
+                Left err -> pure $ Left err
+                Right _ -> do 
+                  jwtSecretKey <- generateKey
+                  loggerSet_ <- newStdoutLoggerSet defaultBufSize
+                  sem <- newQSem 10 -- 10 threads
+                  let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
+                      jwtSett = defaultJWTSettings jwtSecretKey
+                      appCfg =
+                        AppConfig
+                          { loggerSet = loggerSet_
+                          , minLogLevel = toLogLevel logLevel
+                          , emailAPIToken = mailAPIToken
+                          , emailFromEmail = mailFromEmail
+                          , googleOauth2Config = oauth2Config
+                          , jwtSett = jwtSett
+                          , cookieSett =
+                              defaultCookieSettings
+                          , {-
+                              { cookieMaxAge =
+                                  Just $
+                                    secondsToDiffTime $
+                                      fromIntegral tokenExpiryTime
+                              }
+                              -}
 
-                    tokenExpiryTime0 = fromIntegral tokenExpiryTime
-                  , environment = toEnv environment_
-                  , ip = ip_
-                  }
-              appST =
-                MyAppState
-                  appCfg
-                  orvilleState
-                  (HaxlConfig pool sem)
-              ctx = defaultCookieSettings :. jwtSett :. EmptyContext
-          pure $ Right (appST, jwtSett, ctx, fromIntegral applicationPort, pool)
+                            tokenExpiryTime0 = fromIntegral tokenExpiryTime
+                          , environment = toEnv environment_
+                          , ip = ip_
+                          }
+                      appST =
+                        MyAppState
+                          appCfg
+                          orvilleState
+                          (HaxlConfig pool sem)
+                      ctx = defaultCookieSettings :. jwtSett :. EmptyContext
+                  pure $ Right (appST, jwtSett, ctx, fromIntegral applicationPort, pool)
 
 -- | gen a 302 redirect helper
 redirects :: (MonadError ServerError m) => BS.ByteString -> m a
@@ -230,6 +242,9 @@ toEnv _ = Local -- Shouldn't happen
 
 toText :: Show a => a -> Text
 toText = T.pack . show
+
+migrateSchema :: ConnectionPool -> IO (Either SomeException ())
+migrateSchema pool = try $ O.runOrville pool $ autoMigrateQ
 
 {-
 -- Commenting out function instead of deleting it for future reference
