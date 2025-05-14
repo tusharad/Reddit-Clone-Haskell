@@ -30,18 +30,18 @@ import Text.Read (readMaybe)
 import Web.Hyperbole
 
 data OTPView = OTPView
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance (IOE :> es, Hyperbole :> es, Reader AppConfig :> es) => HyperView OTPView es where
   data Action OTPView = Submit Int | DoRedirect
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update DoRedirect = redirect "/login"
   update (Submit newUserId) = do
     logDebug "Submitting OTP"
-    uf <- formData @OTPForm
+    uf <- formData @(OTPForm Identity)
     let vals = validateForm uf
-    if anyInvalid vals
+    if or [isInvalid vals.otp]
       then pure $ otpView newUserId Nothing vals
       else do
         let otpInt_ = readMaybe $ T.unpack uf.otp
@@ -61,9 +61,7 @@ userVerificationSuccessView = do
 
 newtype OTPForm f = OTPForm
   {otp :: Field f Text}
-  deriving (Generic)
-
-instance Form OTPForm Validated
+  deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 validateForm :: OTPForm Identity -> OTPForm Validated
 validateForm u =
@@ -89,16 +87,15 @@ otpPage newUserId = do
               tag "main" (cc "container mx-auto mt-20 px-6 flex-grow") $ do
                 tag "h1" (cc "text-2xl font-bold mb-4 text-center") "Login"
                 el (cc "card-bg px-6 py-6 shadow-lg rounded-lg mb-6 overflow-hidden") $ do
-                  hyper OTPView $ otpView newUserId Nothing genForm
+                  hyper OTPView $ otpView newUserId Nothing genFields
         hyper (FooterId 1) footerView
 
 otpView :: Int -> Maybe Text -> OTPForm Validated -> View OTPView ()
-otpView newUserId mErrorMsg v = do
-  let f = formFieldsWith v
-  form @OTPForm (Submit newUserId) (gap 10 . pad 10) $ do
-    field (otp f) valStyle $ do
+otpView newUserId mErrorMsg _ = do
+  let f = fieldNames @OTPForm
+  form (Submit newUserId) (gap 10 . pad 10) $ do
+    field (otp f) success $ do
       input TextInput (inp . placeholder "Enter OTP e.g 1234")
-      invalidText
 
     case mErrorMsg of
       Nothing -> pure ()
@@ -107,6 +104,3 @@ otpView newUserId mErrorMsg v = do
     submit btn "Submit"
   where
     inp = inputS
-    valStyle (Invalid _) = invalid
-    valStyle Valid = success
-    valStyle _ = id

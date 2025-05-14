@@ -9,6 +9,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Platform.Page.Callback (callbackPage) where
 
@@ -16,16 +17,15 @@ import Data.Text (Text)
 import Effectful
 import Platform.Common.Types (AuthData (..))
 import Web.Hyperbole
-import Web.Hyperbole.Data.QueryData
 
 newtype ViewCallbackId = ViewCallbackId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance HyperView ViewCallbackId es where
-  data Action ViewCallbackId = DoRedirect Url
-    deriving (Show, Read, ViewAction)
+  data Action ViewCallbackId = DoRedirect Text
+    deriving (Show, Read, ViewAction, Generic)
 
-  update (DoRedirect u) = redirect u
+  update (DoRedirect _) = redirect "/"
 
 data AuthStatus = Success | TokenNotFound
   deriving (Show, Eq)
@@ -36,11 +36,11 @@ authStatusPage Success = do
     el_ "Authentication success, redirecting..."
 authStatusPage TokenNotFound = do
   el (onLoad (DoRedirect "/login") 100) $ do
-    el_ "Authentication success, redirecting..."
+    el_ "Authentication unsuccessful, redirecting..."
 
 callbackPage :: (Hyperbole :> es) => Eff es (Page '[ViewCallbackId])
 callbackPage = do
-  mbToken <- lookupParam (Param "token")
+  mbToken <- lookupParam "token"
   case mbToken of
     Nothing -> pure $ hyper (ViewCallbackId 1) (authStatusPage TokenNotFound)
     Just (token :: Text) -> do

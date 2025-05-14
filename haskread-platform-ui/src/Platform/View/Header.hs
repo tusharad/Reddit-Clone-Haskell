@@ -10,6 +10,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Platform.View.Header
   ( HeaderId (..)
@@ -33,13 +34,13 @@ import Web.Hyperbole
 import Web.View.Types
 
 newtype HeaderId = HeaderId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance (IOE :> es) => HyperView HeaderId es where
   data Action HeaderId
     = DoLogout
     | AddThread
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   type Require HeaderId = '[LiveSearchId]
   update DoLogout = do

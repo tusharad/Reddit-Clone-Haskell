@@ -30,20 +30,25 @@ import Platform.View.LiveSearch (LiveSearchId)
 import Web.Hyperbole
 
 data RegisterForm = RegisterForm
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance (IOE :> es, Hyperbole :> es) => HyperView RegisterForm es where
   data Action RegisterForm = Submit | DoRedirect String | OauthPage
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update (DoRedirect x) = redirect (url . pack $ "/otp/" <> x)
   update OauthPage = do
     redirectUrl <- liftIO getRedirectUrl
     redirect redirectUrl
   update Submit = do
-    uf <- formData @RegisterFormData
+    uf <- formData @(RegisterFormData Identity)
     let vals = validateForm uf
-    if anyInvalid vals
+    if or
+      [ isInvalid vals.userName
+      , isInvalid vals.email
+      , isInvalid vals.pass1
+      , isInvalid vals.pass2
+      ]
       then pure $ registerFormView Nothing vals
       else do
         eRes <- liftIO $ registerUser (coerce uf.userName) uf.email uf.pass1 uf.pass2
@@ -63,9 +68,7 @@ data RegisterFormData f = RegisterFormData
   , pass1 :: Field f Text
   , pass2 :: Field f Text
   }
-  deriving (Generic)
-
-instance Form RegisterFormData Validated
+  deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 validateForm :: RegisterFormData Identity -> RegisterFormData Validated
 validateForm u =
@@ -105,59 +108,52 @@ registerPage = do
             el (cc "flex flex-col min-h-screen") $ do
               tag "main" (cc "container mx-auto mt-20 px-6 flex-grow") $ do
                 tag "h1" (cc "text-2xl font-bold mb-4 text-center") "Register"
-                hyper RegisterForm $ registerFormView Nothing genForm
+                hyper RegisterForm $ registerFormView Nothing genFields
         hyper (FooterId 1) footerView
 
 registerFormView :: Maybe Text -> RegisterFormData Validated -> View RegisterForm ()
-registerFormView mErrorMsg v = do
-  let f = formFieldsWith v
+registerFormView mErrorMsg _ = do
+  let f = fieldNames @RegisterFormData
   el
     ( cc
         "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-    ) $ do
-    el (cc "p-6") $ do
-      form @RegisterFormData Submit (cc "flex flex-col space-y-4") $ do
-        field f.userName valStyle $ do
-          input
-            Username
-            ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                . placeholder "Enter user name"
-            )
-          invalidText
+    )
+    $ do
+      el (cc "p-6") $ do
+        form Submit (cc "flex flex-col space-y-4") $ do
+          field f.userName success $ do
+            input
+              Username
+              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  . placeholder "Enter user name"
+              )
 
-        field (email f) valStyle $ do
-          input
-            Email
-            ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                . placeholder "Enter email"
-            )
-          invalidText
+          field (email f) success $ do
+            input
+              Email
+              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  . placeholder "Enter email"
+              )
 
-        field f.pass1 valStyle $ do
-          input
-            NewPassword
-            ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                . placeholder "password"
-            )
-          el_ invalidText
+          field f.pass1 success $ do
+            input
+              NewPassword
+              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  . placeholder "password"
+              )
 
-        field f.pass2 valStyle $ do
-          input
-            NewPassword
-            ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                . placeholder "confirm password"
-            )
-          el_ invalidText
+          field f.pass2 success $ do
+            input
+              NewPassword
+              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  . placeholder "confirm password"
+              )
 
-        case mErrorMsg of
-          Nothing -> pure ()
-          Just errMsg -> el invalid (text errMsg)
-        submit (btn . cc "rounded transition transform hover:scale-105 text-2xl mr-2") "Submit"
-      button
-        OauthPage
-        (btn . cc "mt-2 w-full rounded transition transform hover:scale-105")
-        $ tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"
-  where
-    valStyle (Invalid _) = invalid
-    valStyle Valid = success
-    valStyle _ = id
+          case mErrorMsg of
+            Nothing -> pure ()
+            Just errMsg -> el invalid (text errMsg)
+          submit (btn . cc "rounded transition transform hover:scale-105 text-2xl mr-2") "Submit"
+        button
+          OauthPage
+          (btn . cc "mt-2 w-full rounded transition transform hover:scale-105")
+          $ tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"

@@ -39,7 +39,6 @@ import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.View.Header (headerButtonCSS)
 import Web.Hyperbole hiding (input)
-import Web.Hyperbole.View.Forms (FormFields)
 
 data CommentCardOps = CommentCardOps
   { currUserVotes :: Maybe [(Int, Bool)]
@@ -47,10 +46,10 @@ data CommentCardOps = CommentCardOps
   , commentInfo :: CommentInfo
   , mbUserInfoForCommentCard :: Maybe UserProfileResponse
   }
-  deriving (Show, Eq, Read)
+  deriving (Show, Eq, Read, Generic, ToJSON, FromJSON)
 
 newtype CommentCardId = CommentCardId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance (IOE :> es) => HyperView CommentCardId es where
   data Action CommentCardId
@@ -64,22 +63,22 @@ instance (IOE :> es) => HyperView CommentCardId es where
     | CancelAddComment Int
     | DoRedirect Int
     | GoToLogin
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update (SubmitEditComment cId token tId) = do
-    uf <- formData @EditCommentForm
+    uf <- formData @(EditCommentForm Identity)
     _ <- liftIO $ editComment cId token (commentContentForEdit uf)
     redirect . url $ T.pack ("/view-thread/" <> show tId)
   update GoToLogin = redirect "/login"
   update (AddCommentBtn AddCommentData {..}) =
-    pure $ addCommentView userToken threadId parentCommentIdForAddComment genForm
+    pure $ addCommentView userToken threadId parentCommentIdForAddComment genFields
   update (DoRedirect tId) = redirect . url $ T.pack ("/view-thread/" <> show tId)
   update (CancelAddComment threadId) =
     redirect . url $ T.pack ("/view-thread/" <> show threadId)
   update (SubmitAddComment token tId mParentCommentId) = do
-    uf <- formData @AddCommentForm
+    uf <- formData @(AddCommentForm Identity)
     let vals = validateForm uf
-    if anyInvalid vals
+    if or [isInvalid $ commentContentField vals]
       then
         pure $ addCommentView token tId mParentCommentId vals
       else do
@@ -206,9 +205,7 @@ addCommentButtonView addCommentData =
 newtype AddCommentForm f = AddCommentForm
   { commentContentField :: Field f Text
   }
-  deriving (Generic)
-
-instance Form AddCommentForm Validated
+  deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 validateForm :: AddCommentForm Identity -> AddCommentForm Validated
 validateForm u =
@@ -219,9 +216,7 @@ validateForm u =
 newtype EditCommentForm f = EditCommentForm
   { commentContentForEdit :: Field f Text
   }
-  deriving (Generic)
-
-instance Form EditCommentForm Maybe
+  deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 helperCommentView ::
   Text ->
@@ -260,10 +255,10 @@ editCommentView ::
   EditCommentForm Maybe ->
   View CommentCardId ()
 editCommentView commentId token tId v = do
-  let f = formFieldsWith v
+  let f = fieldNames @EditCommentForm
   helperCommentView
     "Edit Comment"
-    (form @EditCommentForm (SubmitEditComment commentId token tId) (gap 10))
+    (form (SubmitEditComment commentId token tId) (gap 10))
     ( field (commentContentForEdit f) (const mempty) $ do
         el (cc "mb-4") $ do
           textarea
@@ -284,11 +279,11 @@ addCommentView ::
   Maybe Int ->
   AddCommentForm Validated ->
   View CommentCardId ()
-addCommentView token tId mParentCommentId v = do
-  let f = formFieldsWith v
+addCommentView token tId mParentCommentId _ = do
+  let f = fieldNames @AddCommentForm
   helperCommentView
     "Add Comment"
-    (form @EditCommentForm (SubmitAddComment token tId mParentCommentId) (gap 10))
+    (form (SubmitAddComment token tId mParentCommentId) (gap 10))
     ( field (commentContentField f) (const mempty) $ do
         el (cc "mb-4") $ do
           textarea

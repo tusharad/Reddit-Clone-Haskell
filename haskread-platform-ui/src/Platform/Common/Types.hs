@@ -41,7 +41,6 @@ module Platform.Common.Types
   , MinLogLevel
   ) where
 
-import Data.Aeson (FromJSON, ToJSON)
 import Data.String.Conversions
 import Data.Text (Text)
 import Data.Time
@@ -49,7 +48,6 @@ import System.Log.FastLogger
 import Text.Read (readMaybe)
 import Web.HttpApiData
 import Web.Hyperbole
-import Web.Hyperbole.Data.QueryData (Param (..))
 
 -- import Web.View.Types (ClassName)
 data LogLevel
@@ -82,7 +80,7 @@ data UserProfileResponse = UserProfileResponse
   , userEmail :: Text
   , userCreatedAt :: Text
   }
-  deriving (Show, Eq, Generic, FromJSON, Read)
+  deriving (Show, Eq, Generic, FromJSON, Read, ToJSON)
 
 data CreateThreadData = CreateThreadData
   { mToken :: Maybe Text
@@ -108,7 +106,7 @@ data AddCommentData = AddCommentData
   , userToken :: Text
   , parentCommentIdForAddComment :: Maybe Int
   }
-  deriving (Eq, Show, Read)
+  deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
 
 data ThreadInfo = ThreadInfo
   { threadIDForThreadInfo :: Int
@@ -125,7 +123,7 @@ data ThreadInfo = ThreadInfo
   , downvoteCount :: Maybe Int
   , commentCount :: Maybe Int
   }
-  deriving (Show, Eq, Generic, FromJSON, Read)
+  deriving (Show, Eq, Generic, FromJSON, Read, ToJSON)
 
 data FetchAllThreadsResponse = FetchAllThreadsResponse
   { threadsCount :: Int
@@ -220,7 +218,7 @@ data CommentInfo = CommentInfo
   , commentUpvoteCount :: Maybe Int
   , commentDownvoteCount :: Maybe Int
   }
-  deriving (Show, Eq, Generic, FromJSON, Read)
+  deriving (Show, Eq, Generic, FromJSON, Read, ToJSON)
 
 newtype UpdateCommentReqBody = UpdateCommentReqBody
   {commentContentForUpdate :: Text}
@@ -305,11 +303,11 @@ data DeleteUserBody = DeleteUserBody
 data AuthData = AuthData
   { jToken :: Maybe Text
   }
-  deriving (Generic, Show, Read, ToParam, FromParam)
+  deriving (Generic, Show, Read, ToParam, FromParam, ToJSON, FromJSON)
 
 instance Session AuthData where
-  sessionKey = Param "AuthData"
+  sessionKey = "AuthData"
   cookiePath = Just []
 
-instance DefaultParam AuthData where
-  defaultParam = AuthData Nothing
+instance Default AuthData where
+  def = AuthData Nothing

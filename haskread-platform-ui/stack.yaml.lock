@@ -3,10 +3,21 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/topics/lock_files
 
-packages: []
+packages:
+- completed:
+    commit: ad2935e6485c35b44909bf70068ce904150d35ef
+    git: https://github.com/seanhess/hyperbole
+    name: hyperbole
+    pantry-tree:
+      sha256: c815771823cc078affe8a84971425f2acc3bed78bd968b2daca8d3ab3a497f93
+      size: 9034
+    version: 0.4.3
+  original:
+    commit: ad2935e6485c35b44909bf70068ce904150d35ef
+    git: https://github.com/seanhess/hyperbole
 snapshots:
 - completed:
-    sha256: 5052c3587a92adc44d4912d5890346ba4a5bbe81ef6eb87962608a5e5003b5b9
-    size: 681591
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/4/16.yaml
-  original: nightly-2025-04-16
+    sha256: bcbc80a081dbf9d701bb8c46f0212b251acbe6cf64332e6e3c8b108c13794841
+    size: 685947
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/5/5.yaml
+  original: nightly-2025-05-05

@@ -103,7 +103,7 @@ packages:
     subdir: orville-postgresql
 snapshots:
 - completed:
-    sha256: 5052c3587a92adc44d4912d5890346ba4a5bbe81ef6eb87962608a5e5003b5b9
-    size: 681591
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/4/16.yaml
-  original: nightly-2025-04-16
+    sha256: bcbc80a081dbf9d701bb8c46f0212b251acbe6cf64332e6e3c8b108c13794841
+    size: 685947
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2025/5/5.yaml
+  original: nightly-2025-05-05

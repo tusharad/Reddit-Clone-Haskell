@@ -11,6 +11,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Platform.Page.ViewThread (viewThreadPage) where
 
@@ -30,11 +31,11 @@ import Web.Hyperbole
 
 -- | ViewThreadId is a unique identifier for the thread view.
 newtype ViewThreadId = ViewThreadId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance HyperView ViewThreadId es where
   data Action ViewThreadId = InitViewThread
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update InitViewThread = redirect "/"
 

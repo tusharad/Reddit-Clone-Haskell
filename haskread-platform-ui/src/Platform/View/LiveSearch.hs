@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Platform.View.LiveSearch
   ( LiveSearchId (..)
@@ -27,12 +28,12 @@ import Web.Hyperbole hiding (input, textarea)
 import Web.View.Types (ClassName (..))
 
 newtype LiveSearchId = LiveSearchId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance IOE :> es => HyperView LiveSearchId es where
   data Action LiveSearchId
     = SearchTerm Text
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update (SearchTerm searchTerm) = do
     eThreadList <- liftIO $ getAllThreadsBySearch searchTerm

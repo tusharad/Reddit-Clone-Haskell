@@ -1,5 +1,7 @@
-snapshot: nightly-2025-04-16
+snapshot: nightly-2025-05-05
 packages:
 - .
 extra-deps:
+  - git: https://github.com/seanhess/hyperbole
+    commit: ad2935e6485c35b44909bf70068ce904150d35ef
 allow-newer: true

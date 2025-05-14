@@ -46,17 +46,17 @@ data ThreadCardOps = ThreadCardOps
   , threadInfo :: ThreadInfo
   , mbUserInfo :: Maybe UserProfileResponse
   }
-  deriving (Show, Eq, Read)
+  deriving (Show, Eq, Read, Generic, ToJSON, FromJSON)
 
 newtype ThreadId = ThreadId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, Generic, ViewId)
 
 newtype AttachmentViewId = AttachmentViewId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, Generic, ViewId)
 
 instance IOE :> es => HyperView AttachmentViewId es where
   data Action AttachmentViewId = LoadImage Int
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, Generic, ViewAction)
 
   update (LoadImage threadId) = do
     eRes <- liftIO $ getAttachment threadId
@@ -84,7 +84,7 @@ instance IOE :> es => HyperView ThreadId es where
     | DeleteThread ThreadCardOps
     | EditThread ThreadCardOps
     | CancelEditThreadForm
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   type Require ThreadId = '[AttachmentViewId]
 

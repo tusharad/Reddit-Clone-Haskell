@@ -26,20 +26,20 @@ import Platform.View.LiveSearch (LiveSearchId)
 import Web.Hyperbole
 
 data FormView = FormView
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance (IOE :> es, Hyperbole :> es) => HyperView FormView es where
   data Action FormView = Submit | DoRedirect | OAuthPage
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update DoRedirect = redirect "/"
   update OAuthPage = do
     redirectUrl <- liftIO getRedirectUrl
     redirect redirectUrl
   update Submit = do
-    uf <- formData @UserForm
+    uf <- formData @(UserForm Identity)
     let vals = validateForm uf
-    if anyInvalid vals
+    if or [isInvalid vals.email, isInvalid vals.pass]
       then pure $ formView Nothing vals
       else do
         eRes <- liftIO $ loginUser (email uf) (pass uf)
@@ -59,8 +59,7 @@ data UserForm f = UserForm
   { email :: Field f Text
   , pass :: Field f Text
   }
-  deriving (Generic)
-instance Form UserForm Validated
+  deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 validateForm :: UserForm Identity -> UserForm Validated
 validateForm u =
@@ -92,20 +91,20 @@ loginPage = do
             el (cc "flex flex-col min-h-screen") $ do
               tag "main" (cc "container mx-auto mt-20 px-6 flex-grow") $ do
                 tag "p" (cc "text-2xl font-bold mb-4 text-center") "Login"
-                hyper FormView $ formView Nothing genForm
+                hyper FormView $ formView Nothing genFields
         hyper (FooterId 1) footerView
 
 formView :: Maybe Text -> UserForm Validated -> View FormView ()
-formView mErrorMsg v = do
-  let f = formFieldsWith v
+formView mErrorMsg _ = do
+  let f = fieldNames @UserForm
   el
     ( cc
         "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
     )
     $ do
       el (cc "p-6") $ do
-        form @UserForm Submit (cc "flex flex-col space-y-4") $ do
-          field (email f) valStyle $ do
+        form Submit (cc "flex flex-col space-y-4") $ do
+          field (email f) success $ do
             tag "label" (cc "flex flex-col space-y-1") $
               tag "span" (cc "text-gray-700 dark:text-gray-300") "email"
             input
@@ -113,12 +112,8 @@ formView mErrorMsg v = do
               ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   . placeholder "email"
               )
-            fv <- fieldValid
-            case fv of
-              Invalid t -> el_ (text t)
-              Valid -> el_ ""
-              _ -> none
-          field f.pass valStyle $ do
+
+          field f.pass success $ do
             tag "label" (cc "flex flex-col space-y-1") $
               tag "span" (cc "text-gray-700 dark:text-gray-300") "Password"
             input
@@ -126,7 +121,6 @@ formView mErrorMsg v = do
               ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   . placeholder "password"
               )
-            el_ invalidText
           case mErrorMsg of
             Nothing -> pure ()
             Just errMsg -> el invalid (text errMsg)
@@ -135,7 +129,3 @@ formView mErrorMsg v = do
           OAuthPage
           (btn . cc "mt-2 w-full rounded transition transform hover:scale-105")
           $ tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"
-  where
-    valStyle (Invalid _) = invalid
-    valStyle Valid = success
-    valStyle _ = id

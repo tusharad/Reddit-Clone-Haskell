@@ -27,19 +27,18 @@ import Platform.View
 import Platform.View.Header
 import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
-import Web.Hyperbole
-import Web.Hyperbole.Data.QueryData
 import qualified Platform.View.ThreadCard as ThreadCard
+import Web.Hyperbole
 
 newtype ProfileId = ProfileId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 newtype ProfileImageId = ProfileImageId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance IOE :> es => HyperView ProfileImageId es where
   data Action ProfileImageId = LoadProfileImage Int
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update (LoadProfileImage userId) = do
     eImage <- liftIO $ getUserProfileImage userId
@@ -67,17 +66,21 @@ instance IOE :> es => HyperView ProfileId es where
     | DeleteAccount Text
     | SubmitDeleteAccount Text
     | UpdateImage
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update UpdateImage = pure updateImageView
   update CancelChangePassword = redirect "/profile"
   update GoToHome = redirect "/"
-  update (ChangePasswordBtn token) = pure $ changePasswordView token genForm
-  update (DeleteAccount token) = pure $ deleteAccountView token genForm
+  update (ChangePasswordBtn token) = pure $ changePasswordView token genFields
+  update (DeleteAccount token) = pure $ deleteAccountView token genFields
   update (SubmitChangePassword token) = do
-    uf <- formData @ChangePasswordForm
+    uf <- formData @(ChangePasswordForm Identity)
     let vals = validateChangePasswordForm uf
-    if anyInvalid vals
+    if or
+      [ isInvalid $ oldPasswordField vals
+      , isInvalid $ newPasswordField vals
+      , isInvalid $ confirmNewPasswordField vals
+      ]
       then
         pure $ changePasswordView token vals
       else do
@@ -94,9 +97,12 @@ instance IOE :> es => HyperView ProfileId es where
           Right _ -> pure ()
         redirect "/"
   update (SubmitDeleteAccount token) = do
-    uf <- formData @DeleteAccountForm
+    uf <- formData @(DeleteAccountForm Identity)
     let vals = validateDeleteAccountForm uf
-    if anyInvalid vals
+    if or
+      [ isInvalid $ deleteAccountPasswordField vals
+      , isInvalid $ areYouSureField vals
+      ]
       then
         pure $ deleteAccountView token vals
       else do
@@ -117,17 +123,13 @@ data ChangePasswordForm f = ChangePasswordForm
   , newPasswordField :: Field f Text
   , confirmNewPasswordField :: Field f Text
   }
-  deriving (Generic)
-
-instance Form ChangePasswordForm Validated
+  deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 data DeleteAccountForm f = DeleteAccountForm
   { deleteAccountPasswordField :: Field f Text
   , areYouSureField :: Field f Bool
   }
-  deriving (Generic)
-
-instance Form DeleteAccountForm Validated
+  deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 validateDeleteAccountForm :: DeleteAccountForm Identity -> DeleteAccountForm Validated
 validateDeleteAccountForm u =
@@ -165,8 +167,8 @@ changePasswordView ::
   Text ->
   ChangePasswordForm Validated ->
   View ProfileId ()
-changePasswordView token v = do
-  let f = formFieldsWith v
+changePasswordView token _ = do
+  let f = fieldNames @ChangePasswordForm
   let css =
         "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
       inputFieldCSS = "w-full px-3 py-2 border rounded"
@@ -178,27 +180,24 @@ changePasswordView token v = do
       el (cc "p-6") $ do
         tag "h2" (cc textCss) $ text "Change Password"
 
-        form @ChangePasswordForm (SubmitChangePassword token) (cc "flex flex-col space-y-4") $ do
-          field (oldPasswordField f) valStyle $ do
+        form (SubmitChangePassword token) (cc "flex flex-col space-y-4") $ do
+          field (oldPasswordField f) success $ do
             el (cc "mb-4") $ do
               tag "label" (cc "flex flex-col space-y-1") $
                 tag "span" (cc "text-gray-700 dark:text-gray-300") "Enter Old Password"
               input TextInput (placeholder "Old Password" . cc inputFieldCSS)
-              el_ invalidText
 
-          field (newPasswordField f) valStyle $ do
+          field (newPasswordField f) success $ do
             el (cc "mb-4") $ do
               tag "label" (cc "flex flex-col space-y-1") $
                 tag "span" (cc "text-gray-700 dark:text-gray-300") "Enter new Password"
               input TextInput (placeholder "new Password" . cc inputFieldCSS)
-              el_ invalidText
 
-          field (confirmNewPasswordField f) valStyle $ do
+          field (confirmNewPasswordField f) success $ do
             el (cc "mb-4") $ do
               tag "label" (cc "flex flex-col space-y-1") $
                 tag "span" (cc "text-gray-700 dark:text-gray-300") "Re-enter new Password"
               input TextInput (placeholder "confirm new Password" . cc inputFieldCSS)
-              el_ invalidText
 
           el (cc "flex justify-end space-x-2") $ do
             submit
@@ -210,14 +209,10 @@ changePasswordView token v = do
             CancelChangePassword
             (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
             "Cancel"
-  where
-    valStyle (Invalid _) = invalid
-    valStyle Valid = success
-    valStyle _ = id
 
 deleteAccountView :: Text -> DeleteAccountForm Validated -> View ProfileId ()
-deleteAccountView token v = do
-  let f = formFieldsWith v
+deleteAccountView token _ = do
+  let f = fieldNames @DeleteAccountForm
   let css =
         "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
       inputFieldCSS = "w-full px-3 py-2 border rounded"
@@ -229,15 +224,14 @@ deleteAccountView token v = do
       el (cc "p-6") $ do
         tag "h2" (cc textCss) $ text "Delete account"
 
-        form @DeleteAccountForm (SubmitDeleteAccount token) (cc "flex flex-col space-y-4") $ do
-          field (deleteAccountPasswordField f) valStyle $ do
+        form (SubmitDeleteAccount token) (cc "flex flex-col space-y-4") $ do
+          field (deleteAccountPasswordField f) success $ do
             el (cc "mb-4") $ do
               tag "label" (cc "flex flex-col space-y-1") $
                 tag "span" (cc "text-gray-700 dark:text-gray-300") "Enter Password"
               input TextInput (placeholder "Password" . cc inputFieldCSS)
-              el_ invalidText
 
-          field (areYouSureField f) valStyle $ do
+          field (areYouSureField f) success $ do
             el (cc "mb-4") $ do
               tag "label" (cc "flex flex-col space-y-1") $
                 tag "span" (cc "text-gray-700 dark:text-gray-300") "Are you sure"
@@ -245,7 +239,6 @@ deleteAccountView token v = do
                 "input"
                 (att "type" "checkbox" . att "value" "true" . att "name" "areYouSureField")
                 none
-              el_ invalidText
 
           el (cc "flex justify-end space-x-2") $ do
             submit
@@ -257,10 +250,6 @@ deleteAccountView token v = do
             CancelChangePassword
             (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
             "Cancel"
-  where
-    valStyle (Invalid _) = invalid
-    valStyle Valid = success
-    valStyle _ = id
 
 updateImageView :: View ProfileId ()
 updateImageView = do
@@ -321,9 +310,9 @@ profilePage = do
   case mbTokenAndUser of
     Nothing -> redirect "/"
     Just (token_, userInfo) -> do
-      mbLimit <- lookupParam $ Param "limit"
-      mbOffset <- lookupParam $ Param "offset"
-      mbCommunityId <- lookupParam $ Param "communityId"
+      mbLimit <- lookupParam "limit"
+      mbOffset <- lookupParam "offset"
+      mbCommunityId <- lookupParam "communityId"
       eRes <-
         liftIO
           ( getAllThreads
@@ -366,17 +355,18 @@ profilePage = do
   where
     viewThreadsList mUserInfo_ mToken_ mUserThreadVotes threads_ =
       foldr
-        (\(idx, thread) acc -> do
-          hyper
-            (ThreadId idx)
-            ( threadView
-                ThreadCardOps
-                  { currUserVotesForThreads = mUserThreadVotes
-                  , tokenForThreadCard = mToken_
-                  , threadInfo = thread
-                  , ThreadCard.mbUserInfo = mUserInfo_
-                  }
-            )
-          acc)
+        ( \(idx, thread) acc -> do
+            hyper
+              (ThreadId idx)
+              ( threadView
+                  ThreadCardOps
+                    { currUserVotesForThreads = mUserThreadVotes
+                    , tokenForThreadCard = mToken_
+                    , threadInfo = thread
+                    , ThreadCard.mbUserInfo = mUserInfo_
+                    }
+              )
+            acc
+        )
         none
         (zip [0 ..] threads_)

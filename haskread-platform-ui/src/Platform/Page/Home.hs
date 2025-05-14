@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
@@ -26,7 +27,6 @@ import Platform.View.Header
 import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
-import Web.Hyperbole.Data.QueryData (Param (Param))
 
 data PageParams = PageParams
   { mbCommunityId :: Maybe Int
@@ -34,14 +34,14 @@ data PageParams = PageParams
   , mbLimit :: Maybe Int
   , mbOffset :: Maybe Int
   }
-  deriving (Eq, Show, Read)
+  deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
 
 newtype HomeId = HomeId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance HyperView HomeId es where
   data Action HomeId = HandlePrev PageParams | HandleNext PageParams
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update (HandlePrev p) =
     redirect $
@@ -107,10 +107,10 @@ homePage ::
     )
 homePage = do
   mbTokenAndUser <- getTokenAndUser
-  mbLimit <- lookupParam $ Param "limit"
-  mbOffset <- lookupParam $ Param "offset"
-  mbCommunityId <- lookupParam $ Param "communityId"
-  mbUserId <- lookupParam $ Param "userId"
+  mbLimit <- lookupParam "limit"
+  mbOffset <- lookupParam "offset"
+  mbCommunityId <- lookupParam "communityId"
+  mbUserId <- lookupParam "userId"
   eRes <- liftIO (getAllThreads mbLimit mbOffset mbCommunityId mbUserId)
   case eRes of
     Left err -> pure . el_ $ raw (T.pack err)
@@ -141,17 +141,18 @@ homePage = do
   where
     viewThreadsList mUserInfo mToken_ mUserThreadVotes threads =
       foldr
-        (\(idx, thread) acc -> do
-          hyper
-            (ThreadId idx)
-            ( threadView
-                ThreadCardOps
-                  { currUserVotesForThreads = mUserThreadVotes
-                  , tokenForThreadCard = mToken_
-                  , threadInfo = thread
-                  , mbUserInfo = mUserInfo
-                  }
-            )
-          acc)
+        ( \(idx, thread) acc -> do
+            hyper
+              (ThreadId idx)
+              ( threadView
+                  ThreadCardOps
+                    { currUserVotesForThreads = mUserThreadVotes
+                    , tokenForThreadCard = mToken_
+                    , threadInfo = thread
+                    , mbUserInfo = mUserInfo
+                    }
+              )
+            acc
+        )
         none
         (zip [0 ..] threads)

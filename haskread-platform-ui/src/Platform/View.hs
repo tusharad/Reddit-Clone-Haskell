@@ -10,6 +10,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Platform.View
   ( FooterId (..)
@@ -30,31 +31,31 @@ import Effectful (IOE)
 import qualified  Data.Text as T
 
 newtype FooterId = FooterId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance HyperView FooterId es where
   data Action FooterId
     = InitFooter
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
   update InitFooter = pure footerView
 
 newtype CommunityId = CommunityId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance IOE :> es => HyperView CommunityId es where
   data Action CommunityId = Init
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update Init = do 
     eCommunityList <- liftIO getCommunityList
     pure $ communityListView_ eCommunityList
 
 newtype SortMenuId = SortMenuId Int
-  deriving (Show, Read, ViewId)
+  deriving (Show, Read, ViewId, Generic)
 
 instance HyperView SortMenuId es where
   data Action SortMenuId = ChangeSort
-    deriving (Show, Read, ViewAction)
+    deriving (Show, Read, ViewAction, Generic)
 
   update ChangeSort = do
     pure sortMenuView
