@@ -28,4 +28,4 @@ autoMigrateQ = autoMigrateSchema defaultOptions schemaList
 checkDBConnection :: ConnectionPool -> IO (Either SomeException ())
 checkDBConnection pool = do 
   try $ Conn.withPoolConnection pool $ \conn -> 
-    void $ Conn.executeRaw conn "selct 1+1" []
+    void $ Conn.executeRaw conn "select 1+1;" []
