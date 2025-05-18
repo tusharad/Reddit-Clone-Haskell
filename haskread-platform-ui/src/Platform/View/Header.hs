@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
@@ -10,7 +11,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Platform.View.Header
   ( HeaderId (..)
@@ -26,6 +26,7 @@ module Platform.View.Header
 import Control.Monad (forM_)
 import Data.Text (Text)
 import Effectful
+import Platform.Common.CSS
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
@@ -61,87 +62,44 @@ createThreadView ::
   Communities ->
   View HeaderId ()
 createThreadView (Communities communityList) = do
-  let css = "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-  el (cc css) $ do
-    el
-      ( cc
-          "bg-white dark:bg-gray-700 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-      ) $ do
-      el (cc "p-6") $ do
-        tag "h2" (cc "text-2xl font-bold mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white") $
-          text "Create Thread"
+  el (cc centeredCSS) $ do
+    el (cc cardContainerCSS) $ do
+      el (cc paddedCSS) $ do
+        tag "h2" (cc sectionTitleCSS) $ text "Create Thread"
         tag "div" (gap 10) $ do
-          el (cc "mb-4") $ do
-            tag "span" (att "id" "statusMessage" . cc "text-green-500") none
-          el (cc "mb-4") $ do
-            tag "label" (cc "block text-gray-700") "Select community"
-            tag
-              "select"
-              ( cc "w-full px-2 py-2 border rounded"
-                  . att "id" "threadCommunityID"
-              )
-              $ do
-                forM_ communityList $ \c -> do
-                  tag
-                    "option"
-                    (att "value" (toText $ communityID c))
-                    (raw $ communityName c)
-          el (cc "mb-4") $ do
-            tag "label" (cc "block dark:bg-gray-700 dark:border-gray-600 dark:text-white") "Enter title"
+          el (cc formGroupCSS) $ tag "span" (att "id" "statusMessage" . cc "text-green-500") none
+          el (cc formGroupCSS) $ do
+            tag "label" (cc labelCSS) "Select community"
+            tag "select" (cc selectCSS . att "id" "threadCommunityID") $ do
+              forM_ communityList $ \c -> 
+                tag "option" (att "value" (toText $ communityID c)) (raw $ communityName c)
+          el (cc formGroupCSS) $ do
+            tag "label" (cc labelCSS) "Enter title"
             tag
               "input"
-              ( att "type" "text"
-                  . placeholder "Title"
-                  . cc "w-full px-3 py-2 border rounded"
-                  . att "id" "threadTitle"
-              )
+              (att "type" "text" . placeholder "Title" . cc inputCSS . att "id" "threadTitle")
               none
-
-          el (cc "mb-4") $ do
-            tag "label" (cc "block dark:bg-gray-700 dark:border-gray-600 dark:text-white") "Enter Description"
-            tag "textarea" (att "id" "threadDescription" . cc "w-full px-3 py-2 border rounded") none
-
-          el (cc "mb-4") $ do
-            tag "label" (cc "block dark:bg-gray-700 dark:border-gray-600 dark:text-white") "Select File"
-            tag
-              "input"
-              (att "id" "threadAttachment" . cc "w-full px-3 py-2 border rounded" . att "type" "file")
-              none
-
-          el (cc "mb-4") $ do
-            tag
-              "button"
-              ( att "onClick" "createThread()"
-                  . headerButtonCSS "bg-blue-600 hover:bg-blue-500 transition transform hover:scale-105"
-              )
-              "Create"
-            tag
-              "button"
-              ( att "onClick" "cancelForm()"
-                  . headerButtonCSS "bg-blue-600 hover:bg-blue-500 transition transform hover:scale-105"
-              )
-              "Cancel"
+          el (cc formGroupCSS) $ do
+            tag "label" (cc labelCSS) "Enter Description"
+            tag "textarea" (att "id" "threadDescription" . cc inputCSS) none
+          el (cc formGroupCSS) $ do
+            tag "label" (cc labelCSS) "Select File"
+            tag "input" (att "id" "threadAttachment" . cc inputCSS . att "type" "file") none
+          el (cc formGroupCSS) $ do
+            tag "button" (att "onClick" "createThread()" . headerButtonCSS buttonCSS) "Create"
+            tag "button" (att "onClick" "cancelForm()" . headerButtonCSS buttonCSS) "Cancel"
 
 showLoginAndSignup :: View c ()
 showLoginAndSignup = do
-  link
-    "/register"
-    (headerButtonCSS "bg-blue-600 hover:bg-blue-500 transition transform hover:scale-105")
-    "Signup"
-  link
-    "/login"
-    (headerButtonCSS "bg-yellow-500 hover:bg-yellow-600 transition transform hover:scale-105")
-    "Login"
+  link "/register" (headerButtonCSS primaryButtonCSS) "Signup"
+  link "/login" (headerButtonCSS secondaryButtonCSS) "Login"
 
-headerButtonCSS :: Text -> Mod id
-headerButtonCSS btnColor = cc $ ClassName ("px-4 py-2 text-white rounded-full font-semibold " <> btnColor)
+headerButtonCSS :: ClassName -> Mod id
+headerButtonCSS btnColor = cc $ "px-4 py-2 text-white rounded-full font-semibold " <> btnColor
 
 showUserName :: (Text, Int) -> View c ()
 showUserName (userName, _) = do
-  link
-    "/profile"
-    (headerButtonCSS "bg-blue-600 hover:bg-blue-500 transition")
-    (text userName)
+  link "/profile" (headerButtonCSS "bg-blue-600 hover:bg-blue-500 transition") (text userName)
 
 data HeaderOps = HeaderOps
   { mbToken :: Maybe Text
@@ -163,21 +121,22 @@ headerView HeaderOps {..} = do
   script "https://cdn.tailwindcss.com"
   script "https://cdn.jsdelivr.net/npm/flyonui/plugin.min.js"
   script "/myjs.js"
-  tag "header" (cc "bg-blue-800 shadow-lg w-full z-50") $ do
-    el (cc "container mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center") $ do
-      link "/" (cc "text-3xl font-bold text-white mb-4 sm:mb-0") "HaskRead"
-      el (cc "flex items-center w-full sm:w-auto") $ do
+
+  tag "header" (cc headerCSS) $ do
+    el (cc containerFlexCSS) $ do
+      link "/" (cc siteTitleCSS) "HaskRead"
+      el (cc navContainerCSS) $ do
         hyper (LiveSearchId 1) (liveSearch mempty [])
-      el (cc "ml-0 sm:ml-4 mt-4 sm:mt-0 flex flex-wrap justify-center space-x-2") $ do
+      el (cc searchContainerCSS) $ do
         case (mbToken, mbUserInfo) of
           (Just _, Just UserProfileResponse {..}) -> do
             button
               AddThread
-              (headerButtonCSS "bg-blue-600 hover:bg-blue-500 transition transform hover:scale-105")
+              (headerButtonCSS blueBgButtonCSS)
               "Add Thread"
             showUserName (userNameForUPR, userIDForUPR)
             button
               DoLogout
-              (headerButtonCSS "bg-yellow-500 hover:bg-yellow-600 transition transform hover:scale-105")
+              (headerButtonCSS yellowBgButtonCSS)
               "Logout"
           _ -> showLoginAndSignup

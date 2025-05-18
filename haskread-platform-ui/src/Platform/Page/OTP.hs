@@ -19,6 +19,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Effectful
 import Effectful.Reader.Dynamic
+import qualified Platform.Common.CSS as CSS
 import Platform.Common.Log
 import Platform.Common.Request
 import Platform.Common.Types
@@ -70,24 +71,27 @@ validateForm u =
 validateOTP :: Text -> Validated Text
 validateOTP otp_ =
   mconcat
-    [ validate (T.length otp_ /= 4) "OTP should be 4 digit long"
-    , validate (isNothing (readMaybe $ T.unpack otp_ :: Maybe Int)) "OTP should be numbers only"
+    [ validate (T.length otp_ /= 4) "OTP should be 4 digit long",
+      validate (isNothing (readMaybe $ T.unpack otp_ :: Maybe Int)) "OTP should be numbers only"
     ]
 
-otpPage :: Int -> Eff es (Page '[OTPView, HeaderId, FooterId, LiveSearchId])
+otpPage ::
+  Int ->
+  Eff es (Page '[OTPView, HeaderId, FooterId, LiveSearchId])
 otpPage newUserId = do
   pure $ do
     stylesheet "style.css"
-    el (cc "flex flex-col min-h-screen bg-[#F4EEFF]") $ do
+    el (cc $ CSS.flexColumnContainerCSS <> " " <> CSS.pageBackgroundCSS) $ do
       hyper (HeaderId 1) (headerView defaultHeaderOps)
-      tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-        el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
-          el (cc "w-full lg px-4") $ do
-            el (cc "flex flex-col min-h-screen") $ do
+      tag "main" (cc CSS.mainContainerCSS) $ do
+        el (cc CSS.authLayoutFlexCSS) $ do
+          el (cc CSS.authCardContainerCSS) $ do
+            el (cc CSS.flexColumnContainerCSS) $ do
               tag "main" (cc "container mx-auto mt-20 px-6 flex-grow") $ do
-                tag "h1" (cc "text-2xl font-bold mb-4 text-center") "Login"
-                el (cc "card-bg px-6 py-6 shadow-lg rounded-lg mb-6 overflow-hidden") $ do
-                  hyper OTPView $ otpView newUserId Nothing genFields
+                tag "h1" (cc CSS.authSectionTitleCSS) "Enter OTP"
+                el (cc $ CSS.cardContainerCSS <> " " <> CSS.paddedCSS) $
+                  hyper OTPView $
+                    otpView newUserId Nothing genFields
         hyper (FooterId 1) footerView
 
 otpView :: Int -> Maybe Text -> OTPForm Validated -> View OTPView ()

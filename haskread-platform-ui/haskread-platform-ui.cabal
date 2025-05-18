@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Platform.Common.CSS
       Platform.Common.Log
       Platform.Common.Request
       Platform.Common.Types
@@ -62,6 +63,7 @@ library
     , hyperbole
     , mtl
     , string-conversions
+    , string-interpolate
     , text
     , time
     , wai-middleware-static
@@ -91,6 +93,7 @@ executable haskread-platform-ui-exe
     , hyperbole
     , mtl
     , string-conversions
+    , string-interpolate
     , text
     , time
     , wai-middleware-static
@@ -121,6 +124,7 @@ test-suite haskread-platform-ui-test
     , hyperbole
     , mtl
     , string-conversions
+    , string-interpolate
     , text
     , time
     , wai-middleware-static

@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
@@ -8,9 +9,8 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Platform.View
   ( FooterId (..)
@@ -21,14 +21,14 @@ module Platform.View
   , sortMenuView
   ) where
 
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import qualified Data.Text as T
+import Effectful (IOE)
+import Platform.Common.CSS
+import Platform.Common.Request (getCommunityList)
 import Platform.Common.Types
 import Platform.Common.Utils
 import Web.Hyperbole
-import Web.View.Style
-import Platform.Common.Request (getCommunityList)
-import Control.Monad.IO.Class (MonadIO(liftIO))
-import Effectful (IOE)
-import qualified  Data.Text as T
 
 newtype FooterId = FooterId Int
   deriving (Show, Read, ViewId, Generic)
@@ -46,7 +46,7 @@ instance IOE :> es => HyperView CommunityId es where
   data Action CommunityId = Init
     deriving (Show, Read, ViewAction, Generic)
 
-  update Init = do 
+  update Init = do
     eCommunityList <- liftIO getCommunityList
     pure $ communityListView_ eCommunityList
 
@@ -62,35 +62,30 @@ instance HyperView SortMenuId es where
 
 footerView :: View FooterId ()
 footerView = do
-  tag "footer" (cc "bg-blue-800 mt-auto py-4") $ do
+  tag "footer" (cc footerBgCSS) $ do
     el (cc "container mx-auto text-center") $ do
       tag "p" (cc "text-white") $ do
         tag "strong" mempty "HaskRead"
-        link
-          "https://www.linkedin.com/in/tushar-adhatrao/"
-          (cc "text-blue-300 hover:text-blue-400 transition")
-          "Tushar Adhatrao"
+        link linkedInLink (cc footerBrandCSS) "Tushar Adhatrao"
         text "The source code is licensed under "
-        link "https://opensource.org/license/mit" (cc "text-blue-300 hover:text-blue-400 transition") "MIT"
+        link "https://opensource.org/license/mit" (cc footerBrandCSS) "MIT"
 
 showCommunityNames :: [CommunityC] -> View CommunityId ()
 showCommunityNames [] = none
 showCommunityNames (CommunityC {..} : communityList) = do
-  tag "li" (cc "border-b last:border-b-0 dark:border-gray-700") $ do
+  tag "li" (cc communityNameCSS) $ do
     link
       (url $ "/?communityId=" <> toText communityID)
-      ( cc
-          "block p-2 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:underline transition"
-      )
+      (cc commonLinkCSS)
       (text communityName)
     showCommunityNames communityList
 
 communityListView_ :: Either String Communities -> View CommunityId ()
-communityListView_ eCommunityList = 
+communityListView_ eCommunityList =
   el (cc "w-full px-4") $ do
-    el (addClass (cls "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden")) $ do
-      el (addClass (cls "border-b p-4 dark:border-gray-700")) $ do
-        el (addClass (cls "text-lg font-bold text-gray-800 dark:text-gray-200")) (text "Communities")
+    el (cc whiteBackgroundRoundedCSS) $ do
+      el (cc bottomBorderCSS) $ do
+        el (cc largeTextCSS) (text "Communities")
         tag "ul" (cc "p-4 space-y-2") $ do
           either
             (el_ . raw . T.pack)
@@ -100,49 +95,24 @@ communityListView_ eCommunityList =
 communityListView :: View CommunityId ()
 communityListView = do
   el (cc "w-full px-4") $ do
-    el (addClass (cls "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden")) $ do
-      el (addClass (cls "border-b p-4 dark:border-gray-700")) $ do
-        el (addClass (cls "text-lg font-bold text-gray-800 dark:text-gray-200")) (text "Communities")
+    el (cc whiteBackgroundRoundedCSS) $ do
+      el (cc bottomBorderCSS) $ do
+        el (cc largeTextCSS) (text "Communities")
         tag "ul" (cc "p-4 space-y-2") $ do
           el (onLoad Init 500) $ text "Loading communities"
 
 sortMenuView :: View SortMenuId ()
 sortMenuView = do
   el (cc "flex justify-center mb-6") $ do
-    tag "ul" (cc "flex space-x-4 bg-white dark:bg-gray-800 rounded-full shadow-lg p-2") $ do
+    tag "ul" (cc sortMenuItemCSS) $ do
       tag "li" (cc "relative" . att "id" "topVotedButton") $ do
-        button
-          ChangeSort
-          (cc topVotedBtnCSS)
-          $ do
-            text "Top voted"
-            el
-              ( att "id" "topVotedButton"
-                  <> cc "absolute z-10 mt-2 bg-white dark:bg-gray-800 rounded-md shadow-lg hidden"
-              )
-              $ do
-                tag "ul" (cc "py-1") $ do
-                  tag "li" mempty $ do
-                    tag
-                      "p"
-                      ( cc
-                          "block w-full text-left px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-700 transition"
-                      )
-                      "Top of day"
-                  tag "li" mempty $ do
-                    tag
-                      "p"
-                      ( cc
-                          "block w-full text-left px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-700 transition"
-                      )
-                      "Top of month"
-                  tag "li" mempty $ do
-                    tag
-                      "p"
-                      ( cc
-                          "block w-full text-left px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-700 transition"
-                      )
-                      "Top of all time"
+        button ChangeSort (cc topVotedBtnCSS) $ do
+          text "Top voted"
+          el (att "id" "topVotedButton" <> cc selectedSortMenuItemCSS) $ do
+            tag "ul" (cc "py-1") $ do
+              tag "li" mempty $ tag "p" (cc dropdownItemCSS) "Top of day"
+              tag "li" mempty $ tag "p" (cc dropdownItemCSS) "Top of month"
+              tag "li" mempty $ tag "p" (cc dropdownItemCSS) "Top of all time"
       tag "li" (cc reallyLongCSS) "Trending"
       tag "li" (cc reallyLongCSS) "New"
       tag "li" (cc reallyLongCSS) "Following"

@@ -27,6 +27,7 @@ import Platform.View.Header
 import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
+import qualified Platform.Common.CSS as CSS
 
 data PageParams = PageParams
   { mbCommunityId :: Maybe Int
@@ -121,14 +122,14 @@ homePage = do
             (pure (Left "Token not found"))
             (\tokenAndUser -> getUserThreadVotes (fst tokenAndUser) (getThreadIds res))
             mbTokenAndUser
-      pure $ el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
+      pure $ el (cc CSS.pageContainerCSS) $ do
         stylesheet "style.css"
-        el (cc "flex flex-col min-h-screen") $ do
+        el (cc CSS.flexColumnContainerCSS) $ do
           hyper (HeaderId 1) (headerView $ HeaderOps (fst <$> mbTokenAndUser) (snd <$> mbTokenAndUser))
-          tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-            el (cc "flex flex-col lg:flex-row gap-6") $ do
-              el (cc "w-full lg:w-3/4 px-4") $ do
-                tag "p" (cc "text-3xl text-center mb-6 text-gray-800 dark:text-gray-200") "Threads"
+          tag "main" (cc CSS.mainContainerCSS) $ do
+            el (cc CSS.threadListSectionCSS) $ do
+              el (cc CSS.threadListMainCSS) $ do
+                tag "p" (cc CSS.sectionTitleHomeCSS) "Threads"
                 hyper (SortMenuId 1) sortMenuView
                 viewThreadsList
                   (snd <$> mbTokenAndUser)

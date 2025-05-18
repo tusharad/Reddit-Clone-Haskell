@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -11,7 +12,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Platform.Page.ViewThread (viewThreadPage) where
 
@@ -19,6 +19,7 @@ import Control.Monad (unless)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Effectful
+import qualified Platform.Common.CSS as CSS
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
@@ -48,14 +49,14 @@ showCommentsList ::
   [NestedComment] ->
   View
     ( Root
-        [ ViewThreadId
-        , HeaderId
-        , ThreadId
-        , CommunityId
-        , FooterId
-        , CommentCardId
-        , LiveSearchId
-        , AttachmentViewId
+        [ ViewThreadId,
+          HeaderId,
+          ThreadId,
+          CommunityId,
+          FooterId,
+          CommentCardId,
+          LiveSearchId,
+          AttachmentViewId
         ]
     )
     ()
@@ -69,10 +70,10 @@ showCommentsList mbUserInfo n mUserCommentVotes mToken nestedComments = do
         (CommentCardId num)
         ( commentCardView $
             CommentCardOps
-              { currUserVotes = extractUserVotes <$> mUserCommentVotes
-              , tokenForCommentCard = mToken
-              , commentInfo = mainComment c
-              , mbUserInfoForCommentCard = mbUserInfo
+              { currUserVotes = extractUserVotes <$> mUserCommentVotes,
+                tokenForCommentCard = mToken,
+                commentInfo = mainComment c,
+                mbUserInfoForCommentCard = mbUserInfo
               }
         )
       unless (null (children c)) $
@@ -98,14 +99,14 @@ viewThreadPage ::
   Eff
     es
     ( Page
-        '[ ViewThreadId
-         , HeaderId
-         , ThreadId
-         , CommunityId
-         , FooterId
-         , CommentCardId
-         , LiveSearchId
-         , AttachmentViewId
+        '[ ViewThreadId,
+           HeaderId,
+           ThreadId,
+           CommunityId,
+           FooterId,
+           CommentCardId,
+           LiveSearchId,
+           AttachmentViewId
          ]
     )
 viewThreadPage threadId = do
@@ -142,14 +143,14 @@ renderPage ::
   (Maybe UserProfileResponse, Maybe [(Int, Bool)], Maybe FetchVoteCommentsForUserResponse) ->
   Either String Communities ->
   Page
-    '[ ViewThreadId
-     , HeaderId
-     , ThreadId
-     , CommunityId
-     , FooterId
-     , CommentCardId
-     , LiveSearchId
-     , AttachmentViewId
+    '[ ViewThreadId,
+       HeaderId,
+       ThreadId,
+       CommunityId,
+       FooterId,
+       CommentCardId,
+       LiveSearchId,
+       AttachmentViewId
      ]
 renderPage
   mToken
@@ -160,19 +161,19 @@ renderPage
     el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
       stylesheet "/style.css"
       script "/myjs.js"
-      el (cc "flex flex-col min-h-screen") $ do
+      el (cc CSS.flexColumnContainerCSS) $ do
         hyper (HeaderId 1) (headerView $ HeaderOps mToken mUserInfo)
-        tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-          el (cc "flex flex-col lg:flex-row gap-6") $ do
-            el (cc "w-full lg:w-3/4 px-4") $ do
+        tag "main" (cc CSS.mainContainerCSS) $ do
+          el (cc CSS.threadListSectionCSS) $ do
+            el (cc CSS.threadListMainCSS) $ do
               hyper
                 (ThreadId 1)
                 ( threadView
                     ThreadCardOps
-                      { threadInfo = threadInfo
-                      , currUserVotesForThreads = mUserThreadVotes
-                      , tokenForThreadCard = mToken
-                      , mbUserInfo = mUserInfo
+                      { threadInfo = threadInfo,
+                        currUserVotesForThreads = mUserThreadVotes,
+                        tokenForThreadCard = mToken,
+                        mbUserInfo = mUserInfo
                       }
                 )
               renderCommentsSection mToken threadInfo eCommentList mUserInfo mUserCommentVotes
@@ -188,14 +189,14 @@ renderCommentsSection ::
   Maybe FetchVoteCommentsForUserResponse ->
   View
     ( Root
-        [ ViewThreadId
-        , HeaderId
-        , ThreadId
-        , CommunityId
-        , FooterId
-        , CommentCardId
-        , LiveSearchId
-        , AttachmentViewId
+        [ ViewThreadId,
+          HeaderId,
+          ThreadId,
+          CommunityId,
+          FooterId,
+          CommentCardId,
+          LiveSearchId,
+          AttachmentViewId
         ]
     )
     ()
@@ -209,7 +210,7 @@ renderCommentsSection mToken threadInfo commentList mUserInfo mUserCommentVotes 
           ( addCommentButtonView
               (AddCommentData "" (threadIDForThreadInfo threadInfo) token Nothing)
           )
-    tag "h2" (cc "text-2xl text-center mb-6 text-gray-800 dark:text-gray-200") "Comments"
+    tag "h2" (cc CSS.authSectionTitleCSS) "Comments"
     showCommentsList
       mUserInfo
       0
@@ -222,17 +223,17 @@ renderCommunitySection ::
   Either String Communities ->
   View
     ( Root
-        [ ViewThreadId
-        , HeaderId
-        , ThreadId
-        , CommunityId
-        , FooterId
-        , CommentCardId
-        , LiveSearchId
-        , AttachmentViewId
+        [ ViewThreadId,
+          HeaderId,
+          ThreadId,
+          CommunityId,
+          FooterId,
+          CommentCardId,
+          LiveSearchId,
+          AttachmentViewId
         ]
     )
     ()
 renderCommunitySection (Left err) = el_ $ raw $ T.pack err
 renderCommunitySection (Right _) =
-  el_ $ hyper (CommunityId 1) $ communityListView 
+  el_ $ hyper (CommunityId 1) $ communityListView

@@ -32,6 +32,7 @@ dependencies:
 - filepath
 - fast-logger
 - mtl
+- string-interpolate
 
 ghc-options:
 - -Wall

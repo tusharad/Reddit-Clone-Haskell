@@ -39,6 +39,8 @@ import Platform.Common.Types
 import Platform.Common.Utils
 import System.FilePath
 import Web.Hyperbole
+import qualified Platform.Common.CSS as CSS
+
 
 data ThreadCardOps = ThreadCardOps
   { tokenForThreadCard :: Maybe Text
@@ -271,65 +273,42 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
 
 editThreadView :: ThreadInfo -> Communities -> View ThreadId ()
 editThreadView ThreadInfo {..} (Communities communityList) = do
-  let css = "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
+  let css = CSS.centeredCSS
       funcName = "updateThread(" <> show threadIDForThreadInfo <> ")"
   el (cc css) $ do
-    el (cc "bg-white p-8 rounded-lg shadow-lg max-w-md w-full") $ do
-      tag "h2" (cc "text-2xl font-bold mb-4") $ text "Create Thread"
+    el (cc CSS.modalCardCSS) $ do
+      tag "h2" (cc CSS.sectionTitleCSS) $ text "Edit Thread"
       tag "div" (gap 10) $ do
-        el (cc "mb-4") $ do
+        el (cc CSS.formGroupCSS) $ do
           tag "span" (att "id" "statusMessage" . cc "text-green-500") none
-        el (cc "mb-4") $ do
-          tag "label" (cc "block text-gray-700") "Select community"
-          tag
-            "select"
-            ( cc "w-full px-2 py-2 border rounded"
-                . att "id" "threadCommunityID"
-            )
-            $ do
-              forM_ communityList $ \c -> do
-                tag
-                  "option"
-                  (att "value" (toText $ communityID c))
-                  (raw $ communityName c)
-        el (cc "mb-4") $ do
-          tag "label" (cc "block text-gray-700") "Enter title"
-          tag
-            "input"
+        el (cc CSS.formGroupCSS) $ do
+          tag "label" (cc CSS.labelCSS) "Select community"
+          tag "select" (cc CSS.selectCSS . att "id" "threadCommunityID") $ do
+            forM_ communityList $ \c -> do
+              tag "option"
+                (att "value" (toText $ communityID c))
+                (raw $ communityName c)
+        el (cc CSS.formGroupCSS) $ do
+          tag "label" (cc CSS.labelCSS) "Enter title"
+          tag "input"
             ( att "type" "text"
                 . placeholder "Title"
-                . cc "w-full px-3 py-2 border rounded"
+                . cc CSS.inputCSS
                 . att "id" "threadTitle"
                 . att "value" title
             )
             none
-
-        el (cc "mb-4") $ do
-          tag "label" (cc "block text-gray-700") "Enter Description"
-          tag
-            "textarea"
+        el (cc CSS.formGroupCSS) $ do
+          tag "label" (cc CSS.labelCSS) "Enter Description"
+          tag "textarea"
             ( att "id" "threadDescription"
                 . maybe mempty (att "value") description
-                . cc "w-full px-3 py-2 border rounded"
+                . cc CSS.inputCSS
             )
             none
-
-        el (cc "mb-4") $ do
-          tag
-            "label"
-            (cc "block text-gray-700")
+        el (cc CSS.formGroupCSS) $ do
+          tag "label" (cc CSS.disabledLabelCSS) $
             "Cannot update file, if want to update, please delete post"
-
-        el (cc "mb-4") $ do
-          tag
-            "button"
-            ( att "onClick" (T.pack funcName)
-                . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
-            )
-            "Create"
-          tag
-            "button"
-            ( att "onClick" "cancelForm()"
-                . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
-            )
-            "Cancel"
+        el (cc CSS.formGroupCSS) $ do
+          tag "button" (att "onClick" (T.pack funcName) . cc CSS.buttonCSS) "Update"
+          tag "button" (att "onClick" "cancelForm()" . cc CSS.buttonCSS) "Cancel"

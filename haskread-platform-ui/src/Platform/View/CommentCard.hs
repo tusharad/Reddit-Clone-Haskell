@@ -39,6 +39,7 @@ import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.View.Header (headerButtonCSS)
 import Web.Hyperbole hiding (input)
+import qualified Platform.Common.CSS as CSS
 
 data CommentCardOps = CommentCardOps
   { currUserVotes :: Maybe [(Int, Bool)]
@@ -186,20 +187,12 @@ showLikeIcon (Just vals) tId = do
 
 disabledAddCommentButtonView :: View CommentCardId ()
 disabledAddCommentButtonView =
-  button
-    GoToLogin
-    ( cc
-        "px-4 py-2 text-white rounded-full font-semibold bg-blue-600 hover:bg-blue-700 transition transform hover:scale-105 opacity-50 cursor-not-allowed"
-    )
-    $ "Login to add comment"
-
+  button GoToLogin (cc $ CSS.primaryButtonCSS <> " " <> CSS.disabledButtonCSS) $
+    "Login to add comment"
+    
 addCommentButtonView :: AddCommentData -> View CommentCardId ()
 addCommentButtonView addCommentData =
-  button
-    (AddCommentBtn addCommentData)
-    ( cc
-        "px-4 py-2 text-white rounded-full font-semibold bg-blue-600 hover:bg-blue-700 hover:scale-105"
-    )
+  button (AddCommentBtn addCommentData) (cc CSS.primaryButtonCSS) $
     "Add comment"
 
 newtype AddCommentForm f = AddCommentForm
@@ -225,28 +218,18 @@ helperCommentView ::
   Int ->
   View CommentCardId ()
 helperCommentView cardTitle formTag inpField a = do
-  let css =
-        "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-  el (cc css) $ do
-    el
-      ( cc
-          "bg-white dark:bg-gray-700 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-      )
-      $ do
-        el (cc "p-6") $ do
-          tag "h2" (cc "text-2xl font-bold mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white") $
-            text cardTitle
-          void $ formTag $ do
-            void inpField
-            el (cc "flex justify-end space-x-2") $ do
-              submit
-                (headerButtonCSS "bg-blue-600 hover:bg-blue-500 transition transform hover:scale-105")
-                "Submit"
-          el (cc "flex justify-end space-x-2") $ do
-            button
-              (CancelAddComment a)
-              (headerButtonCSS "mt-2 bg-blue-600 hover:bg-blue-500 transition transform hover:scale-105")
-              "Cancel"
+  el (cc CSS.centeredCSS) $ do
+    el (cc CSS.cardContainerCSS) $ do
+      el (cc CSS.paddedCSS) $ do
+        tag "h2" (cc CSS.sectionTitleCSS) (text cardTitle)
+        void $ formTag $ do
+          void inpField
+          el (cc CSS.buttonGroupCSS) $ do
+            submit
+              (headerButtonCSS CSS.primaryButtonCSS)
+              "Submit"
+        el (cc CSS.buttonGroupCSS) $ do
+          button (CancelAddComment a) (headerButtonCSS CSS.secondaryButtonCSS) "Cancel"
 
 editCommentView ::
   Int ->
@@ -260,16 +243,16 @@ editCommentView commentId token tId v = do
     "Edit Comment"
     (form (SubmitEditComment commentId token tId) (gap 10))
     ( field (commentContentForEdit f) (const mempty) $ do
-        el (cc "mb-4") $ do
+        el (cc CSS.formGroupCSS) $ do
           textarea
-            ( cc "w-full px-3 py-2 border rounded"
+            ( cc CSS.textareaCSS
                 . att "maxlength" "250"
                 . att "oninput" "updateCharCount(this)"
             )
             (commentContentForEdit v)
-          el (cc "text-right text-sm text-green-600" . att "id" "charCountDiv") $ do
+          el (cc CSS.charCountLabelCSS . att "id" "charCountDiv") $ do
             tag "span" (att "id" "charCount") "250"
-            "characters remaining"
+            " characters remaining"
     )
     tId
 
@@ -285,16 +268,16 @@ addCommentView token tId mParentCommentId _ = do
     "Add Comment"
     (form (SubmitAddComment token tId mParentCommentId) (gap 10))
     ( field (commentContentField f) (const mempty) $ do
-        el (cc "mb-4") $ do
+        el (cc CSS.formGroupCSS) $ do
           textarea
-            ( cc "w-full px-3 py-2 border rounded"
+            ( cc CSS.textareaCSS
                 . att "maxlength" "250"
                 . att "oninput" "updateCharCount(this)"
             )
             Nothing
-          el (cc "text-right text-sm text-green-600" . att "id" "charCountDiv") $ do
+          el (cc CSS.charCountLabelCSS . att "id" "charCountDiv") $ do
             tag "span" (att "id" "charCount") "250"
-            "characters remaining"
+            " characters remaining"
     )
     tId
 
@@ -307,72 +290,37 @@ commentCardView commentCardOps@CommentCardOps {commentInfo = CommentInfo {..}, .
           , userToken = fromMaybe "" tokenForCommentCard
           , parentCommentIdForAddComment = Just commentIDForCommentInfo
           }
-  el
-    ( cc
-        "comment bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-    )
-    $ do
-      el (cc "comment-content p-4") $ do
-        el
-          ( cc
-              "flex flex-col sm:flex-row justify-between items-start sm:items-center border-b dark:border-gray-700"
-          )
-          $ do
-            tag
-              "span"
-              (cc "font-semibold")
-              (text userNameForCommentInfo)
-            tag
-              "span"
-              (cc "font-semibold")
-              (text $ T.pack $ show createdAtForCommentInfo)
-      el (cc "mt-2 p-4") $
-        tag "p" mempty (text commentContentForCommentInfo)
-      el (cc "flex mt-2 space-x-2 p-2") $ do
-        case tokenForCommentCard of
-          Nothing ->
-            button
-              GoToLogin
-              ( cc
-                  "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
-              )
-              $ "Login to reply"
-          Just _ ->
-            button
-              (AddCommentBtn addCommentData)
-              ( cc
-                  "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
-              )
-              "Reply"
-        button
-          (LikeComment commentCardOps)
-          ( cc
-              "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
-          )
-          $ do
-            showLikeIcon currUserVotes commentIDForCommentInfo
-            tag "span" mempty $ text $ T.pack . show $ fromMaybe 0 commentUpvoteCount
-        button
-          (DislikeComment commentCardOps)
-          ( cc
-              "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
-          )
-          $ do
-            showDislikeIcon currUserVotes commentIDForCommentInfo
-            tag "span" mempty $ text $ T.pack . show $ fromMaybe 0 commentDownvoteCount
-        case mbUserInfoForCommentCard of
-          Nothing -> none
-          Just userInfo -> do
-            if userIDForUPR userInfo == userIDForCommentInfo
-              then do
-                button
-                  (DeleteComment commentCardOps)
-                  ( cc
-                      "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
-                  )
-                  "delete"
-                button
-                  (EditComment commentCardOps)
-                  (cc "text-sm flex hover:bg-gray-900 bg-gray-700 rounded-md px-1 py-1")
-                  "edit"
-              else none
+
+  el (cc CSS.whiteBackgroundShadowCSS) $ do
+    el (cc CSS.p4CSS) $ do
+      el (cc $ CSS.flexBetweenItemsStartCSS <> " " <> CSS.borderBottomCSS) $ do
+        tag "span" (cc CSS.fontBoldCSS) (text userNameForCommentInfo)
+        tag "span" (cc CSS.fontBoldCSS) $
+          text $ T.pack $ show createdAtForCommentInfo
+
+    el (cc $ CSS.mt2CSS <> " " <> CSS.p4CSS) $
+      tag "p" mempty (text commentContentForCommentInfo)
+
+    el (cc CSS.commentVotesCSS) $ do
+      case tokenForCommentCard of
+        Nothing ->
+          button GoToLogin (cc CSS.buttonBaseCSS) "Login to reply"
+        Just _ ->
+          button (AddCommentBtn addCommentData) (cc CSS.buttonBaseCSS) "Reply"
+
+      button (LikeComment commentCardOps) (cc CSS.buttonBaseCSS) $ do
+        showLikeIcon currUserVotes commentIDForCommentInfo
+        tag "span" mempty $ text $ T.pack . show $ fromMaybe 0 commentUpvoteCount
+
+      button (DislikeComment commentCardOps) (cc CSS.buttonBaseCSS) $ do
+        showDislikeIcon currUserVotes commentIDForCommentInfo
+        tag "span" mempty $ text $ T.pack . show $ fromMaybe 0 commentDownvoteCount
+
+      case mbUserInfoForCommentCard of
+        Nothing -> none
+        Just userInfo ->
+          if userIDForUPR userInfo == userIDForCommentInfo
+            then do
+              button (DeleteComment commentCardOps) (cc CSS.buttonBaseCSS) "delete"
+              button (EditComment commentCardOps) (cc "text-sm flex hover:bg-gray-900 bg-gray-700 rounded-md px-1 py-1") "edit"
+            else none

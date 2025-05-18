@@ -14,13 +14,15 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Platform.Page.Register
-  ( registerPage
-  ) where
+  ( registerPage,
+  )
+where
 
 import Data.Coerce (coerce)
 import Data.Text (Text, pack)
 import qualified Data.Text as T
 import Effectful
+import qualified Platform.Common.CSS as CSS
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
@@ -44,10 +46,10 @@ instance (IOE :> es, Hyperbole :> es) => HyperView RegisterForm es where
     uf <- formData @(RegisterFormData Identity)
     let vals = validateForm uf
     if or
-      [ isInvalid vals.userName
-      , isInvalid vals.email
-      , isInvalid vals.pass1
-      , isInvalid vals.pass2
+      [ isInvalid vals.userName,
+        isInvalid vals.email,
+        isInvalid vals.pass1,
+        isInvalid vals.pass2
       ]
       then pure $ registerFormView Nothing vals
       else do
@@ -63,20 +65,20 @@ registerSuccessFullView newUserId = do
     link (url . pack $ "/otp/" <> show newUserId) mempty "Click here"
 
 data RegisterFormData f = RegisterFormData
-  { userName :: Field f Text
-  , email :: Field f Text
-  , pass1 :: Field f Text
-  , pass2 :: Field f Text
+  { userName :: Field f Text,
+    email :: Field f Text,
+    pass1 :: Field f Text,
+    pass2 :: Field f Text
   }
   deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 validateForm :: RegisterFormData Identity -> RegisterFormData Validated
 validateForm u =
   RegisterFormData
-    { userName = validateUsername u.userName
-    , email = validateEmail (email u)
-    , pass1 = validatePass (pass1 u) u.pass2
-    , pass2 = NotInvalid
+    { userName = validateUsername u.userName,
+      email = validateEmail (email u),
+      pass1 = validatePass (pass1 u) u.pass2,
+      pass2 = NotInvalid
     }
 
 validateUsername :: Text -> Validated Text
@@ -85,15 +87,15 @@ validateUsername u = validate (T.length u < 3) "Username too short"
 validateEmail :: Text -> Validated Text
 validateEmail e =
   mconcat
-    [ validate (T.elem ' ' e) "email must not contain spaces"
-    , validate (T.length e < 4) "email must be at least 4 chars"
+    [ validate (T.elem ' ' e) "email must not contain spaces",
+      validate (T.length e < 4) "email must be at least 4 chars"
     ]
 
 validatePass :: Text -> Text -> Validated Text
 validatePass p1 p2 =
   mconcat
-    [ validate (T.length p1 < 3) "Password must be at least 8 chars"
-    , validate (p1 /= p2) "Password and Confirm Password do not matched!"
+    [ validate (T.length p1 < 3) "Password must be at least 8 chars",
+      validate (p1 /= p2) "Password and Confirm Password do not matched!"
     ]
 
 registerPage :: Eff es (Page '[RegisterForm, HeaderId, FooterId, LiveSearchId])
@@ -114,46 +116,44 @@ registerPage = do
 registerFormView :: Maybe Text -> RegisterFormData Validated -> View RegisterForm ()
 registerFormView mErrorMsg _ = do
   let f = fieldNames @RegisterFormData
-  el
-    ( cc
-        "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-    )
-    $ do
-      el (cc "p-6") $ do
-        form Submit (cc "flex flex-col space-y-4") $ do
-          field f.userName success $ do
-            input
-              Username
-              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  . placeholder "Enter user name"
-              )
+  el (cc CSS.cardContainerCSS) $ do
+    el (cc CSS.paddedCSS) $ do
+      form Submit (cc CSS.formBaseCSS) $ do
+        field f.userName id $ do
+          input
+            Username
+            ( cc CSS.inputCSS
+                . placeholder "Enter user name"
+            )
 
-          field (email f) success $ do
-            input
-              Email
-              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  . placeholder "Enter email"
-              )
+        field (email f) id $ do
+          input
+            Email
+            ( cc CSS.inputCSS
+                . placeholder "Enter email"
+            )
 
-          field f.pass1 success $ do
-            input
-              NewPassword
-              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  . placeholder "password"
-              )
+        field f.pass1 id $ do
+          input
+            NewPassword
+            ( cc CSS.inputCSS
+                . placeholder "password"
+            )
 
-          field f.pass2 success $ do
-            input
-              NewPassword
-              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  . placeholder "confirm password"
-              )
+        field f.pass2 id $ do
+          input
+            NewPassword
+            ( cc CSS.inputCSS
+                . placeholder "confirm password"
+            )
 
-          case mErrorMsg of
-            Nothing -> pure ()
-            Just errMsg -> el invalid (text errMsg)
-          submit (btn . cc "rounded transition transform hover:scale-105 text-2xl mr-2") "Submit"
-        button
-          OauthPage
-          (btn . cc "mt-2 w-full rounded transition transform hover:scale-105")
-          $ tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"
+        case mErrorMsg of
+          Nothing -> pure ()
+          Just errMsg ->
+            el (cc "text-red-500 text-sm") $
+              text errMsg
+
+        submit (btn . cc CSS.submitButtonCSS) "Submit"
+
+      button OauthPage (btn . cc CSS.oauthButtonCSS) $ do
+        tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"

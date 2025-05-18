@@ -16,8 +16,6 @@ module Platform.Common.Utils
   , toText
   , stringToUrl
   , getThreadIds
-  , topVotedBtnCSS
-  , reallyLongCSS
   , disabled
   , getRedirectUrl
   , hush
@@ -71,14 +69,6 @@ stringToUrl = url . T.pack
 
 getThreadIds :: FetchAllThreadsResponse -> [Int]
 getThreadIds (FetchAllThreadsResponse {threads = t}) = map threadIDForThreadInfo t
-
-topVotedBtnCSS :: ClassName
-topVotedBtnCSS =
-  "px-4 py-2 rounded-full bg-blue-600 text-white font-semibold cursor-pointer shadow transition transform hover:scale-105"
-
-reallyLongCSS :: ClassName
-reallyLongCSS =
-  "px-4 py-2 rounded-full text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-700 cursor-pointer transition shadow"
 
 disabled :: Mod id
 disabled = att "disabled" mempty

@@ -16,10 +16,11 @@ module Platform.Page.Profile (profilePage) where
 
 import Data.Base64.Types
 import Data.ByteString.Lazy.Base64
-import Data.Text (Text, append)
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Effectful
+import qualified Platform.Common.CSS as CSS
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
@@ -36,7 +37,7 @@ newtype ProfileId = ProfileId Int
 newtype ProfileImageId = ProfileImageId Int
   deriving (Show, Read, ViewId, Generic)
 
-instance IOE :> es => HyperView ProfileImageId es where
+instance (IOE :> es) => HyperView ProfileImageId es where
   data Action ProfileImageId = LoadProfileImage Int
     deriving (Show, Read, ViewAction, Generic)
 
@@ -57,7 +58,7 @@ instance IOE :> es => HyperView ProfileImageId es where
     where
       imgData imgBytes = (TL.toStrict $ "data:image/jpeg;base64," <> extractBase64 (encodeBase64 imgBytes))
 
-instance IOE :> es => HyperView ProfileId es where
+instance (IOE :> es) => HyperView ProfileId es where
   data Action ProfileId
     = GoToHome
     | ChangePasswordBtn Text
@@ -77,9 +78,9 @@ instance IOE :> es => HyperView ProfileId es where
     uf <- formData @(ChangePasswordForm Identity)
     let vals = validateChangePasswordForm uf
     if or
-      [ isInvalid $ oldPasswordField vals
-      , isInvalid $ newPasswordField vals
-      , isInvalid $ confirmNewPasswordField vals
+      [ isInvalid $ oldPasswordField vals,
+        isInvalid $ newPasswordField vals,
+        isInvalid $ confirmNewPasswordField vals
       ]
       then
         pure $ changePasswordView token vals
@@ -88,9 +89,9 @@ instance IOE :> es => HyperView ProfileId es where
           liftIO $
             changePassword token $
               ChangePasswordBody
-                { oldPasswordForChangePass = oldPasswordField uf
-                , newPasswordForChangePass = newPasswordField uf
-                , confirmPasswordForChangePass = confirmNewPasswordField uf
+                { oldPasswordForChangePass = oldPasswordField uf,
+                  newPasswordForChangePass = newPasswordField uf,
+                  confirmPasswordForChangePass = confirmNewPasswordField uf
                 }
         case mRes of
           Left e -> liftIO $ putStrLn e
@@ -100,8 +101,8 @@ instance IOE :> es => HyperView ProfileId es where
     uf <- formData @(DeleteAccountForm Identity)
     let vals = validateDeleteAccountForm uf
     if or
-      [ isInvalid $ deleteAccountPasswordField vals
-      , isInvalid $ areYouSureField vals
+      [ isInvalid $ deleteAccountPasswordField vals,
+        isInvalid $ areYouSureField vals
       ]
       then
         pure $ deleteAccountView token vals
@@ -110,8 +111,8 @@ instance IOE :> es => HyperView ProfileId es where
           liftIO $
             deleteUser token $
               DeleteUserBody
-                { passwordForDeleteUser = deleteAccountPasswordField uf
-                , areUSure = areYouSureField uf
+                { passwordForDeleteUser = deleteAccountPasswordField uf,
+                  areUSure = areYouSureField uf
                 }
         case mRes of
           Left e -> liftIO $ putStrLn e
@@ -119,15 +120,15 @@ instance IOE :> es => HyperView ProfileId es where
         redirect "/"
 
 data ChangePasswordForm f = ChangePasswordForm
-  { oldPasswordField :: Field f Text
-  , newPasswordField :: Field f Text
-  , confirmNewPasswordField :: Field f Text
+  { oldPasswordField :: Field f Text,
+    newPasswordField :: Field f Text,
+    confirmNewPasswordField :: Field f Text
   }
   deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 data DeleteAccountForm f = DeleteAccountForm
-  { deleteAccountPasswordField :: Field f Text
-  , areYouSureField :: Field f Bool
+  { deleteAccountPasswordField :: Field f Text,
+    areYouSureField :: Field f Bool
   }
   deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
@@ -135,32 +136,32 @@ validateDeleteAccountForm :: DeleteAccountForm Identity -> DeleteAccountForm Val
 validateDeleteAccountForm u =
   DeleteAccountForm
     { deleteAccountPasswordField =
-        validate (T.null $ deleteAccountPasswordField u) "Field cannot be empty"
-    , areYouSureField = validate (not $ areYouSureField u) "Please check this box"
+        validate (T.null $ deleteAccountPasswordField u) "Field cannot be empty",
+      areYouSureField = validate (not $ areYouSureField u) "Please check this box"
     }
 
 validateChangePasswordForm :: ChangePasswordForm Identity -> ChangePasswordForm Validated
 validateChangePasswordForm u =
   ChangePasswordForm
-    { oldPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty"
-    , newPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty"
-    , confirmNewPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty"
+    { oldPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty",
+      newPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty",
+      confirmNewPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty"
     }
 
 profileView :: Text -> View ProfileId ()
 profileView token = do
-  el (cc "flex justify-end space-x-2") $ do
+  el (cc CSS.buttonGroupCSS) $ do
     button
       (ChangePasswordBtn token)
-      (cc "px-4 py-2 bg-green-600 text-white rounded hover:bg-green-200")
+      (cc CSS.successButtonCSS)
       "Change Password"
     button
       (DeleteAccount token)
-      (cc "px-4 py-2 bg-red-600 text-white rounded hover:bg-red-200")
+      (cc CSS.dangerButtonCSS)
       "Delete account"
     button
       UpdateImage
-      (cc "px-4 py-2 bg-yellow-600 text-white rounded hover:bg-red-200")
+      (cc CSS.warningButtonCSS)
       "Update profile image"
 
 changePasswordView ::
@@ -169,102 +170,78 @@ changePasswordView ::
   View ProfileId ()
 changePasswordView token _ = do
   let f = fieldNames @ChangePasswordForm
-  let css =
-        "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-      inputFieldCSS = "w-full px-3 py-2 border rounded"
-      containerCss =
-        "bg-white dark:bg-gray-700 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-      textCss = "text-2xl font-bold mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  el (cc css) $ do
-    el (cc containerCss) $ do
-      el (cc "p-6") $ do
-        tag "h2" (cc textCss) $ text "Change Password"
+  el (cc CSS.centeredCSS) $ do
+    el (cc CSS.cardContainerCSS) $ do
+      el (cc CSS.paddedCSS) $ do
+        tag "h2" (cc CSS.sectionTitleCSS) $ text "Change Password"
 
-        form (SubmitChangePassword token) (cc "flex flex-col space-y-4") $ do
-          field (oldPasswordField f) success $ do
-            el (cc "mb-4") $ do
-              tag "label" (cc "flex flex-col space-y-1") $
-                tag "span" (cc "text-gray-700 dark:text-gray-300") "Enter Old Password"
-              input TextInput (placeholder "Old Password" . cc inputFieldCSS)
+        form (SubmitChangePassword token) (cc CSS.formBaseCSS) $ do
+          field (oldPasswordField f) id $ do
+            el (cc CSS.formGroupCSS) $ do
+              tag "label" (cc CSS.labelCSS) $
+                tag "span" (cc CSS.labelTextCSS) "Enter Old Password"
+              input TextInput (placeholder "Old Password" . cc CSS.inputFieldCSS)
 
-          field (newPasswordField f) success $ do
-            el (cc "mb-4") $ do
-              tag "label" (cc "flex flex-col space-y-1") $
-                tag "span" (cc "text-gray-700 dark:text-gray-300") "Enter new Password"
-              input TextInput (placeholder "new Password" . cc inputFieldCSS)
+          field (newPasswordField f) id $ do
+            el (cc CSS.formGroupCSS) $ do
+              tag "label" (cc CSS.labelCSS) $
+                tag "span" (cc CSS.labelTextCSS) "Enter new Password"
+              input TextInput (placeholder "new Password" . cc CSS.inputFieldCSS)
 
-          field (confirmNewPasswordField f) success $ do
-            el (cc "mb-4") $ do
-              tag "label" (cc "flex flex-col space-y-1") $
-                tag "span" (cc "text-gray-700 dark:text-gray-300") "Re-enter new Password"
-              input TextInput (placeholder "confirm new Password" . cc inputFieldCSS)
+          field (confirmNewPasswordField f) id $ do
+            el (cc CSS.formGroupCSS) $ do
+              tag "label" (cc CSS.labelCSS) $
+                tag "span" (cc CSS.labelTextCSS) "Re-enter new Password"
+              input TextInput (placeholder "confirm new Password" . cc CSS.inputFieldCSS)
 
-          el (cc "flex justify-end space-x-2") $ do
-            submit
-              (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
-              "Submit"
+          el (cc CSS.buttonGroupCSS) $ do
+            submit (btn . cc CSS.buttonPrimaryCSS) "Submit"
 
-        el (cc "flex justify-end space-x-2") $ do
-          button
-            CancelChangePassword
-            (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
-            "Cancel"
+        el (cc CSS.buttonGroupCSS) $ do
+          button CancelChangePassword (cc CSS.buttonSecondaryCSS) "Cancel"
 
-deleteAccountView :: Text -> DeleteAccountForm Validated -> View ProfileId ()
+deleteAccountView ::
+  Text ->
+  DeleteAccountForm Validated ->
+  View ProfileId ()
 deleteAccountView token _ = do
   let f = fieldNames @DeleteAccountForm
-  let css =
-        "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-      inputFieldCSS = "w-full px-3 py-2 border rounded"
-      containerCss =
-        "bg-white dark:bg-gray-700 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-      textCss = "text-2xl font-bold mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  el (cc css) $ do
-    el (cc containerCss) $ do
-      el (cc "p-6") $ do
-        tag "h2" (cc textCss) $ text "Delete account"
+  el (cc CSS.centeredCSS) $ do
+    el (cc CSS.cardContainerCSS) $ do
+      el (cc CSS.paddedCSS) $ do
+        tag "h2" (cc CSS.sectionTitleCSS) $ text "Delete account"
 
-        form (SubmitDeleteAccount token) (cc "flex flex-col space-y-4") $ do
-          field (deleteAccountPasswordField f) success $ do
-            el (cc "mb-4") $ do
-              tag "label" (cc "flex flex-col space-y-1") $
-                tag "span" (cc "text-gray-700 dark:text-gray-300") "Enter Password"
-              input TextInput (placeholder "Password" . cc inputFieldCSS)
+        form (SubmitDeleteAccount token) (cc CSS.formBaseCSS) $ do
+          field (deleteAccountPasswordField f) id $ do
+            el (cc CSS.formGroupCSS) $ do
+              tag "label" (cc CSS.labelCSS) $
+                tag "span" (cc CSS.labelTextCSS) "Enter Password"
+              input TextInput (placeholder "Password" . cc CSS.inputFieldCSS)
 
-          field (areYouSureField f) success $ do
-            el (cc "mb-4") $ do
-              tag "label" (cc "flex flex-col space-y-1") $
-                tag "span" (cc "text-gray-700 dark:text-gray-300") "Are you sure"
+          field (areYouSureField f) id $ do
+            el (cc CSS.formGroupCSS) $ do
+              tag "label" (cc CSS.labelCSS) $
+                tag "span" (cc CSS.labelTextCSS) "Are you sure"
               tag
                 "input"
                 (att "type" "checkbox" . att "value" "true" . att "name" "areYouSureField")
                 none
 
-          el (cc "flex justify-end space-x-2") $ do
-            submit
-              (btn . cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500")
-              "Delete"
+          el (cc CSS.buttonGroupCSS) $ do
+            submit (btn . cc CSS.buttonPrimaryCSS) "Delete"
 
-        el (cc "flex justify-end space-x-2") $ do
-          button
-            CancelChangePassword
-            (cc "mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
-            "Cancel"
+        el (cc CSS.buttonGroupCSS) $ do
+          button CancelChangePassword (cc CSS.buttonSecondaryCSS) "Cancel"
 
 updateImageView :: View ProfileId ()
 updateImageView = do
-  let css =
-        "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-      containerCss =
-        "bg-white dark:bg-gray-700 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-      textCss = "text-2xl font-bold mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  el (cc css) $ do
-    el (cc containerCss) $ do
-      el (cc "p-6") $ do
-        tag "h2" (cc textCss) $ text "Update/upload image"
-        el (cc "mb-4") $ do
-          tag "label" (cc "flex flex-col space-y-1") $
-            tag "span" (cc "text-gray-700 dark:text-gray-300") "Choose image"
+  el (cc CSS.centeredCSS) $ do
+    el (cc CSS.cardContainerCSS) $ do
+      el (cc CSS.paddedCSS) $ do
+        tag "h2" (cc CSS.sectionTitleCSS) $ text "Update/upload image"
+        el (cc CSS.formGroupCSS) $ do
+          tag "label" (cc CSS.labelCSS) $
+            tag "span" (cc CSS.labelTextCSS) "Choose image"
           tag
             "input"
             ( att "type" "file"
@@ -274,23 +251,23 @@ updateImageView = do
                 . att "onChange" "previewImage()"
             )
             none
-        el (cc "flex justify-end space-x-2") $ do
+        el (cc CSS.buttonGroupCSS) $ do
           tag
             "button"
-            ( cc "px-4 py-2 bg-blue-600 text-white rounded hover:bg-gray-500"
+            ( cc CSS.buttonPrimaryCSS
                 . att "onClick" "uploadImage()"
             )
             "Upload image"
           button
             CancelChangePassword
-            (cc "px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500")
+            (cc CSS.buttonSecondaryCSS)
             "Cancel"
-        el (cc "mb-4") $ do
+        el (cc CSS.formGroupCSS) $ do
           tag
             "img"
             ( att "id" "imagePreview"
-                . att "style" "display: none; width 100%; height: 100%;"
-                . cc "w-80 h-80"
+                . att "style" "display: none; width: 100%; height: auto;"
+                . cc CSS.imagePreviewCSS
             )
             none
         tag "p" (att "id" "statusMessage") none
@@ -314,44 +291,36 @@ profilePage = do
       mbOffset <- lookupParam "offset"
       mbCommunityId <- lookupParam "communityId"
       eRes <-
-        liftIO
-          ( getAllThreads
-              mbLimit
-              mbOffset
-              mbCommunityId
-              (Just $ userIDForUPR userInfo)
-          )
+        liftIO $
+          getAllThreads
+            mbLimit
+            mbOffset
+            mbCommunityId
+            (Just $ userIDForUPR userInfo)
       case eRes of
         Left err -> pure $ el_ $ raw (T.pack err)
         Right res -> do
           eUserThreadVotes <- liftIO $ getUserThreadVotes token_ (getThreadIds res)
-          pure $ el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
+          pure $ el (cc CSS.pageContainerCSS) $ do
             stylesheet "style.css"
             script "myjs.js"
             hyper (HeaderId 1) (headerView $ HeaderOps (Just token_) (Just userInfo))
-            tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-              el (cc "flex flex-col lg:flex-row gap-6") $ do
+            tag "main" (cc CSS.mainContainerCSS) $ do
+              el (cc CSS.threadListSectionCSS) $ do
                 el (cc "w-full px-4") $ do
-                  tag "p" (cc "text-3xl text-center mb-6 text-gray-800 dark:text-gray-200") "Profile"
+                  tag "p" (cc CSS.sectionTitleHomeCSS) "Profile"
                   el_ $ do
-                    tag
-                      "p"
-                      (cc "text-lg text-center mb-6 text-gray-800 dark:text-gray-200")
-                      "Welcome to your profile page!"
+                    tag "p" (cc CSS.sectionSubtitleCSS) "Welcome to your profile page!"
                     hyper (ProfileImageId 0) (loadingProfileImage (userIDForUPR userInfo))
-                    tag
-                      "p"
-                      (cc "text-bold")
-                      (text $ "Username:" `append` userNameForUPR userInfo)
-
+                    tag "p" (cc CSS.profileInfoCSS) $ text ("Username: " <> userNameForUPR userInfo)
                     hyper (ProfileId 1) $ profileView token_
-                  tag "h1" (cc "text-3xl font-bold text-center mb-4") "Posts by users"
-                  viewThreadsList
-                    (Just userInfo)
-                    (Just token_)
-                    (hush eUserThreadVotes)
-                    (threads res)
-              hyper (FooterId 1) footerView
+              tag "h1" (cc CSS.sectionHeadingCSS) "Posts by user"
+              viewThreadsList
+                (Just userInfo)
+                (Just token_)
+                (hush eUserThreadVotes)
+                (threads res)
+            hyper (FooterId 1) footerView
   where
     viewThreadsList mUserInfo_ mToken_ mUserThreadVotes threads_ =
       foldr
@@ -360,10 +329,10 @@ profilePage = do
               (ThreadId idx)
               ( threadView
                   ThreadCardOps
-                    { currUserVotesForThreads = mUserThreadVotes
-                    , tokenForThreadCard = mToken_
-                    , threadInfo = thread
-                    , ThreadCard.mbUserInfo = mUserInfo_
+                    { currUserVotesForThreads = mUserThreadVotes,
+                      tokenForThreadCard = mToken_,
+                      threadInfo = thread,
+                      ThreadCard.mbUserInfo = mUserInfo_
                     }
               )
             acc

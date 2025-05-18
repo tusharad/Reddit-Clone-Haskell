@@ -17,6 +17,7 @@ module Platform.Page.Login (loginPage) where
 import Data.Text (Text)
 import qualified Data.Text as T
 import Effectful
+import qualified Platform.Common.CSS as CSS
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
@@ -56,23 +57,23 @@ loginSuccessFullView = do
     link "/" mempty "Click here"
 
 data UserForm f = UserForm
-  { email :: Field f Text
-  , pass :: Field f Text
+  { email :: Field f Text,
+    pass :: Field f Text
   }
   deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 validateForm :: UserForm Identity -> UserForm Validated
 validateForm u =
   UserForm
-    { email = validateEmail (email u)
-    , pass = validatePass (pass u)
+    { email = validateEmail (email u),
+      pass = validatePass (pass u)
     }
 
 validateEmail :: Text -> Validated Text
 validateEmail e =
   mconcat
-    [ validate (T.elem ' ' e) "email must not contain spaces"
-    , validate (T.length e < 4) "email must be at least 4 chars"
+    [ validate (T.elem ' ' e) "email must not contain spaces",
+      validate (T.length e < 4) "email must be at least 4 chars"
     ]
 
 validatePass :: Text -> Validated Text
@@ -81,51 +82,49 @@ validatePass p1 =
 
 loginPage :: Eff es (Page '[FormView, HeaderId, FooterId, LiveSearchId])
 loginPage = do
-  pure $ el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
+  pure $ el (cc CSS.pageContainerCSS) $ do
     stylesheet "style.css"
-    el (cc "flex flex-col min-h-screen") $ do
+    el (cc CSS.flexColumnContainerCSS) $ do
       hyper (HeaderId 1) (headerView defaultHeaderOps)
-      tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
-        el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
+      tag "main" (cc CSS.mainContainerCSS) $ do
+        el (cc CSS.authLayoutFlexCSS) $ do
           el (cc "w-full lg px-4") $ do
-            el (cc "flex flex-col min-h-screen") $ do
+            el (cc CSS.flexColumnContainerCSS) $ do
               tag "main" (cc "container mx-auto mt-20 px-6 flex-grow") $ do
-                tag "p" (cc "text-2xl font-bold mb-4 text-center") "Login"
+                tag "p" (cc CSS.authSectionTitleCSS) "Login"
                 hyper FormView $ formView Nothing genFields
         hyper (FooterId 1) footerView
 
 formView :: Maybe Text -> UserForm Validated -> View FormView ()
 formView mErrorMsg _ = do
   let f = fieldNames @UserForm
-  el
-    ( cc
-        "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-    )
-    $ do
-      el (cc "p-6") $ do
-        form Submit (cc "flex flex-col space-y-4") $ do
-          field (email f) success $ do
-            tag "label" (cc "flex flex-col space-y-1") $
-              tag "span" (cc "text-gray-700 dark:text-gray-300") "email"
-            input
-              Email
-              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  . placeholder "email"
-              )
+  el (cc CSS.cardContainerCSS) $ do
+    el (cc CSS.paddedCSS) $ do
+      form Submit (cc CSS.formBaseCSS) $ do
+        field (email f) id $ do
+          tag "label" (cc CSS.labelCSS) $
+            tag "span" (cc CSS.labelTextCSS) "email"
+          input
+            Email
+            ( cc CSS.inputCSS
+                . placeholder "email"
+            )
 
-          field f.pass success $ do
-            tag "label" (cc "flex flex-col space-y-1") $
-              tag "span" (cc "text-gray-700 dark:text-gray-300") "Password"
-            input
-              NewPassword
-              ( cc "w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  . placeholder "password"
-              )
-          case mErrorMsg of
-            Nothing -> pure ()
-            Just errMsg -> el invalid (text errMsg)
-          submit (btn . cc "rounded transition transform hover:scale-105 text-xl mr-2") "Submit"
-        button
-          OAuthPage
-          (btn . cc "mt-2 w-full rounded transition transform hover:scale-105")
-          $ tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"
+        field f.pass id $ do
+          tag "label" (cc CSS.labelCSS) $
+            tag "span" (cc CSS.labelTextCSS) "Password"
+          input
+            NewPassword
+            ( cc CSS.inputCSS
+                . placeholder "password"
+            )
+        case mErrorMsg of
+          Nothing -> pure ()
+          Just errMsg ->
+            el (cc "text-red-500 text-sm") $
+              text errMsg
+        submit (btn . cc CSS.submitButtonCSS) "Submit"
+      button
+        OAuthPage
+        (btn . cc CSS.oauthButtonCSS)
+        $ tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"
