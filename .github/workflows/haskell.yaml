@@ -2,19 +2,19 @@ name: Haskell CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
 
 env:
-  MailFromEmail : ${{ vars.MailFromEmail }}
-  MailAPIToken : ${{ secrets.MailAPIToken }}
-  GoogleOAuth2ClientID : ${{ secrets.GoogleOAuth2ClientID }}
-  GoogleOAuth2ClientSecret : ${{ secrets.GoogleOAuth2ClientSecret }}
-  HaskReadJwtSecret : ${{ secrets.HaskReadJwtSecret }}
+  MailFromEmail: ${{ vars.MailFromEmail }}
+  MailAPIToken: ${{ secrets.MailAPIToken }}
+  GoogleOAuth2ClientID: ${{ secrets.GoogleOAuth2ClientID }}
+  GoogleOAuth2ClientSecret: ${{ secrets.GoogleOAuth2ClientSecret }}
+  HaskReadJwtSecret: ${{ secrets.HaskReadJwtSecret }}
 
 jobs:
   build-ui:
@@ -25,19 +25,18 @@ jobs:
         working-directory: ./haskread-platform-ui/
 
     steps:
-    
-    - name: Copy repo into actions 
-      uses: actions/checkout@v3
-    
-    - name: install dependancies, build and test stack project.
-      uses: freckle/stack-action@v5
-      with:
-        working-directory: ./haskread-platform-ui/
-        stack-build-arguments: --copy-bins
+      - name: Copy repo into actions
+        uses: actions/checkout@v3
 
-    - name: upload ui binary
-      uses: actions/upload-artifact@v4
-      with:
+      - name: install dependancies, build and test stack project.
+        uses: freckle/stack-action@v5
+        with:
+          working-directory: ./haskread-platform-ui/
+          stack-build-arguments: --copy-bins
+
+      - name: upload ui binary
+        uses: actions/upload-artifact@v4
+        with:
           name: ui-binary
           path: /home/runner/.local/bin/haskread-platform-ui-exe
 
@@ -50,27 +49,26 @@ jobs:
         working-directory: ./haskread-platform-be/
 
     steps:
-    
-    - name: Copy repo into actions 
-      uses: actions/checkout@v3
-    
-    - name: Start test database
-      run: make startTestDB
-    
-    - name: install dependancies, build and test stack project.
-      uses: freckle/stack-action@v5
-      with:
-        working-directory: ./haskread-platform-be/
-        stack-build-arguments: --copy-bins
+      - name: Copy repo into actions
+        uses: actions/checkout@v3
 
-    - name: upload be binary
-      uses: actions/upload-artifact@v4
-      with:
+      - name: Start test database
+        run: make startTestDB
+
+      - name: install dependancies, build and test stack project.
+        uses: freckle/stack-action@v5
+        with:
+          working-directory: ./haskread-platform-be/
+          stack-build-arguments: --copy-bins
+
+      - name: upload be binary
+        uses: actions/upload-artifact@v4
+        with:
           name: be-binary
           path: /home/runner/.local/bin/haskread-platform-be-exe
 
-    - name: stop test database
-      run: make stopTestDB
+      - name: stop test database
+        run: make stopTestDB
 
   test-ui:
     needs: [build-ui, build-be]
@@ -102,6 +100,14 @@ jobs:
                 -p 5434:5432 \
                 --rm -d \
                 postgres:16.3-alpine3.20
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..20}; do
+            pg_isready -h localhost -p 5434 -U user && break
+            echo "Waiting for Postgres..."
+            sleep 3
+          done
 
       - name: Run backend
         run: |
