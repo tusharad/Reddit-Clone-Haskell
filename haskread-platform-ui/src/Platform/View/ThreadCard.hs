@@ -13,18 +13,19 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Platform.View.ThreadCard
-  ( ThreadCardOps (..)
-  , ThreadId (..)
-  , AttachmentViewId (..)
-  , threadView
-  , showDislikeIcon
-  , showLikeIcon
-  , updateVoteCount
-  , voteChanges
-  , updateCurrUserVotes
-  , Action (..)
-  , update
-  ) where
+  ( ThreadCardOps (..),
+    ThreadId (..),
+    AttachmentViewId (..),
+    threadView,
+    showDislikeIcon,
+    showLikeIcon,
+    updateVoteCount,
+    voteChanges,
+    updateCurrUserVotes,
+    Action (..),
+    update,
+  )
+where
 
 import Control.Monad (forM_, void)
 import Data.Base64.Types
@@ -34,19 +35,18 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Effectful
+import qualified Platform.Common.CSS as CSS
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
 import System.FilePath
 import Web.Hyperbole
-import qualified Platform.Common.CSS as CSS
-
 
 data ThreadCardOps = ThreadCardOps
-  { tokenForThreadCard :: Maybe Text
-  , currUserVotesForThreads :: Maybe [(Int, Bool)]
-  , threadInfo :: ThreadInfo
-  , mbUserInfo :: Maybe UserProfileResponse
+  { tokenForThreadCard :: Maybe Text,
+    currUserVotesForThreads :: Maybe [(Int, Bool)],
+    threadInfo :: ThreadInfo,
+    mbUserInfo :: Maybe UserProfileResponse
   }
   deriving (Show, Eq, Read, Generic, ToJSON, FromJSON)
 
@@ -56,7 +56,7 @@ newtype ThreadId = ThreadId Int
 newtype AttachmentViewId = AttachmentViewId Int
   deriving (Show, Read, Generic, ViewId)
 
-instance IOE :> es => HyperView AttachmentViewId es where
+instance (IOE :> es) => HyperView AttachmentViewId es where
   data Action AttachmentViewId = LoadImage Int
     deriving (Show, Read, Generic, ViewAction)
 
@@ -79,7 +79,7 @@ instance IOE :> es => HyperView AttachmentViewId es where
             )
             none
 
-instance IOE :> es => HyperView ThreadId es where
+instance (IOE :> es) => HyperView ThreadId es where
   data Action ThreadId
     = UpdateUpVote ThreadCardOps
     | UpdateDownVote ThreadCardOps
@@ -99,8 +99,8 @@ instance IOE :> es => HyperView ThreadId es where
         pure $
           threadView
             threadCardOps
-              { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId True
-              , threadInfo = updateVoteCount currUserVotesForThreads True threadInfo
+              { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId True,
+                threadInfo = updateVoteCount currUserVotesForThreads True threadInfo
               }
   update (UpdateDownVote threadCardOps@ThreadCardOps {..}) = do
     if isNothing tokenForThreadCard
@@ -111,8 +111,8 @@ instance IOE :> es => HyperView ThreadId es where
         pure $
           threadView
             threadCardOps
-              { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId False
-              , threadInfo = updateVoteCount currUserVotesForThreads False threadInfo
+              { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId False,
+                threadInfo = updateVoteCount currUserVotesForThreads False threadInfo
               }
   update (DeleteThread ThreadCardOps {..}) = do
     let threadId = threadIDForThreadInfo threadInfo
@@ -202,74 +202,67 @@ attachmentView attachmentName threadId
 
 threadView :: ThreadCardOps -> View ThreadId ()
 threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
-  el
-    ( cc
-        "bg-white dark:bg-gray-800 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-    ) $ do
-    el
-      ( cc
-          "flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b dark:border-gray-700"
-      ) $ do
-      tag "h2" (cc "text-lg font-bold text-gray-800 dark:text-gray-200") $ do
+  el (cc CSS.cardContainerCSS) $ do
+    el (cc CSS.threadHeaderCSS) $ do
+      tag "h2" (cc CSS.threadTitleCSS) $ do
         link
           (stringToUrl $ "/view-thread/" <> show threadIDForThreadInfo)
-          (cc "truncate block hover:text-blue-600 dark:hover:text-blue-400 transition")
+          (cc CSS.threadTitleLinkCSS)
           (text title)
-      el (cc "text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-0") $ do
-        tag "p" mempty $ do
-          text "Community:"
+      el (cc CSS.threadMetaCSS) $ do
+        tag "p" mempty $ text "Community:"
         tag "span" (cc "font-semibold") (text communityNameForThreadInfo)
         tag "p" mempty $ do
           text "Created by:"
           tag "span" (cc "font-semibold") (text userNameForThreadInfo)
         tag "p" mempty (text createdAtForThreadInfo)
-    el (cc "p-4") $ do
+    el (cc CSS.threadDescriptionCSS) $ do
       tag "p" mempty (text $ fromMaybe "" description)
       case attachmentName of
-        (Just attName) ->
-          hyper
-            (AttachmentViewId threadIDForThreadInfo)
-            (attachmentView attName threadIDForThreadInfo)
+        Just attName ->
+          hyper (AttachmentViewId threadIDForThreadInfo) $
+            attachmentView attName threadIDForThreadInfo
         Nothing -> none
-    el (cc "flex justify-between items-center p-4 border-t dark:border-gray-700") $ do
+    el (cc CSS.threadActionsCSS) $ do
       el (cc "flex space-x-2 items-center") $ do
         button
           (UpdateUpVote threadCardOps)
-          ( cc
-              "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
-          )
+          (cc CSS.threadActionButtonCSS)
           $ do
             showLikeIcon currUserVotesForThreads threadIDForThreadInfo
-            tag "span" (cc "text-gray-600 dark:text-gray-300") . text $ toText (fromMaybe 0 upvoteCount)
+            tag "span" (cc CSS.threadActionTextCSS) . text $
+              T.pack . show $
+                fromMaybe 0 upvoteCount
+
         button
           (UpdateDownVote threadCardOps)
-          ( cc
-              "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
-          )
+          (cc CSS.threadActionButtonCSS)
           $ do
             showDislikeIcon currUserVotesForThreads threadIDForThreadInfo
-            tag "span" (cc "text-gray-600 dark:text-gray-300") . text $ toText (fromMaybe 0 downvoteCount)
+            tag "span" (cc CSS.threadActionTextCSS) . text $
+              T.pack . show $
+                fromMaybe 0 downvoteCount
+
         case mbUserInfo of
           Nothing -> none
-          Just userInfo -> do
+          Just userInfo ->
             if userIDForUPR userInfo == userIDForThreadInfo
               then do
                 button
                   (DeleteThread threadCardOps)
-                  ( cc
-                      "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
-                  )
+                  (cc CSS.threadActionButtonCSS)
                   "delete"
                 button
                   (EditThread threadCardOps)
-                  ( cc
-                      "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
-                  )
+                  (cc CSS.threadActionButtonCSS)
                   "edit"
               else none
-        tag "span" (cc "flex items-center space-x-1 text-gray-600 dark:text-gray-300") $ do
-          tag "i" (cc "bx bx-comment") none
-          tag "span" mempty . text $ toText (fromMaybe 0 commentCount)
+
+        tag "span" (cc "flex items-center space-x-1") $ do
+          tag "i" (cc CSS.commentCountIconCSS) none
+          tag "span" (cc CSS.threadActionTextCSS) . text $
+            T.pack . show $
+              fromMaybe 0 commentCount
 
 editThreadView :: ThreadInfo -> Communities -> View ThreadId ()
 editThreadView ThreadInfo {..} (Communities communityList) = do
@@ -285,12 +278,14 @@ editThreadView ThreadInfo {..} (Communities communityList) = do
           tag "label" (cc CSS.labelCSS) "Select community"
           tag "select" (cc CSS.selectCSS . att "id" "threadCommunityID") $ do
             forM_ communityList $ \c -> do
-              tag "option"
+              tag
+                "option"
                 (att "value" (toText $ communityID c))
                 (raw $ communityName c)
         el (cc CSS.formGroupCSS) $ do
           tag "label" (cc CSS.labelCSS) "Enter title"
-          tag "input"
+          tag
+            "input"
             ( att "type" "text"
                 . placeholder "Title"
                 . cc CSS.inputCSS
@@ -300,7 +295,8 @@ editThreadView ThreadInfo {..} (Communities communityList) = do
             none
         el (cc CSS.formGroupCSS) $ do
           tag "label" (cc CSS.labelCSS) "Enter Description"
-          tag "textarea"
+          tag
+            "textarea"
             ( att "id" "threadDescription"
                 . maybe mempty (att "value") description
                 . cc CSS.inputCSS

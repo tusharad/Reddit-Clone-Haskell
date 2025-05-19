@@ -112,6 +112,15 @@ module Platform.Common.CSS
 
     -- * Social / External
     linkedInLink,
+    threadHeaderCSS,
+    threadTitleCSS,
+    threadTitleLinkCSS,
+    threadDescriptionCSS,
+    threadMetaCSS,
+    threadActionsCSS,
+    threadActionButtonCSS,
+    commentCountIconCSS,
+    threadActionTextCSS,
   )
 where
 
@@ -276,7 +285,7 @@ commentVotesCSS :: ClassName
 commentVotesCSS =
   [i|
   flex items-center space-x-1 p-2 rounded-full
-  hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105 |]
+  hover:bg-gray-100 dark:hover:bg-gray-700 |]
 
 textareaCSS :: ClassName
 textareaCSS = "w-full px-3 py-2 border rounded"
@@ -403,3 +412,34 @@ sectionHeadingCSS = "text-3xl font-bold text-center mb-4"
 
 pageBackgroundCSS :: ClassName
 pageBackgroundCSS = "bg-[#F4EEFF]"
+
+threadHeaderCSS :: ClassName
+threadHeaderCSS =
+  "flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b dark:border-gray-700"
+
+threadTitleCSS :: ClassName
+threadTitleCSS = "text-lg font-bold text-gray-800 dark:text-gray-200"
+
+threadTitleLinkCSS :: ClassName
+threadTitleLinkCSS =
+  "truncate block hover:text-blue-600 dark:hover:text-blue-400 transition"
+
+threadMetaCSS :: ClassName
+threadMetaCSS = "text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-0"
+
+threadDescriptionCSS :: ClassName
+threadDescriptionCSS = "p-4"
+
+threadActionsCSS :: ClassName
+threadActionsCSS =
+  "flex justify-between items-center p-4 border-t dark:border-gray-700"
+
+threadActionButtonCSS :: ClassName
+threadActionButtonCSS =
+  "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
+
+threadActionTextCSS :: ClassName
+threadActionTextCSS = "text-gray-600 dark:text-gray-300"
+
+commentCountIconCSS :: ClassName
+commentCountIconCSS = "bx bx-comment"
