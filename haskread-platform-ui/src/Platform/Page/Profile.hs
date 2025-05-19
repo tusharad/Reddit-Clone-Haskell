@@ -78,9 +78,9 @@ instance (IOE :> es) => HyperView ProfileId es where
     uf <- formData @(ChangePasswordForm Identity)
     let vals = validateChangePasswordForm uf
     if or
-      [ isInvalid $ oldPasswordField vals,
-        isInvalid $ newPasswordField vals,
-        isInvalid $ confirmNewPasswordField vals
+      [ isInvalid $ oldPasswordField vals
+      , isInvalid $ newPasswordField vals
+      , isInvalid $ confirmNewPasswordField vals
       ]
       then
         pure $ changePasswordView token vals
@@ -89,9 +89,9 @@ instance (IOE :> es) => HyperView ProfileId es where
           liftIO $
             changePassword token $
               ChangePasswordBody
-                { oldPasswordForChangePass = oldPasswordField uf,
-                  newPasswordForChangePass = newPasswordField uf,
-                  confirmPasswordForChangePass = confirmNewPasswordField uf
+                { oldPasswordForChangePass = oldPasswordField uf
+                , newPasswordForChangePass = newPasswordField uf
+                , confirmPasswordForChangePass = confirmNewPasswordField uf
                 }
         case mRes of
           Left e -> liftIO $ putStrLn e
@@ -101,8 +101,8 @@ instance (IOE :> es) => HyperView ProfileId es where
     uf <- formData @(DeleteAccountForm Identity)
     let vals = validateDeleteAccountForm uf
     if or
-      [ isInvalid $ deleteAccountPasswordField vals,
-        isInvalid $ areYouSureField vals
+      [ isInvalid $ deleteAccountPasswordField vals
+      , isInvalid $ areYouSureField vals
       ]
       then
         pure $ deleteAccountView token vals
@@ -111,8 +111,8 @@ instance (IOE :> es) => HyperView ProfileId es where
           liftIO $
             deleteUser token $
               DeleteUserBody
-                { passwordForDeleteUser = deleteAccountPasswordField uf,
-                  areUSure = areYouSureField uf
+                { passwordForDeleteUser = deleteAccountPasswordField uf
+                , areUSure = areYouSureField uf
                 }
         case mRes of
           Left e -> liftIO $ putStrLn e
@@ -120,15 +120,15 @@ instance (IOE :> es) => HyperView ProfileId es where
         redirect "/"
 
 data ChangePasswordForm f = ChangePasswordForm
-  { oldPasswordField :: Field f Text,
-    newPasswordField :: Field f Text,
-    confirmNewPasswordField :: Field f Text
+  { oldPasswordField :: Field f Text
+  , newPasswordField :: Field f Text
+  , confirmNewPasswordField :: Field f Text
   }
   deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 data DeleteAccountForm f = DeleteAccountForm
-  { deleteAccountPasswordField :: Field f Text,
-    areYouSureField :: Field f Bool
+  { deleteAccountPasswordField :: Field f Text
+  , areYouSureField :: Field f Bool
   }
   deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
@@ -136,16 +136,16 @@ validateDeleteAccountForm :: DeleteAccountForm Identity -> DeleteAccountForm Val
 validateDeleteAccountForm u =
   DeleteAccountForm
     { deleteAccountPasswordField =
-        validate (T.null $ deleteAccountPasswordField u) "Field cannot be empty",
-      areYouSureField = validate (not $ areYouSureField u) "Please check this box"
+        validate (T.null $ deleteAccountPasswordField u) "Field cannot be empty"
+    , areYouSureField = validate (not $ areYouSureField u) "Please check this box"
     }
 
 validateChangePasswordForm :: ChangePasswordForm Identity -> ChangePasswordForm Validated
 validateChangePasswordForm u =
   ChangePasswordForm
-    { oldPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty",
-      newPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty",
-      confirmNewPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty"
+    { oldPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty"
+    , newPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty"
+    , confirmNewPasswordField = validate (T.null $ oldPasswordField u) "old password cannot be empty"
     }
 
 profileView :: Text -> View ProfileId ()
@@ -281,7 +281,17 @@ profilePage ::
   (Hyperbole :> es, IOE :> es) =>
   Eff
     es
-    (Page '[ProfileId, HeaderId, ThreadId, FooterId, LiveSearchId, AttachmentViewId, ProfileImageId])
+    ( Page
+        '[ ProfileId
+         , HeaderId
+         , ThreadId
+         , FooterId
+         , LiveSearchId
+         , AttachmentViewId
+         , ProfileImageId
+         , LoginProfileBtns
+         ]
+    )
 profilePage = do
   mbTokenAndUser <- getTokenAndUser
   case mbTokenAndUser of
@@ -304,7 +314,7 @@ profilePage = do
           pure $ el (cc CSS.pageContainerCSS) $ do
             stylesheet "style.css"
             script "myjs.js"
-            hyper (HeaderId 1) (headerView $ HeaderOps (Just token_) (Just userInfo))
+            hyper (HeaderId 1) headerView
             tag "main" (cc CSS.mainContainerCSS) $ do
               el (cc CSS.threadListSectionCSS) $ do
                 el (cc "w-full px-4") $ do
@@ -329,10 +339,10 @@ profilePage = do
               (ThreadId idx)
               ( threadView
                   ThreadCardOps
-                    { currUserVotesForThreads = mUserThreadVotes,
-                      tokenForThreadCard = mToken_,
-                      threadInfo = thread,
-                      ThreadCard.mbUserInfo = mUserInfo_
+                    { currUserVotesForThreads = mUserThreadVotes
+                    , tokenForThreadCard = mToken_
+                    , threadInfo = thread
+                    , ThreadCard.mbUserInfo = mUserInfo_
                     }
               )
             acc

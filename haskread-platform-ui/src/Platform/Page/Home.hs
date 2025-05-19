@@ -19,6 +19,7 @@ import Data.Maybe
 import Data.Text (append)
 import qualified Data.Text as T
 import Effectful
+import qualified Platform.Common.CSS as CSS
 import Platform.Common.Request
 import Platform.Common.Types
 import Platform.Common.Utils
@@ -27,7 +28,6 @@ import Platform.View.Header
 import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
 import Web.Hyperbole
-import qualified Platform.Common.CSS as CSS
 
 data PageParams = PageParams
   { mbCommunityId :: Maybe Int
@@ -104,6 +104,7 @@ homePage ::
          , CommunityId
          , LiveSearchId
          , AttachmentViewId
+         , LoginProfileBtns
          ]
     )
 homePage = do
@@ -125,7 +126,7 @@ homePage = do
       pure $ el (cc CSS.pageContainerCSS) $ do
         stylesheet "style.css"
         el (cc CSS.flexColumnContainerCSS) $ do
-          hyper (HeaderId 1) (headerView $ HeaderOps (fst <$> mbTokenAndUser) (snd <$> mbTokenAndUser))
+          hyper (HeaderId 1) headerView
           tag "main" (cc CSS.mainContainerCSS) $ do
             el (cc CSS.threadListSectionCSS) $ do
               el (cc CSS.threadListMainCSS) $ do

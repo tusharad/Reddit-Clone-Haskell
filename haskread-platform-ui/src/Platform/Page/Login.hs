@@ -57,35 +57,35 @@ loginSuccessFullView = do
     link "/" mempty "Click here"
 
 data UserForm f = UserForm
-  { email :: Field f Text,
-    pass :: Field f Text
+  { email :: Field f Text
+  , pass :: Field f Text
   }
   deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 validateForm :: UserForm Identity -> UserForm Validated
 validateForm u =
   UserForm
-    { email = validateEmail (email u),
-      pass = validatePass (pass u)
+    { email = validateEmail (email u)
+    , pass = validatePass (pass u)
     }
 
 validateEmail :: Text -> Validated Text
 validateEmail e =
   mconcat
-    [ validate (T.elem ' ' e) "email must not contain spaces",
-      validate (T.length e < 4) "email must be at least 4 chars"
+    [ validate (T.elem ' ' e) "email must not contain spaces"
+    , validate (T.length e < 4) "email must be at least 4 chars"
     ]
 
 validatePass :: Text -> Validated Text
 validatePass p1 =
   validate (T.length p1 < 3) "Password must be at least 8 chars"
 
-loginPage :: Eff es (Page '[FormView, HeaderId, FooterId, LiveSearchId])
+loginPage :: Eff es (Page '[FormView, HeaderId, FooterId, LiveSearchId, LoginProfileBtns])
 loginPage = do
   pure $ el (cc CSS.pageContainerCSS) $ do
     stylesheet "style.css"
     el (cc CSS.flexColumnContainerCSS) $ do
-      hyper (HeaderId 1) (headerView defaultHeaderOps)
+      hyper (HeaderId 1) headerView
       tag "main" (cc CSS.mainContainerCSS) $ do
         el (cc CSS.authLayoutFlexCSS) $ do
           el (cc "w-full lg px-4") $ do

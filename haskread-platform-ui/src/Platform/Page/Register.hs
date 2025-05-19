@@ -14,7 +14,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Platform.Page.Register
-  ( registerPage,
+  ( registerPage
   )
 where
 
@@ -46,10 +46,10 @@ instance (IOE :> es, Hyperbole :> es) => HyperView RegisterForm es where
     uf <- formData @(RegisterFormData Identity)
     let vals = validateForm uf
     if or
-      [ isInvalid vals.userName,
-        isInvalid vals.email,
-        isInvalid vals.pass1,
-        isInvalid vals.pass2
+      [ isInvalid vals.userName
+      , isInvalid vals.email
+      , isInvalid vals.pass1
+      , isInvalid vals.pass2
       ]
       then pure $ registerFormView Nothing vals
       else do
@@ -65,20 +65,20 @@ registerSuccessFullView newUserId = do
     link (url . pack $ "/otp/" <> show newUserId) mempty "Click here"
 
 data RegisterFormData f = RegisterFormData
-  { userName :: Field f Text,
-    email :: Field f Text,
-    pass1 :: Field f Text,
-    pass2 :: Field f Text
+  { userName :: Field f Text
+  , email :: Field f Text
+  , pass1 :: Field f Text
+  , pass2 :: Field f Text
   }
   deriving (Generic, FromFormF, GenFields FieldName, GenFields Validated)
 
 validateForm :: RegisterFormData Identity -> RegisterFormData Validated
 validateForm u =
   RegisterFormData
-    { userName = validateUsername u.userName,
-      email = validateEmail (email u),
-      pass1 = validatePass (pass1 u) u.pass2,
-      pass2 = NotInvalid
+    { userName = validateUsername u.userName
+    , email = validateEmail (email u)
+    , pass1 = validatePass (pass1 u) u.pass2
+    , pass2 = NotInvalid
     }
 
 validateUsername :: Text -> Validated Text
@@ -87,23 +87,23 @@ validateUsername u = validate (T.length u < 3) "Username too short"
 validateEmail :: Text -> Validated Text
 validateEmail e =
   mconcat
-    [ validate (T.elem ' ' e) "email must not contain spaces",
-      validate (T.length e < 4) "email must be at least 4 chars"
+    [ validate (T.elem ' ' e) "email must not contain spaces"
+    , validate (T.length e < 4) "email must be at least 4 chars"
     ]
 
 validatePass :: Text -> Text -> Validated Text
 validatePass p1 p2 =
   mconcat
-    [ validate (T.length p1 < 3) "Password must be at least 8 chars",
-      validate (p1 /= p2) "Password and Confirm Password do not matched!"
+    [ validate (T.length p1 < 3) "Password must be at least 8 chars"
+    , validate (p1 /= p2) "Password and Confirm Password do not matched!"
     ]
 
-registerPage :: Eff es (Page '[RegisterForm, HeaderId, FooterId, LiveSearchId])
+registerPage :: Eff es (Page '[RegisterForm, HeaderId, FooterId, LiveSearchId, LoginProfileBtns])
 registerPage = do
   pure $ el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
     stylesheet "style.css"
     el (cc "flex flex-col min-h-screen") $ do
-      hyper (HeaderId 1) (headerView defaultHeaderOps)
+      hyper (HeaderId 1) headerView
       tag "main" (cc "container mx-auto mt-16 px-6 flex-grow") $ do
         el (cc "flex flex-wrap lg:flex-nowrap -mx-4") $ do
           el (cc "w-full lg px-4") $ do

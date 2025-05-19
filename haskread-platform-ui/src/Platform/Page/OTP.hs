@@ -71,18 +71,18 @@ validateForm u =
 validateOTP :: Text -> Validated Text
 validateOTP otp_ =
   mconcat
-    [ validate (T.length otp_ /= 4) "OTP should be 4 digit long",
-      validate (isNothing (readMaybe $ T.unpack otp_ :: Maybe Int)) "OTP should be numbers only"
+    [ validate (T.length otp_ /= 4) "OTP should be 4 digit long"
+    , validate (isNothing (readMaybe $ T.unpack otp_ :: Maybe Int)) "OTP should be numbers only"
     ]
 
 otpPage ::
   Int ->
-  Eff es (Page '[OTPView, HeaderId, FooterId, LiveSearchId])
+  Eff es (Page '[OTPView, HeaderId, FooterId, LiveSearchId, LoginProfileBtns])
 otpPage newUserId = do
   pure $ do
     stylesheet "style.css"
     el (cc $ CSS.flexColumnContainerCSS <> " " <> CSS.pageBackgroundCSS) $ do
-      hyper (HeaderId 1) (headerView defaultHeaderOps)
+      hyper (HeaderId 1) headerView
       tag "main" (cc CSS.mainContainerCSS) $ do
         el (cc CSS.authLayoutFlexCSS) $ do
           el (cc CSS.authCardContainerCSS) $ do

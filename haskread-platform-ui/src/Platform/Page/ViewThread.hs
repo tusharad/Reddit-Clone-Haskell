@@ -49,14 +49,15 @@ showCommentsList ::
   [NestedComment] ->
   View
     ( Root
-        [ ViewThreadId,
-          HeaderId,
-          ThreadId,
-          CommunityId,
-          FooterId,
-          CommentCardId,
-          LiveSearchId,
-          AttachmentViewId
+        [ ViewThreadId
+        , HeaderId
+        , ThreadId
+        , CommunityId
+        , FooterId
+        , CommentCardId
+        , LiveSearchId
+        , AttachmentViewId
+        , LoginProfileBtns
         ]
     )
     ()
@@ -70,10 +71,10 @@ showCommentsList mbUserInfo n mUserCommentVotes mToken nestedComments = do
         (CommentCardId num)
         ( commentCardView $
             CommentCardOps
-              { currUserVotes = extractUserVotes <$> mUserCommentVotes,
-                tokenForCommentCard = mToken,
-                commentInfo = mainComment c,
-                mbUserInfoForCommentCard = mbUserInfo
+              { currUserVotes = extractUserVotes <$> mUserCommentVotes
+              , tokenForCommentCard = mToken
+              , commentInfo = mainComment c
+              , mbUserInfoForCommentCard = mbUserInfo
               }
         )
       unless (null (children c)) $
@@ -99,14 +100,15 @@ viewThreadPage ::
   Eff
     es
     ( Page
-        '[ ViewThreadId,
-           HeaderId,
-           ThreadId,
-           CommunityId,
-           FooterId,
-           CommentCardId,
-           LiveSearchId,
-           AttachmentViewId
+        '[ ViewThreadId
+         , HeaderId
+         , ThreadId
+         , CommunityId
+         , FooterId
+         , CommentCardId
+         , LiveSearchId
+         , AttachmentViewId
+         , LoginProfileBtns
          ]
     )
 viewThreadPage threadId = do
@@ -143,14 +145,15 @@ renderPage ::
   (Maybe UserProfileResponse, Maybe [(Int, Bool)], Maybe FetchVoteCommentsForUserResponse) ->
   Either String Communities ->
   Page
-    '[ ViewThreadId,
-       HeaderId,
-       ThreadId,
-       CommunityId,
-       FooterId,
-       CommentCardId,
-       LiveSearchId,
-       AttachmentViewId
+    '[ ViewThreadId
+     , HeaderId
+     , ThreadId
+     , CommunityId
+     , FooterId
+     , CommentCardId
+     , LiveSearchId
+     , AttachmentViewId
+     , LoginProfileBtns
      ]
 renderPage
   mToken
@@ -162,7 +165,7 @@ renderPage
       stylesheet "/style.css"
       script "/myjs.js"
       el (cc CSS.flexColumnContainerCSS) $ do
-        hyper (HeaderId 1) (headerView $ HeaderOps mToken mUserInfo)
+        hyper (HeaderId 1) headerView
         tag "main" (cc CSS.mainContainerCSS) $ do
           el (cc CSS.threadListSectionCSS) $ do
             el (cc CSS.threadListMainCSS) $ do
@@ -170,10 +173,10 @@ renderPage
                 (ThreadId 1)
                 ( threadView
                     ThreadCardOps
-                      { threadInfo = threadInfo,
-                        currUserVotesForThreads = mUserThreadVotes,
-                        tokenForThreadCard = mToken,
-                        mbUserInfo = mUserInfo
+                      { threadInfo = threadInfo
+                      , currUserVotesForThreads = mUserThreadVotes
+                      , tokenForThreadCard = mToken
+                      , mbUserInfo = mUserInfo
                       }
                 )
               renderCommentsSection mToken threadInfo eCommentList mUserInfo mUserCommentVotes
@@ -189,14 +192,15 @@ renderCommentsSection ::
   Maybe FetchVoteCommentsForUserResponse ->
   View
     ( Root
-        [ ViewThreadId,
-          HeaderId,
-          ThreadId,
-          CommunityId,
-          FooterId,
-          CommentCardId,
-          LiveSearchId,
-          AttachmentViewId
+        [ ViewThreadId
+        , HeaderId
+        , ThreadId
+        , CommunityId
+        , FooterId
+        , CommentCardId
+        , LiveSearchId
+        , AttachmentViewId
+        , LoginProfileBtns
         ]
     )
     ()
@@ -223,14 +227,15 @@ renderCommunitySection ::
   Either String Communities ->
   View
     ( Root
-        [ ViewThreadId,
-          HeaderId,
-          ThreadId,
-          CommunityId,
-          FooterId,
-          CommentCardId,
-          LiveSearchId,
-          AttachmentViewId
+        [ ViewThreadId
+        , HeaderId
+        , ThreadId
+        , CommunityId
+        , FooterId
+        , CommentCardId
+        , LiveSearchId
+        , AttachmentViewId
+        , LoginProfileBtns
         ]
     )
     ()
