@@ -13,21 +13,17 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Platform.View.ThreadCard
-  ( ThreadCardOps (..),
-    ThreadId (..),
-    AttachmentViewId (..),
-    threadView,
-    showDislikeIcon,
-    showLikeIcon,
-    updateVoteCount,
-    voteChanges,
-    updateCurrUserVotes,
-    Action (..),
-    update,
+  ( ThreadId (..)
+  , AttachmentViewId (..)
+  , threadView
+  , showDislikeIcon
+  , showLikeIcon
+  , Action (..)
+  , update
   )
 where
 
-import Control.Monad (forM_, void)
+import Control.Monad (forM_)
 import Data.Base64.Types
 import Data.ByteString.Lazy.Base64
 import Data.Maybe
@@ -42,15 +38,7 @@ import Platform.Common.Utils
 import System.FilePath
 import Web.Hyperbole
 
-data ThreadCardOps = ThreadCardOps
-  { tokenForThreadCard :: Maybe Text,
-    currUserVotesForThreads :: Maybe [(Int, Bool)],
-    threadInfo :: ThreadInfo,
-    mbUserInfo :: Maybe UserProfileResponse
-  }
-  deriving (Show, Eq, Read, Generic, ToJSON, FromJSON)
-
-newtype ThreadId = ThreadId Int
+data ThreadId = ThreadId Int
   deriving (Show, Read, Generic, ViewId)
 
 newtype AttachmentViewId = AttachmentViewId Int
@@ -64,126 +52,110 @@ instance (IOE :> es) => HyperView AttachmentViewId es where
     eRes <- liftIO $ getAttachment threadId
     case eRes of
       Left _ -> pure $ el_ "Failed to load attachment"
-      Right docContent -> pure $
-        el (cc "p-4") $ do
-          tag
-            "img"
-            ( att
-                "src"
-                ( TL.toStrict $
-                    "data:image/jpeg;base64,"
-                      <> extractBase64 (encodeBase64 docContent)
-                )
-                . att "alt" "error...image supposed to be here"
-                . cc "w-full h-auto rounded-md"
-            )
-            none
+      Right docContent ->
+        pure $
+          el (cc "p-4") $
+            tag
+              "img"
+              ( att "src" (TL.toStrict $ "data:image/jpeg;base64," <> extractBase64 (encodeBase64 docContent))
+                  . att "alt" "error...image supposed to be here"
+                  . cc "w-full h-auto rounded-md"
+              )
+              none
 
 instance (IOE :> es) => HyperView ThreadId es where
   data Action ThreadId
-    = UpdateUpVote ThreadCardOps
-    | UpdateDownVote ThreadCardOps
-    | DeleteThread ThreadCardOps
-    | EditThread ThreadCardOps
-    | CancelEditThreadForm
+    = UpdateUpVote ThreadInfo (Maybe UserContext)
+    | UpdateDownVote ThreadInfo (Maybe UserContext)
+    | DeleteThread ThreadInfo UserContext
+    | EditThread ThreadInfo UserContext
+    | CancelEditThreadForm ThreadInfo (Maybe UserContext)
     deriving (Show, Read, ViewAction, Generic)
 
   type Require ThreadId = '[AttachmentViewId]
 
-  update (UpdateUpVote threadCardOps@ThreadCardOps {..}) = do
-    if isNothing tokenForThreadCard
-      then pure $ threadView threadCardOps
-      else do
-        let threadId = threadIDForThreadInfo threadInfo
-        void . liftIO $ upvoteThread tokenForThreadCard threadId
-        pure $
-          threadView
-            threadCardOps
-              { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId True,
-                threadInfo = updateVoteCount currUserVotesForThreads True threadInfo
-              }
-  update (UpdateDownVote threadCardOps@ThreadCardOps {..}) = do
-    if isNothing tokenForThreadCard
-      then pure $ threadView threadCardOps
-      else do
-        let threadId = threadIDForThreadInfo threadInfo
-        void . liftIO $ downvoteThread tokenForThreadCard threadId
-        pure $
-          threadView
-            threadCardOps
-              { currUserVotesForThreads = updateCurrUserVotes currUserVotesForThreads threadId False,
-                threadInfo = updateVoteCount currUserVotesForThreads False threadInfo
-              }
-  update (DeleteThread ThreadCardOps {..}) = do
-    let threadId = threadIDForThreadInfo threadInfo
-    case tokenForThreadCard of
-      Nothing -> redirect "/"
-      Just t -> do
-        _ <- liftIO $ deleteThread threadId t
+  update (UpdateUpVote threadInfo@ThreadInfo {..} mbUserContext) = do
+    case mbUserContext of
+      Nothing -> pure $ threadView threadInfo mbUserContext
+      Just uc@UserContext {..} -> do
+        eRes <- liftIO $ voteThread "upvote" ucToken threadIDForThreadInfo
+        case eRes of
+          Left err -> do
+            liftIO $ putStrLn err
+            pure $ threadView threadInfo mbUserContext
+          Right _ -> do
+            let (updatedVotes, updatedThreadInfo) = applyVote ucUserThreadVotes threadInfo threadIDForThreadInfo True
+            pure $ threadView updatedThreadInfo (Just uc {ucUserThreadVotes = updatedVotes})
+  update (UpdateDownVote threadInfo@ThreadInfo {..} mbUserContext) = do
+    case mbUserContext of
+      Nothing -> pure $ threadView threadInfo mbUserContext
+      Just uc@UserContext {..} -> do
+        eRes <- liftIO $ voteThread "downvote" ucToken threadIDForThreadInfo
+        case eRes of
+          Left err -> do
+            liftIO $ putStrLn err
+            pure $ threadView threadInfo mbUserContext
+          Right _ -> do
+            let (updatedVotes, updatedThreadInfo) = applyVote ucUserThreadVotes threadInfo threadIDForThreadInfo False
+            pure $ threadView updatedThreadInfo (Just uc {ucUserThreadVotes = updatedVotes})
+  update (DeleteThread threadInfo@ThreadInfo {..} uc@UserContext {..}) = do
+    if userIDForThreadInfo == (userIDForUPR ucUserProfile)
+      then do
+        _ <- liftIO $ deleteThread threadIDForThreadInfo ucToken
         redirect "/"
-  update CancelEditThreadForm = redirect "/"
-  update (EditThread ThreadCardOps {..}) = do
+      else do
+        pure $ threadView threadInfo (Just uc)
+  update (CancelEditThreadForm _ _) = redirect "/"
+  update (EditThread threadInfo uc) = do
     eCommunityList <- liftIO getCommunityList
     case eCommunityList of
       Left err -> do
         liftIO $ putStrLn $ "Error: " <> err
-        redirect "/"
-      Right communityList -> do
-        case mbUserInfo of
-          Nothing -> redirect "/"
-          (Just _) -> do
-            pure $
-              editThreadView
-                threadInfo
-                communityList
+        pure $ threadView threadInfo (Just uc)
+      Right communityList -> pure $ editThreadView threadInfo communityList
 
-updateVoteCount :: Maybe [(Int, Bool)] -> Bool -> ThreadInfo -> ThreadInfo
-updateVoteCount vals isUpvote t =
-  let threadId = threadIDForThreadInfo t
-      upvotes = fromMaybe 0 (upvoteCount t)
-      downvotes = fromMaybe 0 (downvoteCount t)
-      (upChange, downChange) = voteChanges vals isUpvote threadId
-   in t {upvoteCount = Just (upvotes + upChange), downvoteCount = Just (downvotes + downChange)}
+applyVote :: [(Int, Bool)] -> ThreadInfo -> Int -> Bool -> ([(Int, Bool)], ThreadInfo)
+applyVote votes threadInfo tId newVote =
+  let oldVote = lookup tId votes
+      (updatedVotes, upChange, downChange) = case oldVote of
+        Nothing ->
+          ((tId, newVote) : votes, if newVote then 1 else 0, if newVote then 0 else 1)
+        Just prevVote
+          | prevVote == newVote ->
+              (filter ((/= tId) . fst) votes, if newVote then -1 else 0, if newVote then 0 else -1)
+          | otherwise ->
+              ( map (\(k, v) -> if k == tId then (k, newVote) else (k, v)) votes
+              , if newVote then 1 else -1
+              , if newVote then -1 else 1
+              )
 
-voteChanges :: Maybe [(Int, Bool)] -> Bool -> Int -> (Int, Int)
-voteChanges Nothing True _ = (1, 0)
-voteChanges Nothing False _ = (0, 1)
-voteChanges (Just vals) isUpvote threadId =
-  case lookup threadId vals of
-    Just True -> if isUpvote then (-1, 0) else (-1, 1)
-    -- If user has already upvoted, then downvote will cancel out the upvote
-    Just False -> if isUpvote then (1, -1) else (0, -1)
-    -- If user has already downvoted, then upvote will cancel out the downvote
-    Nothing -> if isUpvote then (1, 0) else (0, 1)
+      newUpvotes = Just $ fromMaybe 0 (upvoteCount threadInfo) + upChange
+      newDownvotes = Just $ fromMaybe 0 (downvoteCount threadInfo) + downChange
+      newThreadInfo = threadInfo {upvoteCount = newUpvotes, downvoteCount = newDownvotes}
+   in (updatedVotes, newThreadInfo)
 
--- If user has not voted yet, then new vote will be added
+showLikeIcon :: Maybe UserContext -> Int -> View ThreadId ()
+showLikeIcon = showVoteIcon True
 
-updateCurrUserVotes :: Maybe [(Int, Bool)] -> Int -> Bool -> Maybe [(Int, Bool)]
-updateCurrUserVotes Nothing tId newVote = Just [(tId, newVote)]
-updateCurrUserVotes (Just vals) tId newVote = Just $ case lookup tId vals of
-  Just True -> if newVote then filter (\(k, _) -> k /= tId) vals else modifyMap vals tId newVote
-  Just False -> if newVote then modifyMap vals tId newVote else filter (\(k, _) -> k /= tId) vals
-  Nothing -> (tId, newVote) : vals
+showDislikeIcon :: Maybe UserContext -> Int -> View ThreadId ()
+showDislikeIcon = showVoteIcon False
 
-modifyMap :: [(Int, Bool)] -> Int -> Bool -> [(Int, Bool)]
-modifyMap [] tId newVal = [(tId, newVal)]
-modifyMap ((k, v) : xs) tId newVal
-  | k == tId = (tId, newVal) : xs
-  | otherwise = (k, v) : modifyMap xs tId newVal
+showVoteIcon :: Bool -> Maybe UserContext -> Int -> View ThreadId ()
+showVoteIcon isLike mbUserContext tId = do
+  let (solidClass, outlinedClass) =
+        if isLike
+          then ("bx bxs-like text-gray-600 dark:text-gray-300", "bx bx-like text-gray-600 dark:text-gray-300")
+          else
+            ( "bx bxs-dislike text-gray-600 dark:text-gray-300"
+            , "bx bx-dislike text-gray-600 dark:text-gray-300"
+            )
 
-showDislikeIcon :: Maybe [(Int, Bool)] -> Int -> View ThreadId ()
-showDislikeIcon Nothing _ = tag "i" (cc "bx bx-dislike text-gray-600 dark:text-gray-300") none
-showDislikeIcon (Just vals) tId = do
-  case lookup tId vals of
-    Just False -> tag "i" (cc "bx bxs-dislike text-gray-600 dark:text-gray-300") none
-    _ -> tag "i" (cc "bx bx-dislike text-gray-600 dark:text-gray-300") none
+      vote = mbUserContext >>= \UserContext {ucUserThreadVotes = votes} -> lookup tId votes
+      iconClass = case vote of
+        Just v | v == isLike -> solidClass
+        _ -> outlinedClass
 
-showLikeIcon :: Maybe [(Int, Bool)] -> Int -> View ThreadId ()
-showLikeIcon Nothing _ = tag "i" (cc "bx bx-like text-gray-600 dark:text-gray-300") none
-showLikeIcon (Just vals) tId = do
-  case lookup tId vals of
-    Just True -> tag "i" (cc "bx bxs-like text-gray-600 dark:text-gray-300") none
-    _ -> tag "i" (cc "bx bx-like text-gray-600 dark:text-gray-300") none
+  tag "i" (cc iconClass) none
 
 attachmentView :: Text -> Int -> View AttachmentViewId ()
 attachmentView attachmentName threadId
@@ -200,8 +172,8 @@ attachmentView attachmentName threadId
         (T.unpack attachmentName)
         `elem` [".png", ".jpeg", ".jpg", ".svg", ".gif"]
 
-threadView :: ThreadCardOps -> View ThreadId ()
-threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
+threadView :: ThreadInfo -> Maybe UserContext -> View ThreadId ()
+threadView threadInfo@ThreadInfo {..} mbUserContext = do
   el (cc CSS.cardContainerCSS) $ do
     el (cc CSS.threadHeaderCSS) $ do
       tag "h2" (cc CSS.threadTitleCSS) $ do
@@ -209,6 +181,7 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
           (stringToUrl $ "/view-thread/" <> show threadIDForThreadInfo)
           (cc CSS.threadTitleLinkCSS)
           (text title)
+
       el (cc CSS.threadMetaCSS) $ do
         tag "p" mempty $ text "Community:"
         tag "span" (cc "font-semibold") (text communityNameForThreadInfo)
@@ -216,6 +189,7 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
           text "Created by:"
           tag "span" (cc "font-semibold") (text userNameForThreadInfo)
         tag "p" mempty (text createdAtForThreadInfo)
+
     el (cc CSS.threadDescriptionCSS) $ do
       tag "p" mempty (text $ fromMaybe "" description)
       case attachmentName of
@@ -223,46 +197,21 @@ threadView threadCardOps@ThreadCardOps {threadInfo = ThreadInfo {..}, ..} = do
           hyper (AttachmentViewId threadIDForThreadInfo) $
             attachmentView attName threadIDForThreadInfo
         Nothing -> none
+
     el (cc CSS.threadActionsCSS) $ do
       el (cc "flex space-x-2 items-center") $ do
-        button
-          (UpdateUpVote threadCardOps)
-          (cc CSS.threadActionButtonCSS)
-          $ do
-            showLikeIcon currUserVotesForThreads threadIDForThreadInfo
-            tag "span" (cc CSS.threadActionTextCSS) . text $
-              T.pack . show $
-                fromMaybe 0 upvoteCount
+        button (UpdateUpVote threadInfo mbUserContext) (cc CSS.threadActionButtonCSS) $ do
+          showLikeIcon mbUserContext threadIDForThreadInfo
+          tag "span" (cc CSS.threadActionTextCSS) (text $ toText (fromMaybe 0 upvoteCount))
 
-        button
-          (UpdateDownVote threadCardOps)
-          (cc CSS.threadActionButtonCSS)
-          $ do
-            showDislikeIcon currUserVotesForThreads threadIDForThreadInfo
-            tag "span" (cc CSS.threadActionTextCSS) . text $
-              T.pack . show $
-                fromMaybe 0 downvoteCount
+        button (UpdateDownVote threadInfo mbUserContext) (cc CSS.threadActionButtonCSS) $ do
+          showDislikeIcon mbUserContext threadIDForThreadInfo
+          tag "span" (cc CSS.threadActionTextCSS) (text $ toText (fromMaybe 0 downvoteCount))
 
-        case mbUserInfo of
-          Nothing -> none
-          Just userInfo ->
-            if userIDForUPR userInfo == userIDForThreadInfo
-              then do
-                button
-                  (DeleteThread threadCardOps)
-                  (cc CSS.threadActionButtonCSS)
-                  "delete"
-                button
-                  (EditThread threadCardOps)
-                  (cc CSS.threadActionButtonCSS)
-                  "edit"
-              else none
-
+        renderEditDeleteButtons mbUserContext threadInfo
         tag "span" (cc "flex items-center space-x-1") $ do
           tag "i" (cc CSS.commentCountIconCSS) none
-          tag "span" (cc CSS.threadActionTextCSS) . text $
-            T.pack . show $
-              fromMaybe 0 commentCount
+          tag "span" (cc CSS.threadActionTextCSS) (text $ toText (fromMaybe 0 commentCount))
 
 editThreadView :: ThreadInfo -> Communities -> View ThreadId ()
 editThreadView ThreadInfo {..} (Communities communityList) = do
@@ -297,10 +246,7 @@ editThreadView ThreadInfo {..} (Communities communityList) = do
           tag "label" (cc CSS.labelCSS) "Enter Description"
           tag
             "textarea"
-            ( att "id" "threadDescription"
-                . maybe mempty (att "value") description
-                . cc CSS.inputCSS
-            )
+            (att "id" "threadDescription" . maybe mempty (att "value") description . cc CSS.inputCSS)
             none
         el (cc CSS.formGroupCSS) $ do
           tag "label" (cc CSS.disabledLabelCSS) $
@@ -308,3 +254,17 @@ editThreadView ThreadInfo {..} (Communities communityList) = do
         el (cc CSS.formGroupCSS) $ do
           tag "button" (att "onClick" (T.pack funcName) . cc CSS.buttonCSS) "Update"
           tag "button" (att "onClick" "cancelForm()" . cc CSS.buttonCSS) "Cancel"
+
+renderEditDeleteButtons ::
+  Maybe UserContext ->
+  ThreadInfo ->
+  View ThreadId ()
+renderEditDeleteButtons mbUserContext threadInfo =
+  case mbUserContext of
+    Just (uc@(UserContext _ userInfo _ _)) ->
+      if userIDForUPR userInfo == userIDForThreadInfo threadInfo -- If user is same as thread author
+        then do
+          button (DeleteThread threadInfo uc) (cc CSS.threadActionButtonCSS) "delete"
+          button (EditThread threadInfo uc) (cc CSS.threadActionButtonCSS) "edit"
+        else none
+    Nothing -> none

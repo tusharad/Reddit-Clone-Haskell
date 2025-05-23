@@ -45,19 +45,12 @@ instance HyperView HomeId es where
     deriving (Show, Read, ViewAction, Generic)
 
   update (HandlePrev p) =
-    redirect $
-      "/"
-        <> pageParamsToUrl
-          p
-            { mbOffset = Just $ maybe 0 (\x -> if x > 10 then x - 10 else 0) (mbOffset p)
-            }
+    redirect
+      ( "/"
+          <> pageParamsToUrl p {mbOffset = Just $ maybe 0 (\x -> if x > 10 then x - 10 else 0) (mbOffset p)}
+      )
   update (HandleNext p) =
-    redirect $
-      "/"
-        <> pageParamsToUrl
-          p
-            { mbOffset = Just $ maybe 10 (+ 10) (mbOffset p)
-            }
+    redirect ("/" <> pageParamsToUrl p {mbOffset = Just $ maybe 10 (+ 10) (mbOffset p)})
 
 pageParamsToUrl :: PageParams -> Url
 pageParamsToUrl PageParams {..} = do
@@ -108,7 +101,6 @@ homePage ::
          ]
     )
 homePage = do
-  mbTokenAndUser <- getTokenAndUser
   mbLimit <- lookupParam "limit"
   mbOffset <- lookupParam "offset"
   mbCommunityId <- lookupParam "communityId"
@@ -117,12 +109,7 @@ homePage = do
   case eRes of
     Left err -> pure . el_ $ raw (T.pack err)
     Right res -> do
-      eUserThreadVotes <-
-        liftIO $
-          maybe
-            (pure (Left "Token not found"))
-            (\tokenAndUser -> getUserThreadVotes (fst tokenAndUser) (getThreadIds res))
-            mbTokenAndUser
+      mbUserContext <- genUserContext (getThreadIds res) []
       pure $ el (cc CSS.pageContainerCSS) $ do
         stylesheet "style.css"
         el (cc CSS.flexColumnContainerCSS) $ do
@@ -132,28 +119,15 @@ homePage = do
               el (cc CSS.threadListMainCSS) $ do
                 tag "p" (cc CSS.sectionTitleHomeCSS) "Threads"
                 hyper (SortMenuId 1) sortMenuView
-                viewThreadsList
-                  (snd <$> mbTokenAndUser)
-                  (fst <$> mbTokenAndUser)
-                  (hush eUserThreadVotes)
-                  (threads res)
+                viewThreadsList (threads res) mbUserContext
                 hyper (HomeId 1) (paginationView (threadsCount res) PageParams {..})
                 hyper (CommunityId 1) communityListView
           hyper (FooterId 1) footerView
   where
-    viewThreadsList mUserInfo mToken_ mUserThreadVotes threads =
+    viewThreadsList threads mbUserContext =
       foldr
         ( \(idx, thread) acc -> do
-            hyper
-              (ThreadId idx)
-              ( threadView
-                  ThreadCardOps
-                    { currUserVotesForThreads = mUserThreadVotes
-                    , tokenForThreadCard = mToken_
-                    , threadInfo = thread
-                    , mbUserInfo = mUserInfo
-                    }
-              )
+            (hyper (ThreadId idx) (threadView thread mbUserContext))
             acc
         )
         none

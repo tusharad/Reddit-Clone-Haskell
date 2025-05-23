@@ -44,7 +44,7 @@ instance HyperView ViewThreadId es where
 showCommentsList ::
   Maybe UserProfileResponse ->
   Int ->
-  Maybe FetchVoteCommentsForUserResponse ->
+  Maybe [FetchVoteComments] ->
   Maybe Text ->
   [NestedComment] ->
   View
@@ -81,7 +81,7 @@ showCommentsList mbUserInfo n mUserCommentVotes mToken nestedComments = do
         showCommentsList mbUserInfo (n + 500) mUserCommentVotes mToken (children c)
       go (num + 1) cs
 
-    extractUserVotes (FetchVoteCommentsForUserResponse lst) =
+    extractUserVotes lst =
       map (\FetchVoteComments {..} -> (commentIDForFetchVote, isUpvote)) lst
 
 -- | Flatten the comment IDs from a nested comment structure.
@@ -112,37 +112,19 @@ viewThreadPage ::
          ]
     )
 viewThreadPage threadId = do
-  mbTokenAndUser <- getTokenAndUser
   eThreadInfo <- liftIO $ getThreadByThreadId threadId
   eCommentList <- liftIO $ getCommentsByThreadId threadId
   eCommunityList <- liftIO getCommunityList
-
+  uc <- genUserContext [threadId] (flattenCommentIds eCommentList)
   case eThreadInfo of
     Left err -> pure $ el_ $ raw (T.pack err)
-    Right threadInfo -> do
-      userData <- fetchUserData (fst <$> mbTokenAndUser) eCommentList threadInfo
-      pure $ renderPage (fst <$> mbTokenAndUser) threadInfo eCommentList userData eCommunityList
-
--- | Fetch user-related data (profile, thread votes, comment votes).
-fetchUserData ::
-  (IOE :> es) =>
-  Maybe Text ->
-  Either String FetchCommentsResponse ->
-  ThreadInfo ->
-  Eff es (Maybe UserProfileResponse, Maybe [(Int, Bool)], Maybe FetchVoteCommentsForUserResponse)
-fetchUserData Nothing _ _ = pure (Nothing, Nothing, Nothing)
-fetchUserData (Just token) eCommentList threadInfo = do
-  eUserInfo <- liftIO $ getUserInfo token
-  eUserThreadVotes <- liftIO $ getUserThreadVotes token [threadIDForThreadInfo threadInfo]
-  eUserCommentVotes <- liftIO $ getUserCommentVotes token (flattenCommentIds eCommentList)
-  return (hush eUserInfo, hush eUserThreadVotes, hush eUserCommentVotes)
+    Right threadInfo -> pure $ renderPage threadInfo eCommentList uc eCommunityList
 
 -- | Render the entire page.
 renderPage ::
-  Maybe Text ->
   ThreadInfo ->
   Either String FetchCommentsResponse ->
-  (Maybe UserProfileResponse, Maybe [(Int, Bool)], Maybe FetchVoteCommentsForUserResponse) ->
+  Maybe UserContext ->
   Either String Communities ->
   Page
     '[ ViewThreadId
@@ -156,10 +138,9 @@ renderPage ::
      , LoginProfileBtns
      ]
 renderPage
-  mToken
   threadInfo
   eCommentList
-  (mUserInfo, mUserThreadVotes, mUserCommentVotes)
+  mbUserContext
   eCommunityList =
     el (cc "min-h-screen bg-white dark:bg-gray-900") $ do
       stylesheet "/style.css"
@@ -171,25 +152,16 @@ renderPage
             el (cc CSS.threadListMainCSS) $ do
               hyper
                 (ThreadId 1)
-                ( threadView
-                    ThreadCardOps
-                      { threadInfo = threadInfo
-                      , currUserVotesForThreads = mUserThreadVotes
-                      , tokenForThreadCard = mToken
-                      , mbUserInfo = mUserInfo
-                      }
-                )
-              renderCommentsSection mToken threadInfo eCommentList mUserInfo mUserCommentVotes
+                (threadView threadInfo mbUserContext)
+              renderCommentsSection threadInfo eCommentList mbUserContext
             renderCommunitySection eCommunityList
         hyper (FooterId 1) footerView
 
 -- | Render the comments section.
 renderCommentsSection ::
-  Maybe Text ->
   ThreadInfo ->
   Either String FetchCommentsResponse ->
-  Maybe UserProfileResponse ->
-  Maybe FetchVoteCommentsForUserResponse ->
+  Maybe UserContext ->
   View
     ( Root
         [ ViewThreadId
@@ -204,22 +176,22 @@ renderCommentsSection ::
         ]
     )
     ()
-renderCommentsSection mToken threadInfo commentList mUserInfo mUserCommentVotes = do
+renderCommentsSection threadInfo commentList mbUserContext = do
   el (cc "mt-6") $ do
-    case mToken of
+    case mbUserContext of
       Nothing -> hyper (CommentCardId 10000) disabledAddCommentButtonView
-      Just token ->
+      Just UserContext {..} ->
         hyper
           (CommentCardId 10000)
           ( addCommentButtonView
-              (AddCommentData "" (threadIDForThreadInfo threadInfo) token Nothing)
+              (AddCommentData "" (threadIDForThreadInfo threadInfo) ucToken Nothing)
           )
     tag "h2" (cc CSS.authSectionTitleCSS) "Comments"
     showCommentsList
-      mUserInfo
+      (ucUserProfile <$> mbUserContext)
       0
-      mUserCommentVotes
-      mToken
+      (ucUserCommentVotes <$> mbUserContext)
+      (ucToken <$> mbUserContext)
       (either (const []) comments commentList)
 
 -- | Render the community section.

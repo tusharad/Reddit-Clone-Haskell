@@ -37,7 +37,8 @@ instance (IOE :> es, Hyperbole :> es, Reader AppConfig :> es) => HyperView OTPVi
   data Action OTPView = Submit Int | DoRedirect
     deriving (Show, Read, ViewAction, Generic)
 
-  update DoRedirect = redirect "/login"
+  update DoRedirect = do 
+    redirect "/login"
   update (Submit newUserId) = do
     logDebug "Submitting OTP"
     uf <- formData @(OTPForm Identity)

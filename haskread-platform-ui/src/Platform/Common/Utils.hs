@@ -19,6 +19,7 @@ module Platform.Common.Utils
   , disabled
   , getRedirectUrl
   , hush
+  , genUserContext
   , getTokenAndUser
   ) where
 
@@ -27,12 +28,44 @@ import Data.Either (isLeft)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Effectful (IOE)
-import Platform.Common.Request (getUserInfo)
+import Platform.Common.Request (getUserCommentVotes, getUserInfo, getUserThreadVotes)
 import Platform.Common.Types
 import System.Environment (getArgs)
 import Web.Hyperbole
 import Web.View.Style
 import Web.View.Types (ClassName)
+
+genUserContext :: (Hyperbole :> es, IOE :> es) => [Int] -> [Int] -> Eff es (Maybe UserContext)
+genUserContext threadIds commentIds = do
+  mbTokenAndUser <- getTokenAndUser
+  case mbTokenAndUser of
+    Nothing -> pure Nothing
+    Just (token, userProfile) -> do
+      userCommentsReaction <- case commentIds of
+        [] -> pure []
+        _ -> do
+          eUserCommentVotes <- liftIO $ getUserCommentVotes token commentIds
+          case eUserCommentVotes of
+            Left err -> do
+              liftIO $ putStrLn $ "Something went wrong while fetching user comment votes: " <> err
+              pure []
+            Right (FetchVoteCommentsForUserResponse res) -> pure res
+      eThreadVotes <- liftIO $ getUserThreadVotes token threadIds
+      votes <- case eThreadVotes of
+        Left err -> do
+          liftIO (putStrLn $ "something went wrong while fetching user votes: " ++ err)
+          pure []
+        Right votes -> pure votes
+      pure
+        ( Just
+            ( UserContext
+                { ucToken = token
+                , ucUserProfile = userProfile
+                , ucUserThreadVotes = votes
+                , ucUserCommentVotes = userCommentsReaction
+                }
+            )
+        )
 
 btn :: Mod id
 btn = btn' Primary
@@ -77,8 +110,9 @@ getRedirectUrl :: IO Url
 getRedirectUrl = do
   argList <- getArgs
   case argList of
-    (envType:_) -> 
-        if envType == "local" then pure "http://localhost:8085/api/v1/user/oauth2/login"
+    (envType : _) ->
+      if envType == "local"
+        then pure "http://localhost:8085/api/v1/user/oauth2/login"
         else pure "/api/v1/user/oauth2/login"
     _ -> pure "/api/v1/user/oauth2/login"
 

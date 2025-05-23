@@ -113,8 +113,7 @@ showUserName (userName, _) = do
 
 loginOrProfileButtons :: View LoginProfileBtns ()
 loginOrProfileButtons = do
-  el (onLoad Load 500) $ do
-    el_ "Checking if user has logged in..."
+  el (onLoad Load 500) $ showLoginAndSignup
 
 profileBtns :: UserProfileResponse -> View LoginProfileBtns ()
 profileBtns UserProfileResponse {..} =

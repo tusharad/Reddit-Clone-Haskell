@@ -55,7 +55,7 @@ library
     , bytestring
     , data-default >=0.8.0
     , data-default-class >=0.2
-    , effectful-core
+    , effectful
     , fast-logger
     , filepath
     , http-api-data
@@ -84,7 +84,7 @@ executable haskread-platform-ui-exe
     , bytestring
     , data-default >=0.8.0
     , data-default-class >=0.2
-    , effectful-core
+    , effectful
     , fast-logger
     , filepath
     , haskread-platform-ui
@@ -115,7 +115,7 @@ test-suite haskread-platform-ui-test
     , bytestring
     , data-default >=0.8.0
     , data-default-class >=0.2
-    , effectful-core
+    , effectful
     , fast-logger
     , filepath
     , haskread-platform-ui

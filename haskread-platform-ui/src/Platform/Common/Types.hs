@@ -39,6 +39,10 @@ module Platform.Common.Types
   , Environment (..)
   , LogLevel (..)
   , MinLogLevel
+  , UserContext (..)
+  , ThreadID
+  , Vote
+  , ThreadVotes
   ) where
 
 import Data.String.Conversions
@@ -48,6 +52,19 @@ import System.Log.FastLogger
 import Text.Read (readMaybe)
 import Web.HttpApiData
 import Web.Hyperbole
+
+type ThreadID = Int
+type Vote = Bool -- True = UpVote, False = DownVote
+type ThreadVotes = [(ThreadID, Vote)]
+
+-- Information of currently loggedIn user
+data UserContext = UserContext
+  { ucToken :: Text
+  , ucUserProfile :: UserProfileResponse
+  , ucUserThreadVotes :: ThreadVotes
+  , ucUserCommentVotes :: [FetchVoteComments]
+  }
+  deriving (Show, Eq, Read, Generic, ToJSON, FromJSON)
 
 -- import Web.View.Types (ClassName)
 data LogLevel
@@ -258,7 +275,7 @@ data FetchVoteComments = FetchVoteComments
   { commentIDForFetchVote :: Int
   , isUpvote :: Bool
   }
-  deriving (Show, Eq, Generic, FromJSON)
+  deriving (Show, Eq, Generic, FromJSON, ToJSON, Read)
 
 {-
 data CVote = CVote { commentIDForFetchVote :: Int, isUpvote :: Bool  }

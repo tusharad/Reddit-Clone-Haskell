@@ -6,6 +6,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -16,6 +17,7 @@ module Platform.Page.Profile (profilePage) where
 
 import Data.Base64.Types
 import Data.ByteString.Lazy.Base64
+import Data.Either
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -28,7 +30,6 @@ import Platform.View
 import Platform.View.Header
 import Platform.View.LiveSearch (LiveSearchId)
 import Platform.View.ThreadCard
-import qualified Platform.View.ThreadCard as ThreadCard
 import Web.Hyperbole
 
 newtype ProfileId = ProfileId Int
@@ -287,30 +288,25 @@ profilePage ::
          , ThreadId
          , FooterId
          , LiveSearchId
+         , ThreadId
          , AttachmentViewId
          , ProfileImageId
          , LoginProfileBtns
          ]
     )
 profilePage = do
-  mbTokenAndUser <- getTokenAndUser
-  case mbTokenAndUser of
+  mbUserContext <- genUserContext [] []
+  case mbUserContext of
     Nothing -> redirect "/"
-    Just (token_, userInfo) -> do
+    Just uc@UserContext {..} -> do
       mbLimit <- lookupParam "limit"
       mbOffset <- lookupParam "offset"
       mbCommunityId <- lookupParam "communityId"
-      eRes <-
-        liftIO $
-          getAllThreads
-            mbLimit
-            mbOffset
-            mbCommunityId
-            (Just $ userIDForUPR userInfo)
+      eRes <- liftIO $ getAllThreads mbLimit mbOffset mbCommunityId (Just (userIDForUPR ucUserProfile))
       case eRes of
         Left err -> pure $ el_ $ raw (T.pack err)
         Right res -> do
-          eUserThreadVotes <- liftIO $ getUserThreadVotes token_ (getThreadIds res)
+          eUserThreadVotes <- liftIO $ getUserThreadVotes ucToken (getThreadIds res)
           pure $ el (cc CSS.pageContainerCSS) $ do
             stylesheet "style.css"
             script "myjs.js"
@@ -321,31 +317,18 @@ profilePage = do
                   tag "p" (cc CSS.sectionTitleHomeCSS) "Profile"
                   el_ $ do
                     tag "p" (cc CSS.sectionSubtitleCSS) "Welcome to your profile page!"
-                    hyper (ProfileImageId 0) (loadingProfileImage (userIDForUPR userInfo))
-                    tag "p" (cc CSS.profileInfoCSS) $ text ("Username: " <> userNameForUPR userInfo)
-                    hyper (ProfileId 1) $ profileView token_
+                    hyper (ProfileImageId 0) (loadingProfileImage (userIDForUPR ucUserProfile))
+                    tag "p" (cc CSS.profileInfoCSS) $ text ("Username: " <> userNameForUPR ucUserProfile)
+                    hyper (ProfileId 1) $ profileView ucToken
               tag "h1" (cc CSS.sectionHeadingCSS) "Posts by user"
-              viewThreadsList
-                (Just userInfo)
-                (Just token_)
-                (hush eUserThreadVotes)
-                (threads res)
+              viewThreadsList (Just $ uc {ucUserThreadVotes = fromRight [] eUserThreadVotes}) (threads res)
             hyper (FooterId 1) footerView
   where
-    viewThreadsList mUserInfo_ mToken_ mUserThreadVotes threads_ =
+    viewThreadsList mbUserContext threads =
       foldr
         ( \(idx, thread) acc -> do
-            hyper
-              (ThreadId idx)
-              ( threadView
-                  ThreadCardOps
-                    { currUserVotesForThreads = mUserThreadVotes
-                    , tokenForThreadCard = mToken_
-                    , threadInfo = thread
-                    , ThreadCard.mbUserInfo = mUserInfo_
-                    }
-              )
+            (hyper (ThreadId idx) (threadView thread mbUserContext))
             acc
         )
         none
-        (zip [0 ..] threads_)
+        (zip [0 ..] threads)

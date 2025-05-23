@@ -370,9 +370,8 @@ voteComment vote token cId = do
           }
   doRequestJSON reqOps
 
-upvoteThread :: Maybe Text -> Int -> IO (Either String ())
-upvoteThread Nothing _ = pure $ Left "Please login first"
-upvoteThread (Just t) tId = voteThread "upvote" t tId
+upvoteThread :: Text -> Int -> IO (Either String ())
+upvoteThread t tId = voteThread "upvote" t tId
 
 downvoteThread :: Maybe Text -> Int -> IO (Either String ())
 downvoteThread Nothing _ = pure $ Left "Please login first"

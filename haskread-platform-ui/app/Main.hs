@@ -42,7 +42,10 @@ main = do
   run 3000 app
 
 myApp :: AppConfig -> Application
-myApp appConfig = liveApp (basicDocument "HaskRead-UI") (runReader appConfig $ routeRequest router)
+myApp appConfig =
+  liveApp
+    (basicDocument "HaskRead-UI")
+    (runReader appConfig $ routeRequest router)
 
 data AppRoute
   = Home
@@ -71,7 +74,9 @@ instance Route AppRoute where
   matchRoute _ = pure Home
 
 router ::
-  forall es. (Hyperbole :> es, IOE :> es, Reader AppConfig :> es) => AppRoute -> Eff es Response
+  forall es.
+  (Hyperbole :> es, IOE :> es, Reader AppConfig :> es) =>
+  AppRoute -> Eff es Response
 router Home = runPage homePage
 router Login = runPage loginPage
 router Register = runPage registerPage
