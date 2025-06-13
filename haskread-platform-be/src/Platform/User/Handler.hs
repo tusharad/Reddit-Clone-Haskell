@@ -19,14 +19,13 @@ import Data.Coerce (coerce)
 import Data.Password.Bcrypt
 import qualified Data.Text as T
 import Google.Cloud.Storage.Bucket
-import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
-import qualified Haxl.Core as Haxl
+import Haxl.Core (dataFetch)
 import Platform.Auth.Types
 import Platform.Common.AppM
-import Platform.Common.Types
+import Platform.Common.Haxl
 import Platform.Common.Utils
 import Platform.DB.Model
-import Platform.Haxl.DataSource
+import Platform.Haxl.DataSource ()
 import Platform.Log
 import Platform.User.DB
 import Platform.User.Types
@@ -55,23 +54,9 @@ fetchUserByIDHaxl ::
   UserID ->
   AppM m (Maybe UserRead)
 fetchUserByIDHaxl uID0 = do
-  MyAppState
-    { haxlConfig =
-      HaxlConfig
-        { pgConnectionPool = pool
-        , numOfThreads = sem
-        }
-    } <-
-    ask
-  let st = HaskReadState pool sem
-  eRes :: Either SomeException (Maybe UserRead) <- liftIO $ do
-    env0 <- initEnv (stateSet st stateEmpty) () :: IO (Haxl.Env () [Int])
-    try $
-      runHaxl
-        env0
-        (dataFetch (GetUserByID uID0))
+  eRes <- try $ runHaxlInM (dataFetch (GetUserByID uID0))
   case eRes of
-    Left e -> throw400Err $ BSL.pack $ show e
+    Left e -> throw400Err $ BSL.pack $ show (e :: SomeException)
     Right r -> pure r
 
 fetchUserProfileImage ::
@@ -194,7 +179,9 @@ userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} =
             show userIDForUserInfo
               <> "_profile_"
               <> takeExtension (T.unpack fName)
-      eRes <- liftIO $ uploadObject "haskread_vm_storage2" newUserProfileImageName content
+      eRes <-
+        liftIO $
+          uploadObject "haskread_vm_storage2" newUserProfileImageName content
       case eRes of
         Left err -> throw400Err $ "Error while uploading image: " <> (BSL.pack err)
         Right _ -> do
@@ -222,7 +209,9 @@ userUpdateProfileImageH (Authenticated UserInfo {..}) UpdateUserImageBody {..} =
               runQuery $ addUserProfileImageQ userProfileImage
               pure $ UpdateUserImageResponse "Profile image added successfully!"
             Just UserProfileImage {..} -> do
-              _ <- liftIO $ deleteObject (T.unpack userImage) (T.unpack userImageName)
+              _ <-
+                liftIO $
+                  deleteObject (T.unpack userImage) (T.unpack userImageName)
               runQuery $ updateUserProfileImageQ userIDForUserInfo userProfileImage
               pure $ UpdateUserImageResponse "Profile image added successfully!"
   where

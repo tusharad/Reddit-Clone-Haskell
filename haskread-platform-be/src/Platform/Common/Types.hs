@@ -9,7 +9,7 @@ module Platform.Common.Types
   , AppConfig (..)
   , LogLevel (..)
   , MinLogLevel
-  , Env (..)
+  , MyEnv (..)
   , DBConfig (..)
   , MyPassword (..)
   , HaxlConfig (..)
@@ -29,6 +29,7 @@ import Dhall
 import qualified Orville.PostgreSQL as O
 import Servant.Auth.Server (CookieSettings, JWTSettings)
 import System.Log.FastLogger
+import Haxl.Core (Env)
 
 data DBConfig = DBConfig
   { host :: Text
@@ -48,7 +49,7 @@ data OAuth2Config = OAuth2Config
   }
   deriving (Generic, FromDhall, Show)
 
-data Env = Env
+data MyEnv = MyEnv
   { dbConfig :: DBConfig
   , logLevel :: Text
   , applicationPort :: Natural
@@ -83,7 +84,7 @@ data HaxlConfig = HaxlConfig
 data MyAppState = MyAppState
   { appConfig :: AppConfig
   , appOrvilleState :: O.OrvilleState
-  , haxlConfig :: HaxlConfig
+  , appHaxlEnv :: Env () ()
   }
 
 -- Log types

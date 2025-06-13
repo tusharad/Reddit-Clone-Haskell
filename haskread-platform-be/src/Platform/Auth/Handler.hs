@@ -30,8 +30,6 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import Data.Time
 import GHC.Int (Int32)
-import Haxl.Core (dataFetch, initEnv, runHaxl, stateEmpty, stateSet)
-import qualified Haxl.Core as Haxl
 import Network.HTTP.Conduit (newManager, tlsManagerSettings)
 import Network.OAuth.OAuth2
   ( ExchangeToken (ExchangeToken)
@@ -47,7 +45,7 @@ import Platform.Common.Types
 import Platform.Common.Utils
 import Platform.DB.Model
 import Platform.Email
-import Platform.Haxl.DataSource
+import Platform.Haxl.DataSource ()
 import Platform.Log
 import Platform.User.DB
 import Platform.User.Types
@@ -57,6 +55,8 @@ import System.Random
 import URI.ByteString (parseURI, strictURIParserOptions)
 import URI.ByteString.QQ (uri)
 import UnliftIO
+import Platform.Common.Haxl (HaskReadReq(GetAdminByEmail))
+import Haxl.Core (dataFetch)
 
 toUserWrite :: RegisterUserBody -> IO UserWrite
 toUserWrite RegisterUserBody {..} = do
@@ -214,22 +214,9 @@ adminLoginH AdminLoginBodyReq {..} = do
   where
     findAdminByEmail :: (MonadUnliftIO m) => AppM m (Maybe AdminRead)
     findAdminByEmail = do
-      MyAppState
-        { haxlConfig =
-          HaxlConfig
-            { pgConnectionPool = pool
-            , numOfThreads = sem
-            }
-        } <-
-        ask
-      let st = HaskReadState pool sem
-      eMAdmin :: Either SomeException (Maybe AdminRead) <-
-        liftIO $ do
-          env0 <- initEnv (stateSet st stateEmpty) () :: IO (Haxl.Env () [Int])
-          try $
-            runHaxl env0 (dataFetch (GetAdminByEmail adminEmailForLogin))
+      eMAdmin <- try $ runHaxlInM (dataFetch (GetAdminByEmail adminEmailForLogin))
       case eMAdmin of
-        Left e -> throw400Err $ BSL.pack $ show e
+        Left e -> throw400Err $ BSL.pack $ show (e :: SomeException)
         Right r -> pure r
 
 verifyEmailH :: (MonadUnliftIO m) => UserID -> Int32 -> AppM m VerifyEmailResponse

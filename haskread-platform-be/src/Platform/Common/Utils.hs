@@ -38,14 +38,17 @@ import qualified Orville.PostgreSQL as O
 import Orville.PostgreSQL.Raw.Connection
 import Platform.Auth.Types
 import Platform.Common.AppM
+import Platform.Common.DB (autoMigrateQ, checkDBConnection)
 import Platform.Common.Types
+-- import Platform.Common.Haxl
 import Platform.DB.Model
 import Platform.Log (logError)
 import Servant as S
 import Servant.Auth.Server
 import System.Log.FastLogger
 import UnliftIO
-import Platform.Common.DB (autoMigrateQ, checkDBConnection)
+import Haxl.Core (initEnv, stateSet, stateEmpty)
+import Platform.Common.Haxl (State(HaskReadState))
 
 toUserInfo :: UserRead -> UserInfo
 toUserInfo User {..} = UserInfo userID userName
@@ -149,10 +152,10 @@ readEnv ::
 readEnv envFilePath = do
   eEnv <-
     try $ input auto (T.pack envFilePath) ::
-      IO (Either SomeException Env)
+      IO (Either SomeException MyEnv)
   case eEnv of
     Left e -> pure $ Left e
-    Right Env {..} -> do
+    Right MyEnv {..} -> do
       putStrLn $ "Environment loaded successfully: " <> envFilePath
       ePool <-
         try (createConnectionPool $ mkConnection dbConfig) ::
@@ -161,7 +164,7 @@ readEnv envFilePath = do
         Left e -> pure $ Left $ toException e
         Right pool -> do
           putStrLn "Checking connection"
-          eConnection <- checkDBConnection pool 
+          eConnection <- checkDBConnection pool
           case eConnection of
             Left err -> pure $ Left err
             Right _ -> do
@@ -170,10 +173,12 @@ readEnv envFilePath = do
               putStrLn "Automigration complete"
               case eRes of
                 Left err -> pure $ Left err
-                Right _ -> do 
+                Right _ -> do
                   jwtSecretKey <- generateKey
                   loggerSet_ <- newStdoutLoggerSet defaultBufSize
                   sem <- newQSem 10 -- 10 threads
+                  let stateStore = stateSet (HaskReadState pool sem) stateEmpty
+                  haxlEnv <- initEnv stateStore ()
                   let orvilleState = O.newOrvilleState O.defaultErrorDetailLevel pool
                       jwtSett = defaultJWTSettings jwtSecretKey
                       appCfg =
@@ -184,17 +189,8 @@ readEnv envFilePath = do
                           , emailFromEmail = mailFromEmail
                           , googleOauth2Config = oauth2Config
                           , jwtSett = jwtSett
-                          , cookieSett =
-                              defaultCookieSettings
-                          , {-
-                              { cookieMaxAge =
-                                  Just $
-                                    secondsToDiffTime $
-                                      fromIntegral tokenExpiryTime
-                              }
-                              -}
-
-                            tokenExpiryTime0 = fromIntegral tokenExpiryTime
+                          , cookieSett = defaultCookieSettings
+                          , tokenExpiryTime0 = fromIntegral tokenExpiryTime
                           , environment = toEnv environment_
                           , ip = ip_
                           }
@@ -202,7 +198,7 @@ readEnv envFilePath = do
                         MyAppState
                           appCfg
                           orvilleState
-                          (HaxlConfig pool sem)
+                          haxlEnv
                       ctx = defaultCookieSettings :. jwtSett :. EmptyContext
                   pure $ Right (appST, jwtSett, ctx, fromIntegral applicationPort, pool)
 

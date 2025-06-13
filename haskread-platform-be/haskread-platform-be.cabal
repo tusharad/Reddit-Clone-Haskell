@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -36,6 +36,7 @@ library
       Platform.Comment.Utils
       Platform.Common.AppM
       Platform.Common.DB
+      Platform.Common.Haxl
       Platform.Common.Middleware
       Platform.Common.Types
       Platform.Common.Utils

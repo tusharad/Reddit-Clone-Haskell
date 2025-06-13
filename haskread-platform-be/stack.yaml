@@ -17,7 +17,9 @@ extra-deps:
 - x509-1.7.7@sha256:90eef2d745a654146fc1c325e035eaddac531e4d2145d4bc1dcf4b8fad439d34,2276
 - x509-store-1.6.9@sha256:1f1abeab5bacf1407b920d0f34f4c35a5ad450ff0d8121cd3dc76460f81e711d,1716
 - x509-validation-1.6.12@sha256:4f4af20ec77f02c042ecd4726c195bb0e0b694b336de81e7bd4515b2917bd9bc,2169
+
 - tasty-wai-0.1.2.0@sha256:06cc057d500aed373fb945e8b263363518ffefab5eface3524c1ccccad541390,2089
+
 - git: https://github.com/flipstone/orville
   commit: 09528c117156592fc1ecbb82dd65548972b2d9d8
   subdirs:
