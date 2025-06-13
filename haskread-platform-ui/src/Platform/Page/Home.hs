@@ -121,7 +121,7 @@ homePage = do
                 hyper (SortMenuId 1) sortMenuView
                 viewThreadsList (threads res) mbUserContext
                 hyper (HomeId 1) (paginationView (threadsCount res) PageParams {..})
-                hyper (CommunityId 1) communityListView
+              hyper (CommunityId 1) communityListView
           hyper (FooterId 1) footerView
   where
     viewThreadsList threads mbUserContext =

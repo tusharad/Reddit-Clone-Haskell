@@ -40,7 +40,7 @@ module Platform.Common.CSS
     disabledButtonCSS,
 
     -- * Cards & Containers
-    whiteBackgroundRoundedCSS,
+    blueBackgroundRoundedCSS,
     cardContainerCSS,
     modalCardCSS,
     p4CSS,
@@ -128,9 +128,9 @@ import Data.String.Interpolate (i)
 import Web.Hyperbole (Url)
 import Web.View.Types (ClassName)
 
-whiteBackgroundRoundedCSS :: ClassName
-whiteBackgroundRoundedCSS =
-  [i| bg-white dark:bg-gray-800
+blueBackgroundRoundedCSS :: ClassName
+blueBackgroundRoundedCSS =
+  [i| bg-blue-800
     shadow-lg rounded-lg mb-6 overflow-hidden |]
 
 linkTextCSS :: ClassName
@@ -138,8 +138,7 @@ linkTextCSS = [i| text-blue-300 hover:text-blue-400 transition |]
 
 commonLinkCSS :: ClassName
 commonLinkCSS =
-  [i| block p-2 text-blue-600 dark:text-blue-400
-    hover:bg-gray-100 dark:hover:bg-gray-700 hover:underline transition |]
+  [i| block p-2 text-white hover:bg-gray-700  hover:underline |]
 
 footerTextCSS :: ClassName
 footerTextCSS = [i| text-white |]
@@ -161,8 +160,7 @@ dropdownItemCSS =
 
 sortMenuItemCSS :: ClassName
 sortMenuItemCSS =
-  [i| flex space-x-4 bg-white
-    dark:bg-gray-800 rounded-full shadow-lg p-2 |]
+  [i| flex space-x-4 bg-gray-700 rounded-full shadow-lg p-2 |]
 
 selectedSortMenuItemCSS :: ClassName
 selectedSortMenuItemCSS =
@@ -173,10 +171,10 @@ bottomBorderCSS :: ClassName
 bottomBorderCSS = [i| border-b p-4 dark:border-gray-700 |]
 
 largeTextCSS :: ClassName
-largeTextCSS = [i| text-lg font-bold text-gray-800 dark:text-gray-200 |]
+largeTextCSS = [i| text-lg font-bold text-white |]
 
 communityNameCSS :: ClassName
-communityNameCSS = [i| border-b last:border-b-0 dark:border-gray-700 |]
+communityNameCSS = [i| border-b last:border-b-0 border-gray-700 text-white |]
 
 linkedInLink :: Url
 linkedInLink = "https://www.linkedin.com/in/tushar-adhatrao/"
@@ -187,26 +185,27 @@ centeredCSS = [i| fixed inset-0 bg-black bg-opacity-50 flex justify-center items
 -- CSS utilities
 cardContainerCSS :: ClassName
 cardContainerCSS =
-  [i| bg-white dark:bg-gray-700 shadow-lg rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300 |]
+  [i| shadow-lg bg-blue-800 
+    rounded-lg mb-6 overflow-hidden hover:shadow-xl transition-shadow duration-300 |]
 
 paddedCSS :: ClassName
 paddedCSS = [i| p-6 |]
 
 sectionTitleCSS :: ClassName
 sectionTitleCSS =
-  [i| text-2xl font-bold mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white |]
+  [i| text-2xl font-bold mb-4 bg-blue-600 text-white |]
 
 formGroupCSS :: ClassName
 formGroupCSS = [i| mb-4 |]
 
 labelCSS :: ClassName
-labelCSS = [i| block dark:bg-gray-700 dark:border-gray-600 dark:text-white |]
+labelCSS = [i| block bg-blue-800 text-white |]
 
 inputCSS :: ClassName
-inputCSS = [i| w-full px-3 py-2 border rounded |]
+inputCSS = [i| w-full text-white px-3 py-2 border rounded |]
 
 selectCSS :: ClassName
-selectCSS = [i| w-full px-2 py-2 border rounded |]
+selectCSS = [i| w-full px-2 bg-blue-800 text-white py-2 border rounded |]
 
 buttonCSS :: ClassName
 buttonCSS =
@@ -215,7 +214,7 @@ buttonCSS =
 
 -- CSS utilities
 primaryButtonCSS :: ClassName
-primaryButtonCSS = "bg-blue-600 hover:bg-blue-500 transition transform hover:scale-105"
+primaryButtonCSS = "bg-blue-500 p-2 hover:bg-blue-400 transition transform hover:scale-105"
 
 secondaryButtonCSS :: ClassName
 secondaryButtonCSS = "bg-yellow-500 hover:bg-yellow-600 transition transform hover:scale-105"
@@ -340,7 +339,7 @@ reallyLongCSS =
   "px-4 py-2 rounded-full text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-gray-700 cursor-pointer transition shadow"
 
 pageContainerCSS :: ClassName
-pageContainerCSS = "min-h-screen bg-white dark:bg-gray-900"
+pageContainerCSS = "min-h-screen bg-white dark:bg-gray-800"
 
 flexColumnContainerCSS :: ClassName
 flexColumnContainerCSS = "flex flex-col min-h-screen"
@@ -358,16 +357,16 @@ sectionTitleHomeCSS :: ClassName
 sectionTitleHomeCSS = "text-3xl text-center mb-6 text-gray-800 dark:text-gray-200"
 
 labelTextCSS :: ClassName
-labelTextCSS = "text-gray-700 dark:text-gray-300"
+labelTextCSS = "text-white"
 
 formBaseCSS :: ClassName
 formBaseCSS = "flex flex-col space-y-4"
 
 submitButtonCSS :: ClassName
-submitButtonCSS = "rounded transition transform hover:scale-105 text-2xl mr-2"
+submitButtonCSS = "rounded text-xl mr-2 bg-blue-600 p-2 text-white"
 
 oauthButtonCSS :: ClassName
-oauthButtonCSS = "mt-2 w-full rounded transition transform hover:scale-105"
+oauthButtonCSS = "mt-2 w-full rounded bg-yellow-600 p-2 text-white"
 
 authLayoutFlexCSS :: ClassName
 authLayoutFlexCSS = "flex flex-wrap lg:flex-nowrap -mx-4"
@@ -415,31 +414,31 @@ pageBackgroundCSS = "bg-[#F4EEFF]"
 
 threadHeaderCSS :: ClassName
 threadHeaderCSS =
-  "flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b dark:border-gray-700"
+  "flex flex-col sm:flex-row justify-between items-start sm:items-center p-4"
 
 threadTitleCSS :: ClassName
-threadTitleCSS = "text-lg font-bold text-gray-800 dark:text-gray-200"
+threadTitleCSS = "text-lg font-bold text-white"
 
 threadTitleLinkCSS :: ClassName
 threadTitleLinkCSS =
   "truncate block hover:text-blue-600 dark:hover:text-blue-400 transition"
 
 threadMetaCSS :: ClassName
-threadMetaCSS = "text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-0"
+threadMetaCSS = "text-sm text-white mt-2 sm:mt-0"
 
 threadDescriptionCSS :: ClassName
-threadDescriptionCSS = "p-4"
+threadDescriptionCSS = "p-4 text-white"
 
 threadActionsCSS :: ClassName
 threadActionsCSS =
-  "flex justify-between items-center p-4 border-t dark:border-gray-700"
+  "flex justify-between items-center p-4"
 
 threadActionButtonCSS :: ClassName
 threadActionButtonCSS =
-  "flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition transform hover:scale-105"
+  "flex items-center space-x-1 p-2 text-white rounded-full hover:bg-blue-300 transition transform hover:scale-105"
 
 threadActionTextCSS :: ClassName
-threadActionTextCSS = "text-gray-600 dark:text-gray-300"
+threadActionTextCSS = "text-white"
 
 commentCountIconCSS :: ClassName
 commentCountIconCSS = "bx bx-comment"

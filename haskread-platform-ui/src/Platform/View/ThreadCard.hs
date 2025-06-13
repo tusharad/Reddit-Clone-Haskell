@@ -57,7 +57,12 @@ instance (IOE :> es) => HyperView AttachmentViewId es where
           el (cc "p-4") $
             tag
               "img"
-              ( att "src" (TL.toStrict $ "data:image/jpeg;base64," <> extractBase64 (encodeBase64 docContent))
+              ( att
+                  "src"
+                  ( TL.toStrict $
+                      "data:image/jpeg;base64,"
+                        <> extractBase64 (encodeBase64 docContent)
+                  )
                   . att "alt" "error...image supposed to be here"
                   . cc "w-full h-auto rounded-md"
               )
@@ -84,7 +89,8 @@ instance (IOE :> es) => HyperView ThreadId es where
             liftIO $ putStrLn err
             pure $ threadView threadInfo mbUserContext
           Right _ -> do
-            let (updatedVotes, updatedThreadInfo) = applyVote ucUserThreadVotes threadInfo threadIDForThreadInfo True
+            let (updatedVotes, updatedThreadInfo) = 
+                    applyVote ucUserThreadVotes threadInfo threadIDForThreadInfo True
             pure $ threadView updatedThreadInfo (Just uc {ucUserThreadVotes = updatedVotes})
   update (UpdateDownVote threadInfo@ThreadInfo {..} mbUserContext) = do
     case mbUserContext of
@@ -96,7 +102,8 @@ instance (IOE :> es) => HyperView ThreadId es where
             liftIO $ putStrLn err
             pure $ threadView threadInfo mbUserContext
           Right _ -> do
-            let (updatedVotes, updatedThreadInfo) = applyVote ucUserThreadVotes threadInfo threadIDForThreadInfo False
+            let (updatedVotes, updatedThreadInfo) = 
+                    applyVote ucUserThreadVotes threadInfo threadIDForThreadInfo False
             pure $ threadView updatedThreadInfo (Just uc {ucUserThreadVotes = updatedVotes})
   update (DeleteThread threadInfo@ThreadInfo {..} uc@UserContext {..}) = do
     if userIDForThreadInfo == (userIDForUPR ucUserProfile)
@@ -144,10 +151,11 @@ showVoteIcon :: Bool -> Maybe UserContext -> Int -> View ThreadId ()
 showVoteIcon isLike mbUserContext tId = do
   let (solidClass, outlinedClass) =
         if isLike
-          then ("bx bxs-like text-gray-600 dark:text-gray-300", "bx bx-like text-gray-600 dark:text-gray-300")
+          then ("bx bxs-like text-white"
+            , "bx bx-like text-white")
           else
-            ( "bx bxs-dislike text-gray-600 dark:text-gray-300"
-            , "bx bx-dislike text-gray-600 dark:text-gray-300"
+            ( "bx bxs-dislike text-white"
+            , "bx bx-dislike text-white"
             )
 
       vote = mbUserContext >>= \UserContext {ucUserThreadVotes = votes} -> lookup tId votes
@@ -161,7 +169,8 @@ attachmentView :: Text -> Int -> View AttachmentViewId ()
 attachmentView attachmentName threadId
   | isImage = el (cc "mb-4" . onLoad (LoadImage threadId) 500) $ text "Loading attachment..."
   | otherwise = el (cc "mb-4") $ do
-      let funcName = mconcat ["downloadAttachment(", T.pack (show threadId), ",'", attachmentName, "')"]
+      let funcName = mconcat 
+            ["downloadAttachment(", T.pack (show threadId), ",'", attachmentName, "')"]
       tag
         "button"
         (cc "text-blue-500" . att "onClick" funcName)
@@ -183,12 +192,13 @@ threadView threadInfo@ThreadInfo {..} mbUserContext = do
           (text title)
 
       el (cc CSS.threadMetaCSS) $ do
-        tag "p" mempty $ text "Community:"
-        tag "span" (cc "font-semibold") (text communityNameForThreadInfo)
+        tag "span" id $ do 
+          text "Community:"
+          tag "span" (cc "font-semibold") (text communityNameForThreadInfo)
         tag "p" mempty $ do
           text "Created by:"
           tag "span" (cc "font-semibold") (text userNameForThreadInfo)
-        tag "p" mempty (text createdAtForThreadInfo)
+        -- tag "p" mempty (text createdAtForThreadInfo)
 
     el (cc CSS.threadDescriptionCSS) $ do
       tag "p" mempty (text $ fromMaybe "" description)
@@ -246,7 +256,8 @@ editThreadView ThreadInfo {..} (Communities communityList) = do
           tag "label" (cc CSS.labelCSS) "Enter Description"
           tag
             "textarea"
-            (att "id" "threadDescription" . maybe mempty (att "value") description . cc CSS.inputCSS)
+            (att "id" "threadDescription" 
+                . maybe mempty (att "value") description . cc CSS.inputCSS)
             none
         el (cc CSS.formGroupCSS) $ do
           tag "label" (cc CSS.disabledLabelCSS) $

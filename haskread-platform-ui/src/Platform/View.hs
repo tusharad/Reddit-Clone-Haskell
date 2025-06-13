@@ -83,7 +83,7 @@ showCommunityNames (CommunityC {..} : communityList) = do
 communityListView_ :: Either String Communities -> View CommunityId ()
 communityListView_ eCommunityList =
   el (cc "w-full px-4") $ do
-    el (cc whiteBackgroundRoundedCSS) $ do
+    el (cc blueBackgroundRoundedCSS) $ do
       el (cc bottomBorderCSS) $ do
         el (cc largeTextCSS) (text "Communities")
         tag "ul" (cc "p-4 space-y-2") $ do
@@ -95,11 +95,10 @@ communityListView_ eCommunityList =
 communityListView :: View CommunityId ()
 communityListView = do
   el (cc "w-full px-4") $ do
-    el (cc whiteBackgroundRoundedCSS) $ do
-      el (cc bottomBorderCSS) $ do
-        el (cc largeTextCSS) (text "Communities")
-        tag "ul" (cc "p-4 space-y-2") $ do
-          el (onLoad Init 500) $ text "Loading communities"
+    el (cc bottomBorderCSS) $ do
+      el (cc largeTextCSS) (text "Communities")
+      tag "ul" (cc "p-4 space-y-2") $ do
+        el (onLoad Init 500) $ text "Loading communities"
 
 sortMenuView :: View SortMenuId ()
 sortMenuView = do

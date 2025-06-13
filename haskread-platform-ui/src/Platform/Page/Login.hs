@@ -123,8 +123,8 @@ formView mErrorMsg _ = do
           Just errMsg ->
             el (cc "text-red-500 text-sm") $
               text errMsg
-        submit (btn . cc CSS.submitButtonCSS) "Submit"
+        submit (cc CSS.submitButtonCSS) "Submit"
       button
         OAuthPage
-        (btn . cc CSS.oauthButtonCSS)
+        (cc CSS.oauthButtonCSS)
         $ tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"

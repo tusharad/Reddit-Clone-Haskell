@@ -153,7 +153,7 @@ registerFormView mErrorMsg _ = do
             el (cc "text-red-500 text-sm") $
               text errMsg
 
-        submit (btn . cc CSS.submitButtonCSS) "Submit"
+        submit (cc CSS.submitButtonCSS) "Submit"
 
-      button OauthPage (btn . cc CSS.oauthButtonCSS) $ do
+      button OauthPage (cc CSS.oauthButtonCSS) $ do
         tag "i" (cc "bx bxl-google text-2xl mr-2") "Continue with Google"
